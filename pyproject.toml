@@ -1,0 +1,22 @@
+[project]
+name = "quantiq"
+version = "0.1.0"
+description = "Real-time stock dashboard using free-tier cloud services and Gemini 2.5 Flash"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.110.0",
+    "uvicorn[standard]>=0.28.0",
+    "websockets>=12.0",
+    "sqlalchemy[mypy]>=2.0.28",
+    "asyncpg>=0.29.0",
+    "psycopg2-binary>=2.9.9",
+    "alembic>=1.13.1",
+    "redis>=5.0.3",
+    "yfinance>=0.2.37",
+    "pandas>=2.2.1",
+    "pandas-ta>=0.3.14b",
+    "google-generativeai>=0.4.1",
+    "pydantic-settings>=2.2.1",
+    "prometheus-fastapi-instrumentator>=7.0.0",
+]
