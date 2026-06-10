@@ -1,0 +1,54 @@
+# Environment and Secrets (Credentials)
+.env
+.env.*
+!.env.example
+secrets.json
+*.pem
+*.key
+*.cert
+
+# Python virtual environment
+.venv/
+venv/
+ENV/
+env/
+
+# Python Cache & Compiled files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# Databases (Local SQLite or PG clusters)
+*.db
+*.sqlite
+*.sqlite3
+
+# IDE / Editors
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+*.swo
+
+# OS files
+Thumbs.db
+.DS_Store
+Desktop.ini
+
+# Package Manager Lockfiles (if specifically requested, but uv.lock is usually tracked; keeping it tracked)
+# Node.js (for frontend later)
+node_modules/
+.next/
+dist/
+build/
+out/
+.vercel
