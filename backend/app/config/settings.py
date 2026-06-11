@@ -11,13 +11,18 @@ class Settings(BaseSettings):
     GEMINI_API_KEY: str
     
     # Optional Razorpay Credentials (defaults to empty string if not set)
-    RAZORPAY_KEY_ID: str= Field(default="")
-    RAZORPAY_KEY_SECRET: str= Field(default="")
-    RAZORPAY_WEBHOOK_SECRET: str= Field(default="")
+    RAZORPAY_KEY_ID: str = Field(default="")
+    RAZORPAY_KEY_SECRET: str = Field(default="")
+    RAZORPAY_WEBHOOK_SECRET: str = Field(default="")
+    
+    # Optional Cloudinary Credentials (defaults to empty string if not set)
+    CLOUDINARY_CLOUD_NAME: str = Field(default="")
+    CLOUDINARY_API_KEY: str = Field(default="")
+    CLOUDINARY_API_SECRET: str = Field(default="")
     
     # Auth configuration
-    SECRET_KEY: str= Field(default="supersecretkeychangeinproduction")
-    ACCESS_TOKEN_EXPIRE_MINUTES: int= 60*24*8 
+    SECRET_KEY: str = Field(default="supersecretkeychangeinproduction")
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 8 
     
     @property
     def database_url_async(self) -> str:
