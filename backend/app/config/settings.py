@@ -1,5 +1,6 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import Field
+from urllib.parse import urlparse, parse_qsl, urlencode, urlunparse
 
 class Settings(BaseSettings):
     PROJECT_NAME: str= "QuantIQ"
@@ -29,11 +30,22 @@ class Settings(BaseSettings):
         """
         Ensures the database URL uses the asyncpg driver dialect.
         Converts 'postgresql://' to 'postgresql+asyncpg://'
+        and cleans up query parameters for asyncpg.
         """
-        url= self.DATABASE_URL
+        url = self.DATABASE_URL
         if url.startswith("postgresql://"):
-            return url.replace("postgresql://", "postgresql+asyncpg://", 1)
-        return url
+            url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
+            
+        parsed_url = urlparse(url)
+        query_params = dict(parse_qsl(parsed_url.query))
+        
+        if "sslmode" in query_params:
+            query_params["ssl"] = query_params.pop("sslmode")
+        
+        query_params.pop("channel_binding", None)
+        reconstructed_query = urlencode(query_params)
+        parsed_url = parsed_url._replace(query=reconstructed_query)
+        return urlunparse(parsed_url)
     
     model_config= SettingsConfigDict(
         env_file=".env",
