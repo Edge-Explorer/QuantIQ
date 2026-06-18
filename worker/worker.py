@@ -38,8 +38,8 @@ async def get_latest_stock_data(ticker: str) -> Optional[dict]:
         # fast_info retrieves basic metrics quickly
         info = await loop.run_in_executor(None, lambda: yf_ticker.fast_info)
         
-        price = info.get("last_price")
-        volume = info.get("last_volume")
+        price = info.last_price
+        volume = info.last_volume
         
         if price is None or volume is None:
             return None

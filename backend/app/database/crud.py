@@ -76,7 +76,7 @@ async def get_user_watchlist(db: AsyncSession, user_id: uuid.UUID) -> List[model
     result = await db.execute(
         select(models.Watchlist)
         .where(models.Watchlist.user_id == user_id)
-        .order_index(models.Watchlist.created_at.desc() if hasattr(models.Watchlist, 'order_index') else None)
+        .order_by(models.Watchlist.created_at.desc() if hasattr(models.Watchlist, 'order_index') else None)
     )
     # Simple order fallback if order_index doesn't apply
     result = await db.execute(
