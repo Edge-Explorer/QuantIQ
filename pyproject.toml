@@ -25,4 +25,5 @@ dependencies = [
     "strawberry-graphql[fastapi]>=0.219.0",
     "celery>=5.3.6",
     "aiokafka>=0.10.0",
+    "pyjwt>=2.8.0",
 ]

@@ -21,9 +21,14 @@ class Settings(BaseSettings):
     CLOUDINARY_API_KEY: str = Field(default="")
     CLOUDINARY_API_SECRET: str = Field(default="")
     
+    # Google OAuth Credentials (defaults to empty string if not set)
+    GOOGLE_CLIENT_ID: str = Field(default="")
+    GOOGLE_CLIENT_SECRET: str = Field(default="")
+    
     # Auth configuration
     SECRET_KEY: str = Field(default="supersecretkeychangeinproduction")
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 8 
+
     
     @property
     def database_url_async(self) -> str:
