@@ -11,6 +11,7 @@ from aiokafka import AIOKafkaConsumer  # type: ignore
 from backend.app.database import crud, models
 from backend.app.schemas import schemas
 from backend.app.config.settings import settings
+from backend.app.services import gemini
 
 KAFKA_BOOTSTRAP_SERVERS = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092")
 KAFKA_TOPIC = "stock-ticks"
@@ -221,7 +222,7 @@ class Mutation:
             credits_credited=credits_credited
         )
         return PaymentOrderType(order_id=mock_order_id, amount=amount * 100, currency="INR")
-
+    
     @strawberry.mutation
     async def get_ai_insight(self, info: Info, ticker: str) -> GeminiInsightType:
         """
@@ -236,22 +237,23 @@ class Mutation:
         if not success:
             raise Exception("Insufficient credits. Please recharge via Razorpay.")
             
-        # 2. Run qualitative predictions (stubs to be filled when gemini.py is fully written)
-        # Fetch data context for Gemini ReAct loop
-        history = await crud.get_stock_history(db, ticker, limit=100)
-        
-        # Placeholder analysis until gemini.py ReAct agent is connected
-        mock_bullish_prob = 75
-        mock_reason = (
-            f"Based on the last {len(history)} candlesticks of {ticker}, the stock is showing a bullish "
-            "rebound from local support levels. Volume is steady."
+        # 2. Call the Gemini ReAct agent loop
+        prompt = (
+            f"Analyze stock ticker {ticker.upper()}. "
+            "Retrieve its latest technical indicators and quantitative ML prediction using your tools. "
+            "Check if the user has any active price alerts or watchlists set up for it. "
+            "Perform a holistic qualitative and quantitative analysis of this stock."
         )
+        insight_data = await gemini.run_agent_chat(db, user.id, prompt)
+        
+        # Refresh the user object to get the updated credit balance
+        await db.refresh(user)
         
         return GeminiInsightType(
-            ticker=ticker,
-            bullish_probability=mock_bullish_prob,
-            reason=mock_reason,
-            credits_remaining=user.credits - 1
+            ticker=ticker.upper(),
+            bullish_probability=insight_data["bullish_probability"],
+            reason=insight_data["reason"],
+            credits_remaining=user.credits
         )
 
 
