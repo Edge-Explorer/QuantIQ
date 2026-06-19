@@ -25,7 +25,7 @@ async def generate_text(prompt: str) -> str:
         return f"[Mock Analysis for prompt: {prompt[:60]}...]"
 
     try:
-        model = genai.GenerativeModel("gemini-1.5-flash")
+        model = genai.GenerativeModel("gemini-2.5-flash")
         loop = asyncio.get_event_loop()
         response = await loop.run_in_executor(
             None, 
