@@ -26,4 +26,6 @@ dependencies = [
     "celery>=5.3.6",
     "aiokafka>=0.10.0",
     "pyjwt>=2.8.0",
+    "onnxruntime>=1.17.0",
+    "huggingface_hub>=0.20.0",
 ]
