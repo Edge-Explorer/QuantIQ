@@ -52,3 +52,7 @@ dist/
 build/
 out/
 .vercel
+
+
+# Model
+model.onnx
