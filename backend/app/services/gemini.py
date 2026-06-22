@@ -6,10 +6,26 @@ import asyncio
 import google.generativeai as genai  # type: ignore
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+import numpy as np
+import onnxruntime as ort
 
 from backend.app.config.settings import settings
 from backend.app.database import crud, models
 from backend.app.schemas import schemas
+
+# Global variable to hold the ONNX inference session
+onnx_session= None
+
+def init_onnx_session(model_path: str):
+    """
+    Initializes the global ONNX runtime inference session.
+    """
+    global onnx_session
+    try:
+        onnx_session= ort.InferenceSession(model_path)
+        print(f"ONNX Model successfully loaded from {model_path}")
+    except Exception as e:
+        print(f"Error loading ONNX session from {model_path}: {str(e)}")
 
 # Configure Google Generative AI API client
 if settings.GEMINI_API_KEY:
@@ -124,15 +140,49 @@ async def run_agent_chat(db: AsyncSession, user_id: uuid.UUID, prompt: str) -> d
             "volume": h.volume
         } for h in history])
 
-        if len(df) >= 14:
-            df.ta.rsi(close="close", length=14, append=True)
-            rsi = df.iloc[-1].get("RSI_14", 50.0)
+        if len(df) >= 26 and onnx_session is not None:
+            try:
+                df.ta.rsi(close= "close", length= 14, append= True)
+                df.ta.macd(close= "close", fast= 12, slow= 26, signal= 9, append= True)
+                df.ta.ema(close= "close", length= 20, append= True)
+                df["EMA_20_ratio"]= (df["close"] - df["EMA_20"]) / df["EMA_20"]
+                
+                latest= df.iloc[-1]
+                rsi_val= float(latest.get("RSI_14", 50.0))
+                macd_val= float(latest.get("MACD_12_26_9", 0.0))
+                macds_val= float(latest.get("MACDs_12_26_9", 0.0))
+                ema_ratio_val= float(latest.get("EMA_20_ratio", 0.0))
+                
+                input_data= np.array([[rsi_val, macd_val, macds_val, ema_ratio_val]], dtype= np.float32)
+                input_name= onnx_session.get_inputs()[0].name
+                label, prob= onnx_session.run(None, {input_name: input_data})
+                
+                if isinstance(prob, list) and len(prob) > 0:
+                    p_dict= prob[0]
+                    if isinstance(p_dict, dict):
+                        p_val= p_dict.get(1, 0.5)
+                    else:
+                        p_val= prob[0][0][1]
+                else:
+                    p_val= prob[0][1]
+                
+                p_val_clipped= min(max(float(p_val), 0.0), 1.0)
+                bullish_prob= int(p_val_clipped * 100)
+                
+                return json.dumps({
+                    "ticker": ticker.upper(),
+                    "bullish_probability": bullish_prob,
+                    "status": "onnx_inference"
+                })
+            except Exception as e:
+                print(f"Error running ONNX model inference: {str(e)}")
+                
+        if len(df)>= 14:
+            df.ta.rsi(close= "close", length= 14, append= True)
+            rsi= df.iloc[-1].get("RSI_14", 50.0)
         else:
-            rsi = 50.0
-
-        # DEV MOCK prediction logic. When ONNX engine is initialized in main.py,
-        # we will load weights and run actual ONNX inference here.
-        mock_prob = int(min(max(rsi * 1.1, 10.0), 90.0))
+            rsi= 50.0
+        mock_prob= int(min(max(rsi*1.1, 10.0), 90.0))
         return json.dumps({
             "ticker": ticker.upper(),
             "bullish_probability": mock_prob,
