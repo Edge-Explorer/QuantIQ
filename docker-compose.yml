@@ -1,1 +1,39 @@
-#
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: quantiq-db
+    environment:
+      POSTGRES_DB: quantiq
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    container_name: quantiq-redis
+    ports:
+      - "6379:6379"
+
+  redpanda:
+    image: docker.redpanda.com/redpandadata/redpanda:v23.2.19
+    container_name: quantiq-redpanda
+    command:
+      - redpanda start
+      - --smp 1
+      - --memory 512M
+      - --reserve-memory 0M
+      - --overprovisioned
+      - --node-id 0
+      - --check=false
+      - --kafka-addr internal://0.0.0.0:9092,external://0.0.0.0:19092
+      - --advertise-kafka-addr internal://redpanda:9092,external://localhost:19092
+    ports:
+      - "19092:19092"
+
+volumes:
+  postgres_data:
