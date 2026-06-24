@@ -4,6 +4,7 @@ import json
 import asyncio
 import os
 from typing import List, Optional, AsyncGenerator
+
 import strawberry      # type: ignore
 from strawberry.types import Info      # type: ignore
 from aiokafka import AIOKafkaConsumer  # type: ignore
@@ -12,7 +13,6 @@ from backend.app.database import crud, models
 from backend.app.schemas import schemas
 from backend.app.config.settings import settings
 from backend.app.services import gemini
-
 KAFKA_BOOTSTRAP_SERVERS = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092")
 KAFKA_TOPIC = "stock-ticks"
 

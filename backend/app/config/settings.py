@@ -28,7 +28,8 @@ class Settings(BaseSettings):
     # Auth configuration
     SECRET_KEY: str = Field(default="supersecretkeychangeinproduction")
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 8 
-
+    
+    KAFKA_BOOTSTRAP_SERVERS: str= Field(default= "localhost:9092")
     
     @property
     def database_url_async(self) -> str:
