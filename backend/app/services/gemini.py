@@ -231,7 +231,7 @@ async def run_agent_chat(db: AsyncSession, user_id: uuid.UUID, prompt: str) -> d
     ]
 
     model = genai.GenerativeModel(
-        model_name="gemini-1.5-flash",
+        model_name="gemini-2.5-flash",
         tools=tools,
         system_instruction=(
             "You are a professional financial analyst for QuantIQ. "
