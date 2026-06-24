@@ -16,9 +16,11 @@ from backend.app.database.session import SessionLocal
 from backend.app.database import crud
 from backend.app.schemas import schemas
 
+KAFKA_BOOTSTRAP_SERVERS = settings.KAFKA_BOOTSTRAP_SERVERS
+
 # Tickers to poll
 TICKERS = ["AAPL", "TSLA", "TCS.NS", "RELIANCE.NS"]
-KAFKA_BOOTSTRAP_SERVERS = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092")
+
 KAFKA_TOPIC = "stock-ticks"
 
 # In-memory buffer to aggregate ticks into 1-minute candles
