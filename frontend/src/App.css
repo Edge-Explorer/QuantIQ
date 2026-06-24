@@ -1,0 +1,668 @@
+/* App Layout & Component Grid Styles */
+
+.app-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  width: 100%;
+}
+
+/* 1. Login Page Styles */
+.login-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 20px;
+  position: relative;
+  overflow: hidden;
+}
+
+.login-card {
+  width: 440px;
+  max-width: 100%;
+  padding: 40px;
+  text-align: center;
+  animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.logo-glow {
+  width: 72px;
+  height: 72px;
+  margin: 0 auto 24px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--neon-cyan), var(--neon-violet));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 30px rgba(0, 242, 254, 0.3);
+}
+
+.login-title {
+  font-size: 36px;
+  background: linear-gradient(135deg, #ffffff 30%, var(--text-secondary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 12px;
+}
+
+.login-subtitle {
+  color: var(--text-secondary);
+  font-size: 15px;
+  line-height: 150%;
+  margin-bottom: 36px;
+}
+
+.google-btn {
+  width: 100%;
+  background: #ffffff;
+  color: #1f2937;
+  font-size: 15px;
+  padding: 12px;
+  border-radius: 8px;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(255, 255, 255, 0.1);
+  transition: all 0.2s ease;
+}
+
+.google-btn:hover {
+  background: #f3f4f6;
+  box-shadow: 0 4px 20px rgba(255, 255, 255, 0.2);
+}
+
+.mock-btn {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-glass);
+  color: var(--text-primary);
+  font-size: 14px;
+  padding: 10px;
+  border-radius: 8px;
+  margin-top: 16px;
+}
+
+.mock-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: var(--neon-violet);
+}
+
+/* 2. Main Dashboard Styles */
+.dashboard-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--border-glass);
+  background: rgba(6, 7, 13, 0.8);
+  backdrop-filter: blur(10px);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.logo-text {
+  font-size: 22px;
+  font-weight: 700;
+  background: linear-gradient(135deg, var(--neon-cyan), var(--neon-violet));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.credits-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(161, 84, 255, 0.08);
+  border: 1px solid rgba(161, 84, 255, 0.25);
+  padding: 6px 12px;
+  border-radius: 99px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--neon-violet);
+}
+
+.recharge-btn {
+  background: linear-gradient(135deg, var(--neon-cyan), var(--neon-violet));
+  color: #000000;
+  font-weight: 600;
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 99px;
+  box-shadow: 0 0 10px rgba(0, 242, 254, 0.3);
+}
+
+.user-profile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--neon-cyan);
+}
+
+.profile-name {
+  font-size: 14px;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.logout-btn {
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-glass);
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+.logout-btn:hover {
+  background: rgba(255, 23, 68, 0.08);
+  border-color: rgba(255, 23, 68, 0.3);
+  color: var(--bear-red);
+}
+
+/* 3. Grid Structure */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 280px 1fr 320px;
+  gap: 16px;
+  padding: 16px;
+  flex: 1;
+  max-width: 1600px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+@media (max-width: 1200px) {
+  .dashboard-grid {
+    grid-template-columns: 260px 1fr;
+  }
+  .right-sidebar {
+    grid-column: span 2;
+  }
+}
+
+@media (max-width: 768px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+  .left-sidebar, .right-sidebar {
+    grid-column: span 1;
+  }
+}
+
+/* Sidebars and Panels */
+.panel-title {
+  font-size: 16px;
+  color: var(--text-primary);
+  padding: 16px;
+  border-bottom: 1px solid var(--border-glass);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* 4. Watchlist Panel */
+.watchlist-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 400px;
+}
+
+.watchlist-search {
+  padding: 12px;
+  display: flex;
+  gap: 8px;
+  border-bottom: 1px solid var(--border-glass);
+}
+
+.watchlist-search input {
+  flex: 1;
+  font-size: 13px;
+  padding: 8px 12px;
+}
+
+.add-btn {
+  background: var(--neon-cyan);
+  color: #000000;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0, 242, 254, 0.2);
+}
+
+.watchlist-items {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px;
+}
+
+.watchlist-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  margin-bottom: 6px;
+  transition: all 0.2s ease;
+}
+
+.watchlist-item:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.watchlist-item.active {
+  background: rgba(0, 242, 254, 0.05);
+  border-left: 3px solid var(--neon-cyan);
+}
+
+.ticker-symbol {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.delete-ticker-btn {
+  background: transparent;
+  color: var(--text-muted);
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  opacity: 0;
+  transition: all 0.2s ease;
+}
+
+.watchlist-item:hover .delete-ticker-btn {
+  opacity: 1;
+}
+
+.delete-ticker-btn:hover {
+  background: rgba(255, 23, 68, 0.1);
+  color: var(--bear-red);
+}
+
+/* 5. Center View (Chart & Insight) */
+.center-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Chart Styles */
+.chart-panel {
+  padding: 20px;
+  height: 420px;
+  display: flex;
+  flex-direction: column;
+}
+
+.chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.active-stock-info {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.active-price {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text-primary);
+  font-family: var(--font-display);
+}
+
+.live-indicator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--bull-green);
+  text-transform: uppercase;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+}
+
+.live-dot {
+  width: 6px;
+  height: 6px;
+  background: var(--bull-green);
+  border-radius: 50%;
+  animation: pulseGlow 1.5s infinite;
+}
+
+.chart-container {
+  flex: 1;
+  min-height: 250px;
+  position: relative;
+}
+
+/* AI Insights View */
+.insight-panel {
+  padding: 24px;
+}
+
+.insight-cta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  text-align: center;
+  gap: 16px;
+}
+
+.insight-btn {
+  background: linear-gradient(135deg, var(--neon-cyan), var(--neon-violet));
+  color: #000000;
+  font-size: 16px;
+  font-weight: 600;
+  padding: 14px 28px;
+  border-radius: 99px;
+  box-shadow: 0 0 20px rgba(161, 84, 255, 0.3);
+}
+
+.insight-btn:hover {
+  box-shadow: 0 0 30px rgba(161, 84, 255, 0.5);
+}
+
+.insight-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  gap: 20px;
+}
+
+.spinner {
+  width: 48px;
+  height: 48px;
+  border: 3px solid rgba(255, 255, 255, 0.05);
+  border-top-color: var(--neon-cyan);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.insight-result {
+  display: flex;
+  gap: 24px;
+  animation: fadeIn 0.4s ease forwards;
+}
+
+@media (max-width: 640px) {
+  .insight-result {
+    flex-direction: column;
+    align-items: center;
+  }
+}
+
+.probability-gauge {
+  flex-shrink: 0;
+  position: relative;
+  width: 140px;
+  height: 140px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gauge-svg {
+  transform: rotate(-90deg);
+}
+
+.gauge-bg {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.04);
+  stroke-width: 8;
+}
+
+.gauge-fill {
+  fill: none;
+  stroke: url(#cyan-violet-grad);
+  stroke-width: 8;
+  stroke-linecap: round;
+  transition: stroke-dasharray 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.gauge-text {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.gauge-percentage {
+  font-size: 32px;
+  font-weight: 700;
+  font-family: var(--font-display);
+}
+
+.gauge-label {
+  font-size: 11px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.insight-text-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 12px;
+}
+
+.insight-tag {
+  display: inline-flex;
+  align-self: flex-start;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.tag-bullish {
+  background: rgba(0, 230, 118, 0.08);
+  border: 1px solid rgba(0, 230, 118, 0.25);
+  color: var(--bull-green);
+}
+
+.tag-bearish {
+  background: rgba(255, 23, 68, 0.08);
+  border: 1px solid rgba(255, 23, 68, 0.25);
+  color: var(--bear-red);
+}
+
+.insight-explanation {
+  color: var(--text-secondary);
+  font-size: 15px;
+  line-height: 160%;
+}
+
+/* 6. Alerts & Config Panel (Right Sidebar) */
+.right-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.alerts-panel {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.alert-form {
+  padding: 16px;
+  border-bottom: 1px solid var(--border-glass);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.alert-form select, .alert-form input {
+  font-size: 13px;
+  width: 100%;
+}
+
+.alert-submit-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-glass);
+  color: var(--text-primary);
+  width: 100%;
+  padding: 10px;
+  border-radius: 8px;
+}
+
+.alert-submit-btn:hover {
+  background: var(--neon-cyan);
+  color: #000000;
+  border-color: var(--neon-cyan);
+}
+
+.alerts-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.alert-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border-glass);
+  border-radius: 8px;
+}
+
+.alert-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.alert-ticker {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.alert-condition {
+  font-size: 11px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+}
+
+.deactivate-alert-btn {
+  background: transparent;
+  color: var(--text-muted);
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+}
+
+.deactivate-alert-btn:hover {
+  background: rgba(255, 23, 68, 0.1);
+  color: var(--bear-red);
+}
+
+/* 7. Recharge / Payment Modal */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(8px);
+}
+
+.modal-content {
+  width: 420px;
+  max-width: 100%;
+  padding: 32px;
+  text-align: center;
+  animation: slideUp 0.3s ease forwards;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.close-btn {
+  background: transparent;
+  color: var(--text-secondary);
+  width: 28px;
+  height: 28px;
+}
+
+.recharge-packages {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.package-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border-glass);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.package-card:hover {
+  border-color: var(--neon-cyan);
+  background: rgba(0, 242, 254, 0.03);
+}
+
+.package-credits {
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.package-price {
+  color: var(--neon-cyan);
+  font-weight: 600;
+}
