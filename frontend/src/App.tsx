@@ -396,7 +396,7 @@ export default function App() {
     }
   };
 
-  // 8. Call Gemini ReAct AI Insights Agent
+  // 8. Call QuantIQ AI Analyst Agent
   const triggerAIInsight = async () => {
     if (user.credits <= 0) {
       setShowRecharge(true);
@@ -422,7 +422,7 @@ export default function App() {
       setInsight(insightData.getAiInsight);
       setUser({ ...user, credits: insightData.getAiInsight.creditsRemaining });
     } catch (err: any) {
-      console.error('Gemini Agent loop error:', err);
+      console.error('QuantIQ AI Analyst Agent loop error:', err);
       setInsightError(err.message || 'Error compiling strategy.');
     } finally {
       setLoadingInsight(false);
@@ -497,7 +497,7 @@ export default function App() {
           <h2 className="login-title">QuantIQ</h2>
           <p className="login-subtitle">
             Experience real-time stock intelligence, automated alert parameters, 
-            and quantitative market insights served directly by Gemini 2.5 Flash.
+            and quantitative market insights served directly by the QuantIQ Intelligence Engine.
           </p>
           
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
@@ -657,7 +657,7 @@ export default function App() {
             <div className="panel-title" style={{ padding: '0 0 16px', borderBottom: '1px solid var(--border-glass)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <Sparkles size={18} color="#a154ff" className="glow-violet" />
-                <span>Gemini Strategy Insights</span>
+                <span>QuantIQ AI Analyst</span>
               </div>
             </div>
 
@@ -676,7 +676,7 @@ export default function App() {
               <div className="insight-loading">
                 <div className="spinner"></div>
                 <span style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>
-                  Deducting 1 credit & consulting Gemini ReAct agent...
+                  Deducting 1 credit & consulting QuantIQ AI Analyst...
                 </span>
               </div>
             )}
