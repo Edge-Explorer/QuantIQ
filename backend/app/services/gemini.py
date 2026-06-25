@@ -52,6 +52,39 @@ async def generate_text(prompt: str) -> str:
         print(f"Error calling Gemini API: {str(e)}")
         return f"[Error generating content: {str(e)}]"
 
+def extract_json_payload(text: str) -> dict:
+    """
+    Extracts and parses a JSON payload from text.
+    Handles raw JSON, markdown-wrapped JSON, and loose curly-braced substrings.
+    """
+    import re
+    cleaned = text.strip()
+    
+    # 1. Try direct loading
+    try:
+        return json.loads(cleaned)
+    except json.JSONDecodeError:
+        pass
+        
+    # 2. Try markdown json block: ```json ... ```
+    match = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", cleaned, re.DOTALL)
+    if match:
+        try:
+            return json.loads(match.group(1).strip())
+        except json.JSONDecodeError:
+            pass
+            
+    # 3. Try finding the first '{' and the last '}'
+    start_idx = cleaned.find("{")
+    end_idx = cleaned.rfind("}")
+    if start_idx != -1 and end_idx != -1 and end_idx > start_idx:
+        try:
+            return json.loads(cleaned[start_idx:end_idx+1].strip())
+        except json.JSONDecodeError:
+            pass
+            
+    raise ValueError(f"Could not extract JSON from: {text}")
+
 async def run_agent_chat(db: AsyncSession, user_id: uuid.UUID, prompt: str) -> dict:
     """
     Runs the Gemini ReAct agent loop using native automatic function calling.
@@ -246,14 +279,13 @@ async def run_agent_chat(db: AsyncSession, user_id: uuid.UUID, prompt: str) -> d
 
     # 3. Execute automatic function calling chat session in thread pool
     chat = model.start_chat(enable_automatic_function_calling=True)
-    generation_config = {"response_mime_type": "application/json"}
     
     try:
         response = await main_loop.run_in_executor(
             None,
-            lambda: chat.send_message(prompt, generation_config=generation_config)
+            lambda: chat.send_message(prompt)
         )
-        data = json.loads(response.text)
+        data = extract_json_payload(response.text)
         return {
             "bullish_probability": data.get("bullish_probability", 50),
             "reason": data.get("reason", "No analysis summary could be generated.")
