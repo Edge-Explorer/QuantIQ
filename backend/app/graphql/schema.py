@@ -202,26 +202,51 @@ class Mutation:
     @strawberry.mutation
     async def create_payment_order(self, info: Info, amount: int) -> PaymentOrderType:
         """
-        Creates a Razorpay order in test mode and logs it as a pending transaction.
+        Creates a Razorpay order via the Razorpay API (or falls back to mock order if keys are missing)
+        and logs the transaction in the database as pending.
         """
         user = get_authenticated_user(info)
         db = info.context["db"]
         
-        # NOTE: Temporary mock order creation. When we write endpoints.py,
-        # we will link this to the Razorpay Client SDK integration.
-        mock_order_id = f"order_rp_{uuid.uuid4().hex[:12]}"
+        order_id= None
         
-        # Determine credits based on ₹100 = 10 credits package
-        credits_credited = (amount // 10)
+        # Check if Razorpay keys are configured
+        if settings.RAZORPAY_KEY_ID and settings.RAZORPAY_KEY_SECRET:
+            try:
+                import razorpay
+                client= razorpay.Client(auth= (settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET))
+                
+                order_payload= {
+                    "amount": amount * 100, 
+                    "currency": "INR",
+                    "receipt": f"rcpt_{user.id.hex[:10]}_{uuid.uuid4().hex[:6]}"
+                }
+                
+                loop= asyncio.get_event_loop()
+                order= await loop.run_in_executor(
+                    None,
+                    lambda: client.order.create(data= order_payload)
+                )
+                order_id= order["id"]
+            except Exception as e:
+                print(f"Error creating Razorpay order via API, falling back to mock: {str(e)}")
         
+        # Fall back to mock order generation if API call failed or keys are missing
+        if not order_id:
+            order_id= f"order_rp_{uuid.uuid4().hex[:12]}"
+            
+        # Determine credits based on ₹10 = 1 credit (₹100 = 10 credits package)
+        credits_credited= (amount // 10)
+        
+        # Log the pending transaction in Postgres
         await crud.create_payment_transaction(
-            db=db,
-            user_id=user.id,
-            order_id=mock_order_id,
-            amount=amount * 100,  # in paisa
-            credits_credited=credits_credited
+            db= db,
+            user_id= user.id,
+            order_id= order_id,
+            amount= amount * 100,
+            credits_credited= credits_credited
         )
-        return PaymentOrderType(order_id=mock_order_id, amount=amount * 100, currency="INR")
+        return PaymentOrderType(order_id= order_id, amount= amount * 100, currency= "INR")
     
     @strawberry.mutation
     async def get_ai_insight(self, info: Info, ticker: str) -> GeminiInsightType:
