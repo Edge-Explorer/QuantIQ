@@ -1,98 +1,56 @@
-/* ── LogoLoop: Infinite horizontal scroll ── */
+/* ── LogoLoop ── */
 
-.logoloop {
+.logoloop-wrapper {
+  width: 100%;
   overflow: hidden;
   position: relative;
-  width: 100%;
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, black 10%, black 90%, transparent 100%);
+  mask-image: linear-gradient(to right, transparent 0%, black 10%, black 90%, transparent 100%);
 }
 
-/* Fade edges */
-.logoloop::before,
-.logoloop::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  width: 120px;
-  z-index: 2;
-  pointer-events: none;
-}
-
-.logoloop::before {
-  left: 0;
-  background: linear-gradient(to right, #06070d 0%, transparent 100%);
-}
-
-.logoloop::after {
-  right: 0;
-  background: linear-gradient(to left, #06070d 0%, transparent 100%);
-}
-
-/* Track: holds two copies side by side, slides left infinitely */
-.logoloop__track {
+.logoloop-track {
   display: flex;
   width: max-content;
-  animation: logoloop-scroll linear infinite;
+  animation: logoloop-slide linear infinite;
 }
 
-.logoloop__track:hover {
+.logoloop-track:hover {
   animation-play-state: paused;
 }
 
-@keyframes logoloop-scroll {
-  0% {
-    transform: translateX(0);
-  }
-  100% {
-    transform: translateX(-50%);
-  }
-}
-
-/* Each set of logos */
-.logoloop__set {
+.logoloop-set {
   display: flex;
   align-items: center;
-  list-style: none;
-  margin: 0;
-  padding: 0;
   flex-shrink: 0;
 }
 
-/* Individual item */
-.logoloop__item {
+.logoloop-item {
   flex-shrink: 0;
-  line-height: 1;
-  list-style: none;
-}
-
-/* Icon node */
-.logoloop__node {
   display: inline-flex;
   align-items: center;
-  color: rgba(255, 255, 255, 0.4);
+  line-height: 1;
+}
+
+.logoloop-item a,
+.logoloop-item span {
+  display: inline-flex;
+  align-items: center;
+  color: rgba(255, 255, 255, 0.35);
+  text-decoration: none;
   transition: color 0.3s ease, transform 0.3s ease;
 }
 
-.logoloop__node:hover {
-  color: rgba(255, 255, 255, 0.9);
-  transform: scale(1.25);
+.logoloop-item a:hover,
+.logoloop-item span:hover {
+  color: rgba(255, 255, 255, 0.95);
+  transform: scale(1.2);
 }
 
-/* Link wrapper */
-.logoloop__link {
-  display: inline-flex;
-  align-items: center;
-  text-decoration: none;
-}
-
-.logoloop__link:focus-visible {
-  outline: 2px solid rgba(255, 255, 255, 0.5);
-  outline-offset: 4px;
-  border-radius: 4px;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .logoloop__track {
-    animation: none !important;
+@keyframes logoloop-slide {
+  from {
+    transform: translateX(0%);
+  }
+  to {
+    transform: translateX(-50%);
   }
 }
