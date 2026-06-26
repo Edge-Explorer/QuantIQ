@@ -441,8 +441,8 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
         </section>
 
         {/* TECH STACK LOGO LOOP */}
-        <section className="w-full py-16 border-t border-white/5 bg-black/30 backdrop-blur-[1px]">
-          <div className="max-w-7xl mx-auto px-8 mb-8 text-center">
+        <section className="w-full py-6 border-t border-white/5">
+          <div className="max-w-7xl mx-auto px-8 mb-5 text-center">
             <span className="text-muted-foreground text-xs font-semibold uppercase tracking-widest">Powered By</span>
           </div>
           <LogoLoop
@@ -456,10 +456,9 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
               { node: <SiApachekafka />, title: "Redpanda", href: "https://redpanda.com" },
               { node: <SiRazorpay />, title: "Razorpay", href: "https://razorpay.com" },
             ]}
-            speed={40}
-            logoHeight={36}
-            gap={80}
-            ariaLabel="QuantIQ technology stack"
+            logoSize={48}
+            gap={72}
+            durationSeconds={18}
           />
         </section>
 
