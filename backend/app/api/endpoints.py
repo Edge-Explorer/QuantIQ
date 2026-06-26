@@ -98,7 +98,77 @@ async def google_auth(payload: schemas.GoogleAuthRequest, db: AsyncSession= Depe
         # 4. Generate and return our custom JWT
         access_token= create_access_token(data= {"sub": str(user.id)})
         return {"access_token": access_token, "token_type": "bearer"}
+
+# TRADITIONAL EMAIL AUTHENTICATION
+from pydantic import BaseModel
+
+class EmailSignUpRequest(BaseModel):
+    email:str
+    full_name: str
+    country: str
+    password: str
+
+class EmailLoginRequest(BaseModel):
+    email:str
+    password: str
+
+@router.post("/auth/signup", response_model= schemas.Token)
+async def email_signup(payload: EmailSignUpRequest, db: AsyncSession= Depends(get_db)):
+    """
+    Registers a new user using their email, name, country, and password.
+    Saves authentication credentials inside the existing schema.
+    Instantly returns a signed access token.
+    """
+    # 1. Check if email already in use
+    existing_user= await crud.get_user_by_email(db, payload.email)
+    if existing_user:
+        raise HTTPException(status_code= 400, detail= "Email is already registered.")
     
+    # 2. Setup mock google_id for compatibility and password hash payload
+    google_id = f"local:{payload.email}"
+    pwd_hash = hashlib.sha256(payload.password.encode("utf-8")).hexdigest()
+    picture_url = f"local_auth:{pwd_hash}:{payload.country}"
+    
+    user_in= schemas.UserBase(
+        email= payload.email,
+        full_name= payload.full_name,
+        picture_url= picture_url
+    )
+    
+    try:
+        user= await crud.create_user(db, user_in, google_id= google_id)
+    except Exception as e:
+        raise HTTPException(status_code= 500, detail=f"Failed to register user: {str(e)}")
+    
+    token= create_access_token(data= {"sub": str(user.id)})
+    return {"access_token": token, "token_type": "bearer"}
+
+@router.post("/auth/login", response_model= schemas.Token)
+async def email_login(payload: EmailLoginRequest, db: AsyncSession= Depends(get_db)):
+    """
+    Authenticates a user via traditional email and password.
+    Returns a custom JWT token.
+    """
+    user= await crud.get_user_by_email(db, payload.email)
+    if not user:
+        raise HTTPException(status_code= 400, detail= "Invalid email or password.")
+    
+    if not user.picture_url or not user.picture_url.startswith("local_auth:"):
+        raise HTTPException(status_code= 400, detail= "Invalid login method. Please sign in using Google.")
+    
+    parts= user.picture_url.split(":")
+    if len(parts) < 2:
+        raise HTTPException(status_code= 400, detail= "Invalid account details.")
+    
+    stored_hash= parts[1]
+    input_hash= hashlib.sha256(payload.password.encode("utf-8")).hexdigest()
+    
+    if stored_hash != input_hash:
+        raise HTTPException(status_code= 400, detail= "Invalid email or password.")
+    
+    token= create_access_token(data={"sub": str(user.id)})
+    return {"access_token": token, "token_type": "bearer"}
+
 @router.post("/payments/webhook")
 async def razorpay_webhook(request: Request, x_razorpay_signature: str= Header(None), db: AsyncSession= Depends(get_db)):
     """

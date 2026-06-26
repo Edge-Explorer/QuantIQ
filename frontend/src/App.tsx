@@ -235,6 +235,11 @@ export default function App() {
   }, [token, activeTicker]);
 
   // 5. Handle Authentication Callbacks (Google Sign-In response)
+  const handleAuthSuccess = (accessToken: string) => {
+    localStorage.setItem('quantiq_jwt', accessToken);
+    setToken(accessToken);
+  };
+
   const handleGoogleCredentialResponse = async (response: any) => {
     try {
       const idToken = response.credential;
@@ -245,8 +250,7 @@ export default function App() {
       }).then(r => r.json());
 
       if (res.access_token) {
-        localStorage.setItem('quantiq_jwt', res.access_token);
-        setToken(res.access_token);
+        handleAuthSuccess(res.access_token);
       }
     } catch (err) {
       console.error('Google Auth server exchange error:', err);
@@ -420,6 +424,8 @@ export default function App() {
       <LandingPage
         onGoogleLogin={handleGoogleCredentialResponse}
         googleClientId={GOOGLE_CLIENT_ID}
+        onAuthSuccess={handleAuthSuccess}
+        apiUrl={API_URL}
       />
     );
   }

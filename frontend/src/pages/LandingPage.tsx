@@ -1,15 +1,35 @@
 import { useEffect, useRef, useState } from 'react';
 import Logo from '../components/Logo';
 import { Button } from '../components/ui/button';
-import { X, ArrowRight } from 'lucide-react';
+import { X, ArrowRight, Eye, EyeOff, Lock, Mail, User, Globe } from 'lucide-react';
 
 interface LandingPageProps {
   onGoogleLogin: (response: any) => Promise<void>;
   googleClientId: string;
+  onAuthSuccess: (token: string) => void;
+  apiUrl: string;
 }
 
-export default function LandingPage({ onGoogleLogin, googleClientId }: LandingPageProps) {
+type AuthMode = 'signin' | 'signup';
+
+export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSuccess, apiUrl }: LandingPageProps) {
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [authMode, setAuthMode] = useState<AuthMode>('signin');
+  
+  // Form States
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [country, setCountry] = useState('');
+  
+  // UI Helpers
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  
   const googleButtonRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -45,7 +65,7 @@ export default function LandingPage({ onGoogleLogin, googleClientId }: LandingPa
         // Safe catch if script was already unmounted
       }
     };
-  }, [onGoogleLogin, googleClientId, showAuthModal]);
+  }, [googleClientId, onGoogleLogin, showAuthModal]);
 
   // Re-run script loader whenever modal opens to render the Google Button
   useEffect(() => {
@@ -56,7 +76,97 @@ export default function LandingPage({ onGoogleLogin, googleClientId }: LandingPa
         width: 280,
       });
     }
+    // Clear alerts and reset form fields when modal toggles
+    setErrorMsg(null);
+    setSuccessMsg(null);
   }, [showAuthModal]);
+
+  const toggleAuthMode = () => {
+    setAuthMode(prev => prev === 'signin' ? 'signup' : 'signin');
+    setErrorMsg(null);
+    setSuccessMsg(null);
+  };
+
+  const handleTraditionalSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMsg(null);
+    setSuccessMsg(null);
+
+    // Basic Validation
+    if (!email || !password) {
+      setErrorMsg("Email and password are required.");
+      return;
+    }
+
+    if (authMode === 'signup') {
+      if (!fullName || !country) {
+        setErrorMsg("All fields are required for sign up.");
+        return;
+      }
+      if (password !== confirmPassword) {
+        setErrorMsg("Passwords do not match.");
+        return;
+      }
+      if (password.length < 6) {
+        setErrorMsg("Password must be at least 6 characters.");
+        return;
+      }
+    }
+
+    setLoading(true);
+
+    try {
+      if (authMode === 'signup') {
+        const response = await fetch(`${apiUrl}/api/v1/auth/signup`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: email.trim(),
+            full_name: fullName.trim(),
+            country: country.trim(),
+            password: password
+          })
+        });
+
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.detail || "Sign up failed.");
+        }
+
+        setSuccessMsg("Account created successfully!");
+        if (data.access_token) {
+          setTimeout(() => {
+            onAuthSuccess(data.access_token);
+            setShowAuthModal(false);
+          }, 1000);
+        }
+      } else {
+        // Sign In
+        const response = await fetch(`${apiUrl}/api/v1/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: email.trim(),
+            password: password
+          })
+        });
+
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.detail || "Invalid email or password.");
+        }
+
+        if (data.access_token) {
+          onAuthSuccess(data.access_token);
+          setShowAuthModal(false);
+        }
+      }
+    } catch (err: any) {
+      setErrorMsg(err.message || "An unexpected error occurred.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="relative min-h-screen w-full overflow-hidden bg-background text-foreground flex flex-col font-body">
@@ -111,7 +221,7 @@ export default function LandingPage({ onGoogleLogin, googleClientId }: LandingPa
 
           {/* CTA Trigger */}
           <Button 
-            onClick={() => setShowAuthModal(true)}
+            onClick={() => { setAuthMode('signin'); setShowAuthModal(true); }}
             className="liquid-glass rounded-full px-6 py-2.5 text-sm text-foreground hover:scale-[1.03] transition-transform duration-200 cursor-pointer shadow-md"
           >
             Unlock Alpha
@@ -139,7 +249,7 @@ export default function LandingPage({ onGoogleLogin, googleClientId }: LandingPa
 
           {/* Large Hero CTA */}
           <button 
-            onClick={() => setShowAuthModal(true)}
+            onClick={() => { setAuthMode('signin'); setShowAuthModal(true); }}
             className="liquid-glass rounded-full px-14 py-5 text-base text-foreground mt-12 hover:scale-[1.03] cursor-pointer transition-transform duration-200 animate-fade-rise-delay-2 shadow-lg"
           >
             Unlock Alpha
@@ -149,8 +259,8 @@ export default function LandingPage({ onGoogleLogin, googleClientId }: LandingPa
 
       {/* 4. Glassmorphic Authentication Modal */}
       {showAuthModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-fade-in">
-          <div className="relative w-full max-w-md p-8 rounded-3xl liquid-glass border border-white/10 shadow-2xl flex flex-col items-center">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md overflow-y-auto animate-fade-in">
+          <div className="relative w-full max-w-md p-8 rounded-3xl liquid-glass border border-white/10 shadow-2xl flex flex-col items-center my-8">
             
             {/* Close Button */}
             <button 
@@ -162,7 +272,7 @@ export default function LandingPage({ onGoogleLogin, googleClientId }: LandingPa
             </button>
 
             {/* Logo brand in Modal */}
-            <div className="flex items-center gap-3 mb-6 select-none mt-2">
+            <div className="flex items-center gap-3 mb-4 select-none mt-2">
               <Logo size={42} className="glow-cyan" />
               <span 
                 className="text-4xl tracking-tight text-foreground"
@@ -172,29 +282,150 @@ export default function LandingPage({ onGoogleLogin, googleClientId }: LandingPa
               </span>
             </div>
 
-            <h2 className="text-xl font-medium mb-2 text-foreground tracking-tight">Access the Platform</h2>
-            <p className="text-sm text-muted-foreground text-center mb-8 max-w-xs">
-              Welcome. Connect your workspace to unlock advanced quantitative stock analysis.
+            <h2 className="text-xl font-medium mb-1 text-foreground tracking-tight">
+              {authMode === 'signin' ? 'Welcome Back' : 'Create Account'}
+            </h2>
+            <p className="text-xs text-muted-foreground text-center mb-6 max-w-xs">
+              {authMode === 'signin' 
+                ? 'Access your terminal to monitor watchlists and AI signals.' 
+                : 'Sign up to receive 5 free credits automatically.'}
             </p>
 
-            {/* Auth Providers */}
-            <div className="flex flex-col gap-4 w-full items-center">
+            {/* Feedback Messages */}
+            {errorMsg && (
+              <div className="w-full mb-4 px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs text-center font-medium">
+                {errorMsg}
+              </div>
+            )}
+            {successMsg && (
+              <div className="w-full mb-4 px-4 py-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs text-center font-medium">
+                {successMsg}
+              </div>
+            )}
+
+            {/* Traditional Email Form */}
+            <form onSubmit={handleTraditionalSubmit} className="w-full flex flex-col gap-4">
               
-              {/* Google Button Container */}
-              <div className="google-btn-wrapper w-full flex justify-center py-1">
-                <div ref={googleButtonRef}></div>
+              {authMode === 'signup' && (
+                <>
+                  {/* Full Name */}
+                  <div className="relative w-full">
+                    <User size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                    <input 
+                      type="text" 
+                      placeholder="Full Name"
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      className="w-full bg-white/3 border border-white/8 rounded-xl pl-11 pr-4 py-3 text-sm text-white placeholder-muted-foreground outline-none focus:border-cyan-400/50 focus:ring-1 focus:ring-cyan-400/30 transition-all duration-200"
+                    />
+                  </div>
+
+                  {/* Country */}
+                  <div className="relative w-full">
+                    <Globe size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                    <input 
+                      type="text" 
+                      placeholder="Country (e.g. India)"
+                      value={country}
+                      onChange={(e) => setCountry(e.target.value)}
+                      className="w-full bg-white/3 border border-white/8 rounded-xl pl-11 pr-4 py-3 text-sm text-white placeholder-muted-foreground outline-none focus:border-cyan-400/50 focus:ring-1 focus:ring-cyan-400/30 transition-all duration-200"
+                    />
+                  </div>
+                </>
+              )}
+
+              {/* Email */}
+              <div className="relative w-full">
+                <Mail size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <input 
+                  type="email" 
+                  placeholder="Email Address"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full bg-white/3 border border-white/8 rounded-xl pl-11 pr-4 py-3 text-sm text-white placeholder-muted-foreground outline-none focus:border-cyan-400/50 focus:ring-1 focus:ring-cyan-400/30 transition-all duration-200"
+                />
               </div>
 
+              {/* Password */}
+              <div className="relative w-full">
+                <Lock size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <input 
+                  type={showPassword ? 'text' : 'password'} 
+                  placeholder="Password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full bg-white/3 border border-white/8 rounded-xl pl-11 pr-11 py-3 text-sm text-white placeholder-muted-foreground outline-none focus:border-cyan-400/50 focus:ring-1 focus:ring-cyan-400/30 transition-all duration-200"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(prev => !prev)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-white transition-colors cursor-pointer"
+                >
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+
+              {authMode === 'signup' && (
+                /* Confirm Password */
+                <div className="relative w-full">
+                  <Lock size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                  <input 
+                    type={showConfirmPassword ? 'text' : 'password'} 
+                    placeholder="Confirm Password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="w-full bg-white/3 border border-white/8 rounded-xl pl-11 pr-11 py-3 text-sm text-white placeholder-muted-foreground outline-none focus:border-cyan-400/50 focus:ring-1 focus:ring-cyan-400/30 transition-all duration-200"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(prev => !prev)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-white transition-colors cursor-pointer"
+                  >
+                    {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+              )}
+
+              {/* Submit Button */}
+              <Button 
+                type="submit"
+                disabled={loading}
+                className="w-full bg-white text-black hover:bg-white/95 rounded-xl py-3.5 text-sm font-semibold transition-all duration-200 cursor-pointer shadow-md flex justify-center items-center mt-2 disabled:opacity-50"
+              >
+                {loading ? 'Processing...' : (authMode === 'signin' ? 'Sign In' : 'Sign Up')}
+              </Button>
+
+            </form>
+
+            {/* Toggle Link */}
+            <div className="text-center mt-4">
+              <button 
+                onClick={toggleAuthMode}
+                className="text-xs text-muted-foreground hover:text-white hover:underline transition-all cursor-pointer"
+              >
+                {authMode === 'signin' 
+                  ? "Don't have an account? Sign Up" 
+                  : "Already have an account? Sign In"}
+              </button>
             </div>
 
-            <div className="mt-8 flex flex-col gap-2 w-full text-center">
-              <div className="flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground">
+            {/* Google Authentication Section */}
+            <div className="flex items-center justify-center gap-2 w-full my-4">
+              <span className="h-[1px] w-12 bg-white/10"></span>
+              <span className="text-[10px] text-muted-foreground uppercase tracking-widest">or login with</span>
+              <span className="h-[1px] w-12 bg-white/10"></span>
+            </div>
+
+            {/* Google Button Container */}
+            <div className="google-btn-wrapper w-full flex justify-center py-1">
+              <div ref={googleButtonRef}></div>
+            </div>
+
+            {/* Footer Trust Details */}
+            <div className="mt-6 flex flex-col gap-1.5 w-full text-center">
+              <div className="flex items-center justify-center gap-1.5 text-[10px] text-muted-foreground">
                 <ArrowRight size={10} className="text-cyan-400" />
-                <span>Secure checkout via Razorpay Checkout</span>
-              </div>
-              <div className="flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground">
-                <ArrowRight size={10} className="text-cyan-400" />
-                <span>Real-time market insights & AI analyst loop</span>
+                <span>Secure payment transactions verified by Razorpay</span>
               </div>
             </div>
 
