@@ -315,7 +315,10 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
                 Reach Us
               </button>
               {showReachUs && (
-                <div className="absolute top-full left-1/2 -translate-x-1/2 mt-3 w-48 p-2 rounded-2xl liquid-glass border border-white/10 shadow-2xl flex flex-col gap-1 z-20">
+                <div 
+                  style={{ top: 'calc(100% + 12px)', left: '50%', transform: 'translateX(-50%)' }}
+                  className="absolute w-48 p-2 rounded-2xl liquid-glass border border-white/10 shadow-2xl flex flex-col gap-1 z-20"
+                >
                   <a 
                     href="https://www.linkedin.com/in/karan-shelar-779381343/" 
                     target="_blank" 
