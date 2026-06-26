@@ -14,6 +14,7 @@ type AuthMode = 'signin' | 'signup';
 
 export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSuccess, apiUrl }: LandingPageProps) {
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [showReachUs, setShowReachUs] = useState(false);
   const [authMode, setAuthMode] = useState<AuthMode>('signin');
   
   // Form States
@@ -201,8 +202,8 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
           </div>
 
           {/* Navigation Links */}
-          <nav className="hidden md:flex items-center gap-8">
-            <a href="#hero" className="text-sm font-medium text-foreground transition-colors">
+          <nav className="hidden md:flex items-center gap-8 relative">
+            <a href="#hero" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
               Home
             </a>
             <a href="#stack" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
@@ -211,12 +212,52 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
             <a href="#capabilities" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
               Capabilities
             </a>
-            <a href="#" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
-              Journal
-            </a>
-            <a href="#" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
-              Reach Us
-            </a>
+            <div className="relative">
+              <button 
+                onClick={() => setShowReachUs(prev => !prev)}
+                className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer flex items-center gap-1 outline-none"
+              >
+                Reach Us
+              </button>
+              {showReachUs && (
+                <div className="absolute top-full left-1/2 -translate-x-1/2 mt-3 w-48 p-2 rounded-2xl liquid-glass border border-white/10 shadow-2xl flex flex-col gap-1 z-20">
+                  <a 
+                    href="https://www.linkedin.com/in/karan-shelar-779381343/" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    onClick={() => setShowReachUs(false)}
+                    className="px-4 py-2 rounded-xl hover:bg-white/5 text-xs text-muted-foreground hover:text-foreground transition-colors text-left"
+                  >
+                    LinkedIn
+                  </a>
+                  <a 
+                    href="https://github.com/Edge-Explorer" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    onClick={() => setShowReachUs(false)}
+                    className="px-4 py-2 rounded-xl hover:bg-white/5 text-xs text-muted-foreground hover:text-foreground transition-colors text-left"
+                  >
+                    GitHub Profile
+                  </a>
+                  <a 
+                    href="https://github.com/Edge-Explorer/QuantIQ" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    onClick={() => setShowReachUs(false)}
+                    className="px-4 py-2 rounded-xl hover:bg-white/5 text-xs text-muted-foreground hover:text-foreground transition-colors text-left"
+                  >
+                    GitHub Repository
+                  </a>
+                  <a 
+                    href="mailto:karanshelar8775@gmail.com" 
+                    onClick={() => setShowReachUs(false)}
+                    className="px-4 py-2 rounded-xl hover:bg-white/5 text-xs text-muted-foreground hover:text-foreground transition-colors text-left border-t border-white/5 mt-1 pt-3"
+                  >
+                    Email Developer
+                  </a>
+                </div>
+              )}
+            </div>
           </nav>
 
           {/* CTA Trigger */}
@@ -402,9 +443,9 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
           <div className="max-w-7xl mx-auto px-8 flex flex-col sm:flex-row justify-between items-center gap-4">
             <span className="font-light">© {new Date().getFullYear()} QuantIQ Platform. All rights reserved.</span>
             <div className="flex gap-6">
-              <a href="#" className="hover:text-foreground transition-colors">Privacy Policy</a>
-              <a href="#" className="hover:text-foreground transition-colors">Terms of Service</a>
-              <a href="#" className="hover:text-foreground transition-colors">API Docs</a>
+              <a href="https://github.com/Edge-Explorer/QuantIQ" target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors">GitHub Repo</a>
+              <a href="https://www.linkedin.com/in/karan-shelar-779381343/" target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors">LinkedIn</a>
+              <a href="mailto:karanshelar8775@gmail.com" className="hover:text-foreground transition-colors">Reach Us</a>
             </div>
           </div>
         </footer>
