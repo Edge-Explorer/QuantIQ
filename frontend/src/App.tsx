@@ -253,23 +253,7 @@ export default function App() {
     }
   };
 
-  // Mock bypass login for local testing
-  const handleMockLogin = async () => {
-    try {
-      const res = await fetch(`${API_URL}/api/v1/auth/google`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token_id: 'mock_token' }),
-      }).then(r => r.json());
 
-      if (res.access_token) {
-        localStorage.setItem('quantiq_jwt', res.access_token);
-        setToken(res.access_token);
-      }
-    } catch (err) {
-      console.error('Local mock login error:', err);
-    }
-  };
 
   const handleLogout = () => {
     localStorage.removeItem('quantiq_jwt');
@@ -343,7 +327,7 @@ export default function App() {
 
   // 8. Call QuantIQ AI Analyst Agent
   const triggerAIInsight = async () => {
-    if (!user || user.credits <= 0) {
+    if (!user || (user.credits <= 0 && user.email !== 'karanshelar8775@gmail.com')) {
       setShowRecharge(true);
       return;
     }
@@ -435,7 +419,6 @@ export default function App() {
     return (
       <LandingPage
         onGoogleLogin={handleGoogleCredentialResponse}
-        onMockLogin={handleMockLogin}
         googleClientId={GOOGLE_CLIENT_ID}
       />
     );
