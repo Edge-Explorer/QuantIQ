@@ -1,5 +1,6 @@
 
-import { Sparkles, Wallet, LogOut } from 'lucide-react';
+import { Wallet, LogOut } from 'lucide-react';
+import Logo from './Logo';
 
 interface NavbarProps {
   user: any;
@@ -11,7 +12,7 @@ export default function Navbar({ user, onRechargeClick, onLogout }: NavbarProps)
   return (
     <header className="dashboard-header">
       <div className="header-left">
-        <Sparkles size={24} color="#00f2fe" className="glow-cyan" />
+        <Logo size={32} />
         <span className="logo-text">QuantIQ</span>
       </div>
       

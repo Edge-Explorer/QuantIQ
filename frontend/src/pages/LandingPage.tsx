@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { Sparkles, Play, Activity, Cpu, ArrowRight, Zap } from 'lucide-react';
 import { ResponsiveContainer, AreaChart, Area } from 'recharts';
+import Logo from '../components/Logo';
 
 interface LandingPageProps {
   onGoogleLogin: (response: any) => Promise<void>;
@@ -57,7 +58,7 @@ export default function LandingPage({ onGoogleLogin, onMockLogin, googleClientId
       {/* Landing Header */}
       <header className="landing-header">
         <div className="brand">
-          <Sparkles size={28} color="#00f2fe" className="glow-cyan animate-pulse" />
+          <Logo size={40} className="glow-cyan" />
           <span className="brand-logo-text">QuantIQ</span>
         </div>
       </header>      {/* Main Content Sections */}
