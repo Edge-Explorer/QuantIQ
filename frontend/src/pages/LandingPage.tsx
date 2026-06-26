@@ -2,6 +2,8 @@ import { useState, useEffect, useRef } from 'react';
 import { Button } from '../components/ui/button';
 import { X, ArrowRight, Eye, EyeOff, Lock, Mail, User, Globe } from 'lucide-react';
 import Logo from '../components/Logo';
+import LogoLoop from '../components/LogoLoop';
+import { SiReact, SiTypescript, SiFastapi, SiPostgresql, SiGraphql, SiApachekafka, SiRazorpay, SiTailwindcss } from 'react-icons/si';
 
 
 interface LandingPageProps {
@@ -436,6 +438,36 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
             )}
           </div>
 
+        </section>
+
+        {/* TECH STACK LOGO LOOP */}
+        <section className="w-full py-16 border-t border-white/5 bg-black/30 backdrop-blur-[1px] overflow-hidden">
+          <div className="max-w-7xl mx-auto px-8 mb-8 text-center">
+            <span className="text-muted-foreground text-xs font-semibold uppercase tracking-widest">Powered By</span>
+          </div>
+          <div style={{ height: '80px', position: 'relative', overflow: 'hidden' }}>
+            <LogoLoop
+              logos={[
+                { node: <SiReact />, title: "React 19", href: "https://react.dev" },
+                { node: <SiTailwindcss />, title: "Tailwind v4", href: "https://tailwindcss.com" },
+                { node: <SiTypescript />, title: "TypeScript", href: "https://www.typescriptlang.org" },
+                { node: <SiFastapi />, title: "FastAPI", href: "https://fastapi.tiangolo.com" },
+                { node: <SiGraphql />, title: "GraphQL", href: "https://graphql.org" },
+                { node: <SiPostgresql />, title: "PostgreSQL", href: "https://www.postgresql.org" },
+                { node: <SiApachekafka />, title: "Redpanda", href: "https://redpanda.com" },
+                { node: <SiRazorpay />, title: "Razorpay", href: "https://razorpay.com" },
+              ]}
+              speed={60}
+              direction="left"
+              logoHeight={36}
+              gap={80}
+              hoverSpeed={0}
+              scaleOnHover
+              fadeOut
+              fadeOutColor="#06070d"
+              ariaLabel="QuantIQ technology stack"
+            />
+          </div>
         </section>
 
         {/* THE QUANTIQ STACK INFO SECTION */}
