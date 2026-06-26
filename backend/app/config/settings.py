@@ -29,6 +29,14 @@ class Settings(BaseSettings):
     SECRET_KEY: str = Field(default="supersecretkeychangeinproduction")
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 8 
     
+    # SMTP Configuration
+    SMTP_HOST: str = Field(default="")
+    SMTP_PORT: int = Field(default=587)
+    SMTP_USER: str = Field(default="")
+    SMTP_PASSWORD: str = Field(default="")
+    SMTP_FROM: str = Field(default="noreply@quantiq.io")
+    DEVELOPER_EMAIL: str = Field(default="karanshelar8775@gmail.com")
+    
     KAFKA_BOOTSTRAP_SERVERS: str= Field(default= "localhost:9092")
     
     @property

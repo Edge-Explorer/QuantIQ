@@ -40,6 +40,15 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
   const [showReachUs, setShowReachUs] = useState(false);
   const [authMode, setAuthMode] = useState<AuthMode>('signin');
   
+  // Contact Form States
+  const [showContactModal, setShowContactModal] = useState(false);
+  const [contactName, setContactName] = useState('');
+  const [contactEmail, setContactEmail] = useState('');
+  const [contactMessage, setContactMessage] = useState('');
+  const [contactLoading, setContactLoading] = useState(false);
+  const [contactError, setContactError] = useState<string | null>(null);
+  const [contactSuccess, setContactSuccess] = useState<string | null>(null);
+  
   // Form States
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -216,6 +225,45 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
     }
   };
 
+  const handleContactSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setContactError(null);
+    setContactSuccess(null);
+
+    if (!contactName.trim() || !contactEmail.trim() || !contactMessage.trim()) {
+      setContactError("All fields are required.");
+      return;
+    }
+
+    setContactLoading(true);
+
+    try {
+      const response = await fetch(`${apiUrl}/api/v1/contact`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: contactName.trim(),
+          email: contactEmail.trim(),
+          message: contactMessage.trim(),
+        }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.detail || "Failed to send message.");
+      }
+
+      setContactSuccess("Message sent successfully!");
+      setContactName('');
+      setContactEmail('');
+      setContactMessage('');
+    } catch (err: any) {
+      setContactError(err.message || "An unexpected error occurred.");
+    } finally {
+      setContactLoading(false);
+    }
+  };
+
   return (
     <div className="relative min-h-screen w-full overflow-y-auto scroll-smooth bg-background text-foreground flex flex-col font-body">
       
@@ -295,13 +343,12 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
                   >
                     GitHub Repository
                   </a>
-                  <a 
-                    href="mailto:karanshelar8775@gmail.com" 
-                    onClick={() => setShowReachUs(false)}
-                    className="px-4 py-2 rounded-xl hover:bg-white/5 text-xs text-muted-foreground hover:text-foreground transition-colors text-left border-t border-white/5 mt-1 pt-3"
+                  <button 
+                    onClick={() => { setShowReachUs(false); setShowContactModal(true); }}
+                    className="w-full px-4 py-2 rounded-xl hover:bg-white/5 text-xs text-muted-foreground hover:text-foreground transition-colors text-left border-t border-white/5 mt-1 pt-3 cursor-pointer outline-none"
                   >
                     Email Developer
-                  </a>
+                  </button>
                 </div>
               )}
             </div>
@@ -529,10 +576,15 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
         <footer className="w-full py-12 border-t border-white/5 text-center text-xs text-muted-foreground bg-black/30 backdrop-blur-[2px]">
           <div className="max-w-7xl mx-auto px-8 flex flex-col sm:flex-row justify-between items-center gap-4">
             <span className="font-light">© {new Date().getFullYear()} QuantIQ Platform. All rights reserved.</span>
-            <div className="flex gap-6">
+            <div className="flex gap-6 items-center">
               <a href="https://github.com/Edge-Explorer/QuantIQ" target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors">GitHub Repo</a>
               <a href="https://www.linkedin.com/in/karan-shelar-779381343/" target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors">LinkedIn</a>
-              <a href="mailto:karanshelar8775@gmail.com" className="hover:text-foreground transition-colors">Reach Us</a>
+              <button 
+                onClick={() => setShowContactModal(true)} 
+                className="hover:text-foreground transition-colors cursor-pointer outline-none bg-transparent border-none text-xs text-muted-foreground"
+              >
+                Reach Us
+              </button>
             </div>
           </div>
         </footer>
@@ -710,6 +762,108 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
                 <span>Secure payment transactions verified by Razorpay</span>
               </div>
             </div>
+
+          </div>
+        </div>
+      )}
+
+      {/* 5. Glassmorphic Contact Form Modal */}
+      {showContactModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md overflow-y-auto animate-fade-in">
+          <div className="relative w-full max-w-md p-8 rounded-3xl liquid-glass border border-white/10 shadow-2xl flex flex-col items-center my-8">
+            
+            {/* Close Button */}
+            <button 
+              onClick={() => {
+                setShowContactModal(false);
+                setContactError(null);
+                setContactSuccess(null);
+              }}
+              className="absolute top-4 right-4 p-2 text-muted-foreground hover:text-foreground rounded-full hover:bg-white/5 transition-colors cursor-pointer"
+              aria-label="Close modal"
+            >
+              <X size={20} />
+            </button>
+
+            {/* Logo brand in Modal */}
+            <div className="flex items-center gap-3 mb-2 select-none mt-2">
+              <Logo size={42} className="glow-cyan" />
+              <span 
+                className="text-4xl tracking-tight text-foreground"
+                style={{ fontFamily: "'Instrument Serif', serif" }}
+              >
+                QuantIQ<sup className="text-xs align-super ml-0.5">®</sup>
+              </span>
+            </div>
+
+            <h2 className="text-xl font-medium mb-1 text-foreground tracking-tight">
+              Email Developer
+            </h2>
+            <p className="text-xs text-muted-foreground text-center mb-6 max-w-xs">
+              Send a direct message to the system developers.
+            </p>
+
+            {/* Feedback Messages */}
+            {contactError && (
+              <div className="w-full mb-4 px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs text-center font-medium">
+                {contactError}
+              </div>
+            )}
+            {contactSuccess && (
+              <div className="w-full mb-4 px-4 py-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs text-center font-medium">
+                {contactSuccess}
+              </div>
+            )}
+
+            {/* Contact Form */}
+            <form onSubmit={handleContactSubmit} className="w-full flex flex-col gap-4">
+              {/* Name */}
+              <div className="relative w-full">
+                <User size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <input 
+                  type="text" 
+                  placeholder="Your Name"
+                  required
+                  value={contactName}
+                  onChange={(e) => setContactName(e.target.value)}
+                  className="w-full bg-white/3 border border-white/8 rounded-xl pl-11 pr-4 py-3 text-sm text-white placeholder-muted-foreground outline-none focus:border-cyan-400/50 focus:ring-1 focus:ring-cyan-400/30 transition-all duration-200"
+                />
+              </div>
+
+              {/* Email */}
+              <div className="relative w-full">
+                <Mail size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <input 
+                  type="email" 
+                  placeholder="Your Email Address"
+                  required
+                  value={contactEmail}
+                  onChange={(e) => setContactEmail(e.target.value)}
+                  className="w-full bg-white/3 border border-white/8 rounded-xl pl-11 pr-4 py-3 text-sm text-white placeholder-muted-foreground outline-none focus:border-cyan-400/50 focus:ring-1 focus:ring-cyan-400/30 transition-all duration-200"
+                />
+              </div>
+
+              {/* Message */}
+              <div className="relative w-full">
+                <textarea 
+                  placeholder="Type your message here..."
+                  required
+                  rows={4}
+                  value={contactMessage}
+                  onChange={(e) => setContactMessage(e.target.value)}
+                  className="w-full bg-white/3 border border-white/8 rounded-xl px-4 py-3 text-sm text-white placeholder-muted-foreground outline-none focus:border-cyan-400/50 focus:ring-1 focus:ring-cyan-400/30 transition-all duration-200 resize-none min-h-[100px]"
+                />
+              </div>
+
+              {/* Submit Button */}
+              <Button 
+                type="submit"
+                disabled={contactLoading}
+                className="w-full bg-white text-black hover:bg-white/95 rounded-xl py-3.5 text-sm font-semibold transition-all duration-200 cursor-pointer shadow-md flex justify-center items-center mt-2 disabled:opacity-50"
+              >
+                {contactLoading ? 'Sending...' : 'Send Message'}
+              </Button>
+            </form>
 
           </div>
         </div>
