@@ -80,14 +80,14 @@ export default function LandingPage({ onGoogleLogin, onMockLogin, googleClientId
       {/* 2. Glassmorphic Navigation Bar */}
       <header className="relative z-10 w-full">
         <div className="flex flex-row justify-between items-center px-8 py-6 max-w-7xl mx-auto">
-          {/* Logo brand combining the custom SVG mark and 'Velorah' */}
+          {/* Logo brand combining the custom SVG mark and 'QuantIQ' */}
           <div className="flex items-center gap-3 select-none">
             <Logo size={36} className="glow-cyan" />
             <span 
               className="text-3xl tracking-tight text-foreground font-normal"
               style={{ fontFamily: "'Instrument Serif', serif" }}
             >
-              Velorah<sup className="text-xs font-sans align-super ml-0.5 opacity-80">®</sup>
+              QuantIQ<sup className="text-xs font-sans align-super ml-0.5 opacity-80">®</sup>
             </span>
           </div>
 
@@ -115,7 +115,7 @@ export default function LandingPage({ onGoogleLogin, onMockLogin, googleClientId
             onClick={() => setShowAuthModal(true)}
             className="liquid-glass rounded-full px-6 py-2.5 text-sm text-foreground hover:scale-[1.03] transition-transform duration-200 cursor-pointer shadow-md"
           >
-            Begin Journey
+            Unlock Alpha
           </Button>
         </div>
       </header>
@@ -128,14 +128,14 @@ export default function LandingPage({ onGoogleLogin, onMockLogin, googleClientId
             className="text-5xl sm:text-7xl md:text-8xl font-normal leading-[0.95] tracking-[-2.46px] text-foreground animate-fade-rise"
             style={{ fontFamily: "'Instrument Serif', serif" }}
           >
-            Where <em className="not-italic text-muted-foreground">dreams</em> rise <br />
+            Where <em className="not-italic text-muted-foreground">wealth</em> rises <br />
             <em className="not-italic text-muted-foreground">through the silence.</em>
           </h1>
 
           {/* Subtext */}
           <p className="text-muted-foreground text-base sm:text-lg max-w-2xl mt-8 leading-relaxed animate-fade-rise-delay font-normal">
-            We're designing tools for deep thinkers, bold creators, and quiet rebels. 
-            Amid the chaos, we build digital spaces for sharp focus and inspired work.
+            We're designing tools for quantitative traders, market analysts, and strategic investors. 
+            Amid market noise, we build high-fidelity spaces for sharp focus and outperforming strategy.
           </p>
 
           {/* Large Hero CTA */}
@@ -143,7 +143,7 @@ export default function LandingPage({ onGoogleLogin, onMockLogin, googleClientId
             onClick={() => setShowAuthModal(true)}
             className="liquid-glass rounded-full px-14 py-5 text-base text-foreground mt-12 hover:scale-[1.03] cursor-pointer transition-transform duration-200 animate-fade-rise-delay-2 shadow-lg"
           >
-            Begin Journey
+            Unlock Alpha
           </button>
         </div>
       </main>
@@ -169,7 +169,7 @@ export default function LandingPage({ onGoogleLogin, onMockLogin, googleClientId
                 className="text-4xl tracking-tight text-foreground"
                 style={{ fontFamily: "'Instrument Serif', serif" }}
               >
-                Velorah<sup className="text-xs align-super ml-0.5">®</sup>
+                QuantIQ<sup className="text-xs align-super ml-0.5">®</sup>
               </span>
             </div>
 
