@@ -1,7 +1,7 @@
-import { useEffect, useRef } from 'react';
-import { Sparkles, Play, Activity, Cpu, ArrowRight, Zap } from 'lucide-react';
-import { ResponsiveContainer, AreaChart, Area } from 'recharts';
+import { useEffect, useRef, useState } from 'react';
 import Logo from '../components/Logo';
+import { Button } from '../components/ui/button';
+import { X, Play, ArrowRight } from 'lucide-react';
 
 interface LandingPageProps {
   onGoogleLogin: (response: any) => Promise<void>;
@@ -9,16 +9,8 @@ interface LandingPageProps {
   googleClientId: string;
 }
 
-const mockupChartData = [
-  { time: '09:30', price: 280 },
-  { time: '10:00', price: 284 },
-  { time: '10:30', price: 282 },
-  { time: '11:00', price: 289 },
-  { time: '11:30', price: 287 },
-  { time: '12:00', price: 294.3 },
-];
-
 export default function LandingPage({ onGoogleLogin, onMockLogin, googleClientId }: LandingPageProps) {
+  const [showAuthModal, setShowAuthModal] = useState(false);
   const googleButtonRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -31,186 +23,202 @@ export default function LandingPage({ onGoogleLogin, onMockLogin, googleClientId
 
     script.onload = () => {
       if (window.google && googleButtonRef.current) {
-        window.google.accounts.id.initialize({
-          client_id: googleClientId || 'dummy-client-id.apps.googleusercontent.com',
-          callback: onGoogleLogin,
-        });
-        window.google.accounts.id.renderButton(googleButtonRef.current, {
-          theme: 'filled_blue',
-          size: 'large',
-          width: 320,
-        });
+        try {
+          window.google.accounts.id.initialize({
+            client_id: googleClientId || 'dummy-client-id.apps.googleusercontent.com',
+            callback: onGoogleLogin,
+          });
+          window.google.accounts.id.renderButton(googleButtonRef.current, {
+            theme: 'filled_blue',
+            size: 'large',
+            width: 280,
+          });
+        } catch (err) {
+          console.error("Error loading Google GIS SDK:", err);
+        }
       }
     };
 
     return () => {
-      document.body.removeChild(script);
+      try {
+        document.body.removeChild(script);
+      } catch (e) {
+        // Safe catch if script was already unmounted
+      }
     };
-  }, [onGoogleLogin, googleClientId]);
+  }, [onGoogleLogin, googleClientId, showAuthModal]);
+
+  // Re-run script loader whenever modal opens to render the Google Button
+  useEffect(() => {
+    if (showAuthModal && window.google && googleButtonRef.current) {
+      window.google.accounts.id.renderButton(googleButtonRef.current, {
+        theme: 'filled_blue',
+        size: 'large',
+        width: 280,
+      });
+    }
+  }, [showAuthModal]);
 
   return (
-    <div className="landing-page-container">
-      {/* Mesh glowing grid background elements */}
-      <div className="bg-glow-mesh">
-        <div className="mesh-dot mesh-cyan"></div>
-        <div className="mesh-dot mesh-violet"></div>
-      </div>
-      {/* Landing Header */}
-      <header className="landing-header">
-        <div className="brand">
-          <Logo size={40} className="glow-cyan" />
-          <span className="brand-logo-text">QuantIQ</span>
-        </div>
-      </header>      {/* Main Content Sections */}
-      <main className="landing-main">
-        {/* HERO SECTION */}
-        <section className="landing-hero animate-slide">
-          <div className="hero-badge">
-            <Zap size={14} color="#00f2fe" />
-            <span>Next-Gen Stock Intelligence</span>
+    <div className="relative min-h-screen w-full overflow-hidden bg-background text-foreground flex flex-col font-body">
+      
+      {/* 1. Fullscreen Loop Background Video */}
+      <video
+        autoPlay
+        loop
+        muted
+        playsInline
+        className="absolute inset-0 w-full h-full object-cover z-0 pointer-events-none"
+      >
+        <source
+          src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260314_131748_f2ca2a28-fed7-44c8-b9a9-bd9acdd5ec31.mp4"
+          type="video/mp4"
+        />
+        Your browser does not support the video tag.
+      </video>
+
+      {/* 2. Glassmorphic Navigation Bar */}
+      <header className="relative z-10 w-full">
+        <div className="flex flex-row justify-between items-center px-8 py-6 max-w-7xl mx-auto">
+          {/* Logo brand combining the custom SVG mark and 'Velorah' */}
+          <div className="flex items-center gap-3 select-none">
+            <Logo size={36} className="glow-cyan" />
+            <span 
+              className="text-3xl tracking-tight text-foreground font-normal"
+              style={{ fontFamily: "'Instrument Serif', serif" }}
+            >
+              Velorah<sup className="text-xs font-sans align-super ml-0.5 opacity-80">®</sup>
+            </span>
           </div>
-          
-          <h1 className="hero-title">
-            Real-Time Stock Intelligence <br />
-            <span>Powered by AI & Quant Models</span>
+
+          {/* Navigation Links */}
+          <nav className="hidden md:flex items-center gap-8">
+            <a href="#" className="text-sm font-medium text-foreground transition-colors">
+              Home
+            </a>
+            <a href="#" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+              Studio
+            </a>
+            <a href="#" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+              About
+            </a>
+            <a href="#" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+              Journal
+            </a>
+            <a href="#" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+              Reach Us
+            </a>
+          </nav>
+
+          {/* CTA Trigger */}
+          <Button 
+            onClick={() => setShowAuthModal(true)}
+            className="liquid-glass rounded-full px-6 py-2.5 text-sm text-foreground hover:scale-[1.03] transition-transform duration-200 cursor-pointer shadow-md"
+          >
+            Begin Journey
+          </Button>
+        </div>
+      </header>
+
+      {/* 3. Cinematic Hero Section */}
+      <main className="relative z-10 flex-1 flex flex-col justify-center items-center px-6 text-center max-w-7xl mx-auto w-full">
+        <div className="flex flex-col items-center max-w-5xl pt-12">
+          {/* Heading H1 */}
+          <h1 
+            className="text-5xl sm:text-7xl md:text-8xl font-normal leading-[0.95] tracking-[-2.46px] text-foreground animate-fade-rise"
+            style={{ fontFamily: "'Instrument Serif', serif" }}
+          >
+            Where <em className="not-italic text-muted-foreground">dreams</em> rise <br />
+            <em className="not-italic text-muted-foreground">through the silence.</em>
           </h1>
-          
-          <p className="hero-subtitle">
-            Experience event-driven stock analysis. Combine live technical indicators, 
-            local ONNX machine learning model signals, and Price Alerts in a unified ReAct agent loop.
+
+          {/* Subtext */}
+          <p className="text-muted-foreground text-base sm:text-lg max-w-2xl mt-8 leading-relaxed animate-fade-rise-delay font-normal">
+            We're designing tools for deep thinkers, bold creators, and quiet rebels. 
+            Amid the chaos, we build digital spaces for sharp focus and inspired work.
           </p>
 
-          {/* Interactive Dashboard Preview Mockup */}
-          <div className="dashboard-mockup glass-panel">
-            <div className="mockup-header">
-              <div className="mockup-dots">
-                <span className="dot red"></span>
-                <span className="dot yellow"></span>
-                <span className="dot green"></span>
-              </div>
-              <div className="mockup-url">https://app.quantiq.io/AAPL</div>
-            </div>
-            
-            <div className="mockup-body">
-              <div className="mockup-chart-preview">
-                <div className="preview-info">
-                  <span className="preview-ticker">AAPL</span>
-                  <span className="preview-price">$294.30 <span className="live-pill">LIVE</span></span>
-                </div>
-                <div className="mini-chart-container">
-                  <ResponsiveContainer width="100%" height={120}>
-                    <AreaChart data={mockupChartData}>
-                      <defs>
-                        <linearGradient id="mockupGlow" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#00f2fe" stopOpacity={0.15}/>
-                          <stop offset="95%" stopColor="#00f2fe" stopOpacity={0.0}/>
-                        </linearGradient>
-                      </defs>
-                      <Area 
-                        type="monotone" 
-                        dataKey="price" 
-                        stroke="#00f2fe" 
-                        strokeWidth={2} 
-                        fill="url(#mockupGlow)"
-                      />
-                    </AreaChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-              
-              <div className="mockup-agent-preview glass-panel">
-                <div className="preview-agent-title">
-                  <Sparkles size={14} color="#a154ff" />
-                  <span>QuantIQ AI Analyst</span>
-                  <span className="preview-agent-badge">BULLISH BIAS (75%)</span>
-                </div>
-                <p className="preview-agent-reason">
-                  The **QuantIQ ML Signal Engine** indicates strong upward momentum for AAPL. 
-                  RSI is steady at **58.2** with a bullish crossover on the MACD.
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
+          {/* Large Hero CTA */}
+          <button 
+            onClick={() => setShowAuthModal(true)}
+            className="liquid-glass rounded-full px-14 py-5 text-base text-foreground mt-12 hover:scale-[1.03] cursor-pointer transition-transform duration-200 animate-fade-rise-delay-2 shadow-lg"
+          >
+            Begin Journey
+          </button>
+        </div>
+      </main>
 
-        {/* SECURE AUTHENTICATION PANEL */}
-        <section className="landing-auth-panel animate-fade">
-          <div className="auth-card glass-panel">
-            <h3 className="auth-card-title">Get Started</h3>
-            <p className="auth-card-subtitle">
-              Sign up today and receive <strong>5 free credits</strong> automatically to analyze stock strategies.
-            </p>
+      {/* 4. Glassmorphic Authentication Modal */}
+      {showAuthModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-fade-in">
+          <div className="relative w-full max-w-md p-8 rounded-3xl liquid-glass border border-white/10 shadow-2xl flex flex-col items-center">
             
-            <div className="auth-actions">
-              {/* Google OAuth Button Container */}
-              <div className="google-btn-wrapper">
+            {/* Close Button */}
+            <button 
+              onClick={() => setShowAuthModal(false)}
+              className="absolute top-4 right-4 p-2 text-muted-foreground hover:text-foreground rounded-full hover:bg-white/5 transition-colors cursor-pointer"
+              aria-label="Close modal"
+            >
+              <X size={20} />
+            </button>
+
+            {/* Logo brand in Modal */}
+            <div className="flex items-center gap-3 mb-6 select-none mt-2">
+              <Logo size={42} className="glow-cyan" />
+              <span 
+                className="text-4xl tracking-tight text-foreground"
+                style={{ fontFamily: "'Instrument Serif', serif" }}
+              >
+                Velorah<sup className="text-xs align-super ml-0.5">®</sup>
+              </span>
+            </div>
+
+            <h2 className="text-xl font-medium mb-2 text-foreground tracking-tight">Access the Platform</h2>
+            <p className="text-sm text-muted-foreground text-center mb-8 max-w-xs">
+              Welcome. Connect your workspace to unlock advanced quantitative stock analysis.
+            </p>
+
+            {/* Auth Providers */}
+            <div className="flex flex-col gap-4 w-full items-center">
+              
+              {/* Google Button Container */}
+              <div className="google-btn-wrapper w-full flex justify-center py-1">
                 <div ref={googleButtonRef}></div>
               </div>
 
-              <div className="auth-divider">
-                <span>OR</span>
+              <div className="flex items-center justify-center gap-2 w-full my-1">
+                <span className="h-[1px] w-12 bg-white/10"></span>
+                <span className="text-xs text-muted-foreground uppercase tracking-widest">or</span>
+                <span className="h-[1px] w-12 bg-white/10"></span>
               </div>
 
-              {/* Mock Tester Sandbox Account */}
-              <button className="sandbox-btn" onClick={onMockLogin}>
-                <Play size={16} />
-                <span>Enter with Tester Account (Sandbox)</span>
-              </button>
+              {/* Mock Login */}
+              <Button 
+                onClick={async () => {
+                  await onMockLogin();
+                  setShowAuthModal(false);
+                }}
+                className="w-full max-w-[280px] bg-white text-black hover:bg-white/90 rounded-xl py-3.5 text-sm font-medium flex items-center justify-center gap-2 transition-all duration-200 cursor-pointer shadow-md"
+              >
+                <Play size={14} className="fill-black" />
+                <span>Enter as Sandbox Tester</span>
+              </Button>
             </div>
 
-            <div className="auth-features-list">
-              <div className="auth-feature-item">
-                <ArrowRight size={14} color="#00f2fe" />
-                <span>Test Mode Razorpay Checkout Enabled</span>
+            <div className="mt-8 flex flex-col gap-2 w-full text-center">
+              <div className="flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground">
+                <ArrowRight size={10} className="text-cyan-400" />
+                <span>Sandbox Mode includes Razorpay Checkout</span>
               </div>
-              <div className="auth-feature-item">
-                <ArrowRight size={14} color="#00f2fe" />
-                <span>Real-Time WebSocket streams on watchlist</span>
+              <div className="flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground">
+                <ArrowRight size={10} className="text-cyan-400" />
+                <span>AI Agent & live stock ticks loaded</span>
               </div>
             </div>
-          </div>
-        </section>
-      </main>
 
-      {/* CORE FEATURES LIST */}
-      <section className="landing-features">
-        <div className="features-grid">
-          <div className="feature-card glass-panel">
-            <div className="feature-icon">
-              <Cpu size={24} color="#00f2fe" />
-            </div>
-            <h4>QuantIQ ML Signal Engine</h4>
-            <p>
-              Serves localized stock price predictions using an optimized, lightweight ONNX neural model.
-            </p>
-          </div>
-
-          <div className="feature-card glass-panel">
-            <div className="feature-icon">
-              <Sparkles size={24} color="#a154ff" />
-            </div>
-            <h4>QuantIQ AI Analyst</h4>
-            <p>
-              Consult a native Gemini ReAct agent checking watchlists, active indicators, and alerts.
-            </p>
-          </div>
-
-          <div className="feature-card glass-panel">
-            <div className="feature-icon">
-              <Activity size={24} color="#ff007f" />
-            </div>
-            <h4>Event-Driven Streaming</h4>
-            <p>
-              Live stock tick ingestion powered by Redpanda (Kafka) streamed directly via WebSockets.
-            </p>
           </div>
         </div>
-      </section>
-
-      {/* FOOTER */}
-      <footer className="landing-footer">
-        <p>© 2026 QuantIQ Platform. Developed for Next-Gen Financial Intelligence.</p>
-      </footer>
+      )}
     </div>
   );
 }
