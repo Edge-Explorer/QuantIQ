@@ -1,15 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
 import Logo from '../components/Logo';
 import { Button } from '../components/ui/button';
-import { X, Play, ArrowRight } from 'lucide-react';
+import { X, ArrowRight } from 'lucide-react';
 
 interface LandingPageProps {
   onGoogleLogin: (response: any) => Promise<void>;
-  onMockLogin: () => Promise<void>;
   googleClientId: string;
 }
 
-export default function LandingPage({ onGoogleLogin, onMockLogin, googleClientId }: LandingPageProps) {
+export default function LandingPage({ onGoogleLogin, googleClientId }: LandingPageProps) {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const googleButtonRef = useRef<HTMLDivElement>(null);
 
@@ -186,33 +185,16 @@ export default function LandingPage({ onGoogleLogin, onMockLogin, googleClientId
                 <div ref={googleButtonRef}></div>
               </div>
 
-              <div className="flex items-center justify-center gap-2 w-full my-1">
-                <span className="h-[1px] w-12 bg-white/10"></span>
-                <span className="text-xs text-muted-foreground uppercase tracking-widest">or</span>
-                <span className="h-[1px] w-12 bg-white/10"></span>
-              </div>
-
-              {/* Mock Login */}
-              <Button 
-                onClick={async () => {
-                  await onMockLogin();
-                  setShowAuthModal(false);
-                }}
-                className="w-full max-w-[280px] bg-white text-black hover:bg-white/90 rounded-xl py-3.5 text-sm font-medium flex items-center justify-center gap-2 transition-all duration-200 cursor-pointer shadow-md"
-              >
-                <Play size={14} className="fill-black" />
-                <span>Enter as Sandbox Tester</span>
-              </Button>
             </div>
 
             <div className="mt-8 flex flex-col gap-2 w-full text-center">
               <div className="flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground">
                 <ArrowRight size={10} className="text-cyan-400" />
-                <span>Sandbox Mode includes Razorpay Checkout</span>
+                <span>Secure checkout via Razorpay Checkout</span>
               </div>
               <div className="flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground">
                 <ArrowRight size={10} className="text-cyan-400" />
-                <span>AI Agent & live stock ticks loaded</span>
+                <span>Real-time market insights & AI analyst loop</span>
               </div>
             </div>
 
