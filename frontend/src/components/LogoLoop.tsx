@@ -44,6 +44,7 @@ interface LogoLoopProps {
 }
 
 const useResizeObserver = (callback: () => void, elements: React.RefObject<HTMLElement | null>[], dependencies: any[]) => {
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (!window.ResizeObserver) {
       const handleResize = () => callback();
@@ -61,10 +62,11 @@ const useResizeObserver = (callback: () => void, elements: React.RefObject<HTMLE
     return () => {
       observers.forEach(observer => observer?.disconnect());
     };
-  }, [callback, elements, dependencies]);
+  }, [callback, ...dependencies]);
 };
 
 const useImageLoader = (seqRef: React.RefObject<HTMLElement | null>, onLoad: () => void, dependencies: any[]) => {
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     const images = seqRef.current?.querySelectorAll('img') ?? [];
     if (images.length === 0) {
@@ -91,7 +93,7 @@ const useImageLoader = (seqRef: React.RefObject<HTMLElement | null>, onLoad: () 
         img.removeEventListener('error', handleImageLoad);
       });
     };
-  }, [onLoad, seqRef, dependencies]);
+  }, [onLoad, seqRef, ...dependencies]);
 };
 
 const useAnimationLoop = (
