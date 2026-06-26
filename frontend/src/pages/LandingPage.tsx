@@ -169,15 +169,15 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
   };
 
   return (
-    <div className="relative min-h-screen w-full overflow-hidden bg-background text-foreground flex flex-col font-body">
+    <div className="relative min-h-screen w-full overflow-y-auto scroll-smooth bg-background text-foreground flex flex-col font-body">
       
-      {/* 1. Fullscreen Loop Background Video */}
+      {/* 1. Fullscreen Fixed Loop Background Video */}
       <video
         autoPlay
         loop
         muted
         playsInline
-        className="absolute inset-0 w-full h-full object-cover z-0 pointer-events-none"
+        className="fixed inset-0 w-full h-full object-cover z-0 pointer-events-none"
       >
         <source
           src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260314_131748_f2ca2a28-fed7-44c8-b9a9-bd9acdd5ec31.mp4"
@@ -187,7 +187,7 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
       </video>
 
       {/* 2. Glassmorphic Navigation Bar */}
-      <header className="relative z-10 w-full">
+      <header className="relative z-10 w-full backdrop-blur-[2px] border-b border-white/3">
         <div className="flex flex-row justify-between items-center px-8 py-6 max-w-7xl mx-auto">
           {/* Logo brand combining the custom SVG mark and 'QuantIQ' */}
           <div className="flex items-center gap-3 select-none">
@@ -202,14 +202,14 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
 
           {/* Navigation Links */}
           <nav className="hidden md:flex items-center gap-8">
-            <a href="#" className="text-sm font-medium text-foreground transition-colors">
+            <a href="#hero" className="text-sm font-medium text-foreground transition-colors">
               Home
             </a>
-            <a href="#" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
-              Studio
+            <a href="#stack" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+              The Stack
             </a>
-            <a href="#" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
-              About
+            <a href="#capabilities" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+              Capabilities
             </a>
             <a href="#" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
               Journal
@@ -229,32 +229,186 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
         </div>
       </header>
 
-      {/* 3. Cinematic Hero Section */}
-      <main className="relative z-10 flex-1 flex flex-col justify-center items-center px-6 text-center max-w-7xl mx-auto w-full">
-        <div className="flex flex-col items-center max-w-5xl pt-12">
-          {/* Heading H1 */}
-          <h1 
-            className="text-5xl sm:text-7xl md:text-8xl font-normal leading-[0.95] tracking-[-2.46px] text-foreground animate-fade-rise"
-            style={{ fontFamily: "'Instrument Serif', serif" }}
-          >
-            Where <em className="not-italic text-muted-foreground">wealth</em> rises <br />
-            <em className="not-italic text-muted-foreground">through the silence.</em>
-          </h1>
+      {/* 3. Cinematic Hero and Scrollable Content */}
+      <main className="relative z-10 w-full flex flex-col items-center">
+        
+        {/* HERO SECTION */}
+        <section id="hero" className="flex flex-col justify-center items-center px-6 text-center max-w-7xl mx-auto w-full min-h-[85vh]">
+          <div className="flex flex-col items-center max-w-5xl pt-12">
+            {/* Heading H1 */}
+            <h1 
+              className="text-5xl sm:text-7xl md:text-8xl font-normal leading-[0.95] tracking-[-2.46px] text-foreground animate-fade-rise"
+              style={{ fontFamily: "'Instrument Serif', serif" }}
+            >
+              Where <em className="not-italic text-muted-foreground">wealth</em> rises <br />
+              <em className="not-italic text-muted-foreground">through the silence.</em>
+            </h1>
 
-          {/* Subtext */}
-          <p className="text-muted-foreground text-base sm:text-lg max-w-2xl mt-8 leading-relaxed animate-fade-rise-delay font-normal">
-            We're designing tools for quantitative traders, market analysts, and strategic investors. 
-            Amid market noise, we build high-fidelity spaces for sharp focus and outperforming strategy.
-          </p>
+            {/* Subtext */}
+            <p className="text-muted-foreground text-base sm:text-lg max-w-2xl mt-8 leading-relaxed animate-fade-rise-delay font-normal">
+              We're designing tools for quantitative traders, market analysts, and strategic investors. 
+              Amid market noise, we build high-fidelity spaces for sharp focus and outperforming strategy.
+            </p>
 
-          {/* Large Hero CTA */}
-          <button 
-            onClick={() => { setAuthMode('signin'); setShowAuthModal(true); }}
-            className="liquid-glass rounded-full px-14 py-5 text-base text-foreground mt-12 hover:scale-[1.03] cursor-pointer transition-transform duration-200 animate-fade-rise-delay-2 shadow-lg"
-          >
-            Unlock Alpha
-          </button>
-        </div>
+            {/* Large Hero CTA */}
+            <button 
+              onClick={() => { setAuthMode('signin'); setShowAuthModal(true); }}
+              className="liquid-glass rounded-full px-14 py-5 text-base text-foreground mt-12 hover:scale-[1.03] cursor-pointer transition-transform duration-200 animate-fade-rise-delay-2 shadow-lg"
+            >
+              Unlock Alpha
+            </button>
+          </div>
+        </section>
+
+        {/* THE QUANTIQ STACK INFO SECTION */}
+        <section id="stack" className="w-full py-28 border-t border-white/5 flex flex-col items-center text-center bg-black/20 backdrop-blur-[1px]">
+          <div className="max-w-7xl mx-auto px-8 w-full flex flex-col items-center">
+            
+            <span className="text-cyan-400 text-xs font-semibold uppercase tracking-widest mb-3">System Architecture</span>
+            <h2 
+              className="text-4xl sm:text-5xl font-normal text-foreground tracking-tight"
+              style={{ fontFamily: "'Instrument Serif', serif" }}
+            >
+              The QuantIQ Technology Stack
+            </h2>
+            <p className="text-muted-foreground max-w-xl text-sm sm:text-base mt-4 mb-16 leading-relaxed">
+              Designed for high-frequency model inference, localized intelligence, and type-safe data streaming.
+            </p>
+
+            {/* Tech Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full max-w-6xl">
+              
+              {/* Card 1: ONNX */}
+              <div className="liquid-glass rounded-2xl p-7 text-left border border-white/5 hover:border-cyan-400/20 hover:scale-[1.01] transition-all duration-300 group">
+                <span className="text-[10px] text-cyan-400 uppercase tracking-widest font-semibold block mb-1">Inference Engine</span>
+                <h3 className="text-lg font-medium text-foreground mb-3">ONNX Runtime Model</h3>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Executes localized neural network price direction predictions on the client-side stock streams with sub-millisecond execution times.
+                </p>
+              </div>
+
+              {/* Card 2: Gemini */}
+              <div className="liquid-glass rounded-2xl p-7 text-left border border-white/5 hover:border-purple-400/20 hover:scale-[1.01] transition-all duration-300 group">
+                <span className="text-[10px] text-purple-400 uppercase tracking-widest font-semibold block mb-1">Strategic Reasoning</span>
+                <h3 className="text-lg font-medium text-foreground mb-3">Gemini ReAct Agent</h3>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Orchestrates event-driven logical reasoning loops cross-examining current indicators, alert levels, and watchlist tickers.
+                </p>
+              </div>
+
+              {/* Card 3: FastAPI */}
+              <div className="liquid-glass rounded-2xl p-7 text-left border border-white/5 hover:border-emerald-400/20 hover:scale-[1.01] transition-all duration-300 group">
+                <span className="text-[10px] text-emerald-400 uppercase tracking-widest font-semibold block mb-1">Backend Core</span>
+                <h3 className="text-lg font-medium text-foreground mb-3">FastAPI & Uvicorn</h3>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  High-performance Python ASGI backend handling auth verification, database sessions, and payment order callbacks.
+                </p>
+              </div>
+
+              {/* Card 4: Strawberry GraphQL */}
+              <div className="liquid-glass rounded-2xl p-7 text-left border border-white/5 hover:border-cyan-400/20 hover:scale-[1.01] transition-all duration-300 group">
+                <span className="text-[10px] text-cyan-400 uppercase tracking-widest font-semibold block mb-1">Data Query & Stream</span>
+                <h3 className="text-lg font-medium text-foreground mb-3">Strawberry GraphQL</h3>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Defines type-safe schemas for queries, mutations, and WebSocket subscriptions to stream real-time price updates.
+                </p>
+              </div>
+
+              {/* Card 5: Redpanda */}
+              <div className="liquid-glass rounded-2xl p-7 text-left border border-white/5 hover:border-rose-400/20 hover:scale-[1.01] transition-all duration-300 group">
+                <span className="text-[10px] text-rose-400 uppercase tracking-widest font-semibold block mb-1">Message Broker</span>
+                <h3 className="text-lg font-medium text-foreground mb-3">Redpanda Data Stream</h3>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Ingests and queues tick-by-tick real-time stock pricing updates to provide high-throughput WebSocket broadcast streams.
+                </p>
+              </div>
+
+              {/* Card 6: PostgreSQL */}
+              <div className="liquid-glass rounded-2xl p-7 text-left border border-white/5 hover:border-blue-400/20 hover:scale-[1.01] transition-all duration-300 group">
+                <span className="text-[10px] text-blue-400 uppercase tracking-widest font-semibold block mb-1">Persistence</span>
+                <h3 className="text-lg font-medium text-foreground mb-3">PostgreSQL & SQLAlchemy</h3>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Stores user transactions, price thresholds for alerts, user profiles, and historical stock candlesticks.
+                </p>
+              </div>
+
+              {/* Card 7: Razorpay */}
+              <div className="liquid-glass rounded-2xl p-7 text-left border border-white/5 hover:border-indigo-400/20 hover:scale-[1.01] transition-all duration-300 group">
+                <span className="text-[10px] text-indigo-400 uppercase tracking-widest font-semibold block mb-1">Monetization</span>
+                <h3 className="text-lg font-medium text-foreground mb-3">Razorpay Checkout SDK</h3>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Enables integrated test-mode checkout payments to purchase SaaS credit packs for running Gemini Agent analyses.
+                </p>
+              </div>
+
+              {/* Card 8: React & Tailwind v4 */}
+              <div className="liquid-glass rounded-2xl p-7 text-left border border-white/5 hover:border-violet-400/20 hover:scale-[1.01] transition-all duration-300 group">
+                <span className="text-[10px] text-violet-400 uppercase tracking-widest font-semibold block mb-1">Frontend Layer</span>
+                <h3 className="text-lg font-medium text-foreground mb-3">React 19 & Tailwind v4</h3>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Built with React's latest hooks and Tailwind's compile-time CSS engine to deliver a responsive, glassmorphic layout.
+                </p>
+              </div>
+
+            </div>
+          </div>
+        </section>
+
+        {/* CORE PLATFORM CAPABILITIES SECTION */}
+        <section id="capabilities" className="w-full py-28 border-t border-white/5 flex flex-col items-center text-center">
+          <div className="max-w-7xl mx-auto px-8 w-full flex flex-col items-center">
+            
+            <span className="text-purple-400 text-xs font-semibold uppercase tracking-widest mb-3">Capabilities</span>
+            <h2 
+              className="text-4xl sm:text-5xl font-normal text-foreground tracking-tight"
+              style={{ fontFamily: "'Instrument Serif', serif" }}
+            >
+              Real-Time Stock Intelligence
+            </h2>
+            <p className="text-muted-foreground max-w-xl text-sm sm:text-base mt-4 mb-16 leading-relaxed">
+              Unlock data-driven execution tools to back up and cross-reference your investing strategies.
+            </p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-4xl">
+              
+              {/* Feature A */}
+              <div className="liquid-glass rounded-3xl p-8 border border-white/5 text-left flex flex-col justify-between hover:border-white/10 hover:shadow-xl transition-all duration-300">
+                <div>
+                  <h3 className="text-xl font-medium text-foreground mb-4">Event-Driven Price Alerts</h3>
+                  <p className="text-xs text-muted-foreground leading-relaxed mb-6">
+                    Establish target limits on active stock tickers. The platform checks prices against targets in real time, notifying you immediately when thresholds are crossed.
+                  </p>
+                </div>
+                <div className="h-[2px] w-12 bg-cyan-400/50"></div>
+              </div>
+
+              {/* Feature B */}
+              <div className="liquid-glass rounded-3xl p-8 border border-white/5 text-left flex flex-col justify-between hover:border-white/10 hover:shadow-xl transition-all duration-300">
+                <div>
+                  <h3 className="text-xl font-medium text-foreground mb-4">Interactive Strategy Gauges</h3>
+                  <p className="text-xs text-muted-foreground leading-relaxed mb-6">
+                    Formulate bullish or bearish confidence indicators based on qualitative and quantitative inputs from your watchlists, ONNX models, and technical indicator metrics.
+                  </p>
+                </div>
+                <div className="h-[2px] w-12 bg-purple-400/50"></div>
+              </div>
+
+            </div>
+          </div>
+        </section>
+
+        {/* FOOTER */}
+        <footer className="w-full py-12 border-t border-white/5 text-center text-xs text-muted-foreground bg-black/30 backdrop-blur-[2px]">
+          <div className="max-w-7xl mx-auto px-8 flex flex-col sm:flex-row justify-between items-center gap-4">
+            <span className="font-light">© {new Date().getFullYear()} QuantIQ Platform. All rights reserved.</span>
+            <div className="flex gap-6">
+              <a href="#" className="hover:text-foreground transition-colors">Privacy Policy</a>
+              <a href="#" className="hover:text-foreground transition-colors">Terms of Service</a>
+              <a href="#" className="hover:text-foreground transition-colors">API Docs</a>
+            </div>
+          </div>
+        </footer>
+
       </main>
 
       {/* 4. Glassmorphic Authentication Modal */}
