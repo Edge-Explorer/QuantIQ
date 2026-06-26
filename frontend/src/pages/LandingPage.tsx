@@ -3,7 +3,7 @@ import { Button } from '../components/ui/button';
 import { X, ArrowRight, Eye, EyeOff, Lock, Mail, User, Globe } from 'lucide-react';
 import Logo from '../components/Logo';
 import LogoLoop from '../components/LogoLoop';
-import { SiReact, SiTypescript, SiFastapi, SiPostgresql, SiGraphql, SiApachekafka, SiRazorpay, SiTailwindcss } from 'react-icons/si';
+import { SiReact, SiTypescript, SiFastapi, SiPostgresql, SiGraphql, SiApachekafka, SiRazorpay, SiTailwindcss, SiPython } from 'react-icons/si';
 
 
 interface LandingPageProps {
@@ -453,6 +453,7 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
               { node: <SiFastapi />, title: "FastAPI", href: "https://fastapi.tiangolo.com" },
               { node: <SiGraphql />, title: "GraphQL", href: "https://graphql.org" },
               { node: <SiPostgresql />, title: "PostgreSQL", href: "https://www.postgresql.org" },
+              { node: <SiPython />, title: "Python", href: "https://www.python.org" },
               { node: <SiApachekafka />, title: "Redpanda", href: "https://redpanda.com" },
               { node: <SiRazorpay />, title: "Razorpay", href: "https://razorpay.com" },
             ]}
