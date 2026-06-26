@@ -6,12 +6,16 @@ interface NavbarProps {
   user: any;
   onRechargeClick: () => void;
   onLogout: () => void;
+  onLogoClick?: () => void;
 }
 
-export default function Navbar({ user, onRechargeClick, onLogout }: NavbarProps) {
+export default function Navbar({ user, onRechargeClick, onLogout, onLogoClick }: NavbarProps) {
   return (
     <header className="dashboard-header">
-      <div className="header-left">
+      <div 
+        className={`header-left ${onLogoClick ? 'cursor-pointer hover:opacity-85 active:scale-[0.98]' : ''} transition-all`}
+        onClick={onLogoClick}
+      >
         <Logo size={32} />
         <span className="logo-text">QuantIQ</span>
       </div>

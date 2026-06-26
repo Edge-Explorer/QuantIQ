@@ -44,6 +44,7 @@ export default function App() {
   // Auth State
   const [token, setToken] = useState<string | null>(localStorage.getItem('quantiq_jwt'));
   const [user, setUser] = useState<any>(null);
+  const [currentView, setCurrentView] = useState<'landing' | 'dashboard'>(localStorage.getItem('quantiq_jwt') ? 'dashboard' : 'landing');
   
   // Dashboard Core State
   const [watchlist, setWatchlist] = useState<string[]>(['AAPL', 'TSLA', 'TCS.NS', 'RELIANCE.NS']);
@@ -238,6 +239,7 @@ export default function App() {
   const handleAuthSuccess = (accessToken: string) => {
     localStorage.setItem('quantiq_jwt', accessToken);
     setToken(accessToken);
+    setCurrentView('dashboard');
   };
 
   const handleGoogleCredentialResponse = async (response: any) => {
@@ -264,6 +266,7 @@ export default function App() {
     setToken(null);
     setUser(null);
     setInsight(null);
+    setCurrentView('landing');
   };
 
   // 6. Watchlist Operations
@@ -419,13 +422,15 @@ export default function App() {
   };
 
   // Auth Router rendering
-  if (!token) {
+  if (!token || currentView === 'landing') {
     return (
       <LandingPage
         onGoogleLogin={handleGoogleCredentialResponse}
         googleClientId={GOOGLE_CLIENT_ID}
         onAuthSuccess={handleAuthSuccess}
         apiUrl={API_URL}
+        user={user}
+        onGoToDashboard={() => setCurrentView('dashboard')}
       />
     );
   }
@@ -451,6 +456,7 @@ export default function App() {
       onOpenRecharge={() => setShowRecharge(true)}
       onSelectPackage={handlePayment}
       onLogout={handleLogout}
+      onLogoClick={() => setCurrentView('landing')}
     />
   );
 }

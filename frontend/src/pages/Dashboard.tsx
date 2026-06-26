@@ -26,6 +26,7 @@ interface DashboardProps {
   onOpenRecharge: () => void;
   onSelectPackage: (amountInRupees: number) => Promise<void>;
   onLogout: () => void;
+  onLogoClick?: () => void;
 }
 
 export default function Dashboard({
@@ -48,6 +49,7 @@ export default function Dashboard({
   onOpenRecharge,
   onSelectPackage,
   onLogout,
+  onLogoClick,
 }: DashboardProps) {
   return (
     <div className="app-container animate-fade">
@@ -56,6 +58,7 @@ export default function Dashboard({
         user={user} 
         onRechargeClick={onOpenRecharge} 
         onLogout={onLogout} 
+        onLogoClick={onLogoClick}
       />
 
       {/* Main Grid Content */}
