@@ -2,6 +2,9 @@ import json
 import hmac
 import hashlib
 import datetime
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 from typing import Optional
 import jwt
 import httpx
@@ -210,3 +213,60 @@ async def razorpay_webhook(request: Request, x_razorpay_signature: str= Header(N
         raise HTTPException(status_code= 500, detail= f"Webhook processing error: {str(e)}")
     
     return {"status": "ok"}
+
+
+class ContactFormRequest(BaseModel):
+    name: str
+    email: str
+    message: str
+
+@router.post("/contact")
+async def contact_developer(payload: ContactFormRequest):
+    """
+    Receives a message from the contact form and sends an email via SMTP.
+    Falls back to server console logging if SMTP credentials are not set.
+    """
+    name = payload.name.strip()
+    email_addr = payload.email.strip()
+    message = payload.message.strip()
+    
+    if not name or not email_addr or not message:
+        raise HTTPException(status_code=400, detail="Name, email, and message are required.")
+    
+    # Check if SMTP settings are configured
+    if settings.SMTP_HOST and settings.SMTP_USER and settings.SMTP_PASSWORD:
+        try:
+            # Construct the email
+            msg = MIMEMultipart()
+            msg["From"] = settings.SMTP_FROM
+            msg["To"] = settings.DEVELOPER_EMAIL
+            msg["Subject"] = f"QuantIQ Developer Contact: {name}"
+            
+            body = (
+                f"You have received a new contact message from QuantIQ:\n\n"
+                f"Name: {name}\n"
+                f"Email: {email_addr}\n\n"
+                f"Message:\n{message}\n"
+            )
+            msg.attach(MIMEText(body, "plain"))
+            
+            # Connect and send
+            server = smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT)
+            server.starttls()
+            server.login(settings.SMTP_USER, settings.SMTP_PASSWORD)
+            server.sendmail(settings.SMTP_FROM, settings.DEVELOPER_EMAIL, msg.as_string())
+            server.quit()
+            
+            print(f"Contact Form: Email successfully sent to {settings.DEVELOPER_EMAIL} from {email_addr}")
+        except Exception as e:
+            # Log error but don't crash, fallback to printing the message
+            print(f"Contact Form Error: Failed to send email via SMTP: {str(e)}")
+            print(f"FALLBACK CONTACT MESSAGE:\nName: {name}\nEmail: {email_addr}\nMessage: {message}")
+    else:
+        # Fallback logging if SMTP is not configured
+        print("Contact Form: SMTP not configured. Logging contact form submission:")
+        print(f"Name: {name}")
+        print(f"Email: {email_addr}")
+        print(f"Message: {message}")
+        
+    return {"status": "success", "message": "Your message has been sent successfully."}
