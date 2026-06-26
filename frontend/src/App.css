@@ -1137,3 +1137,87 @@
 .insight-reason-body p:last-child {
   margin-bottom: 0;
 }
+
+/* ==========================================
+   Animated Cyberpunk Glows & Micro-animations
+   ========================================== */
+@keyframes pulseGlow {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(0, 242, 254, 0.7);
+  }
+  70% {
+    transform: scale(1.2);
+    box-shadow: 0 0 0 6px rgba(0, 242, 254, 0);
+  }
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(0, 242, 254, 0);
+  }
+}
+
+/* Neon logo glow effects */
+.glow-cyan {
+  filter: drop-shadow(0 0 6px rgba(0, 242, 254, 0.75));
+}
+.glow-violet {
+  filter: drop-shadow(0 0 6px rgba(161, 84, 255, 0.75));
+}
+
+/* Hover scales and glows on glass panels */
+.glass-panel {
+  transition: border-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
+}
+.glass-panel:hover {
+  border-color: rgba(0, 242, 254, 0.25);
+  box-shadow: 0 8px 32px 0 rgba(0, 242, 254, 0.03), inset 0 0 12px rgba(255, 255, 255, 0.02);
+}
+
+/* Watchlist items neon hover indicator */
+.watchlist-item {
+  position: relative;
+  overflow: hidden;
+}
+.watchlist-item::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--neon-cyan);
+  transform: scaleY(0);
+  transition: transform 0.2s ease;
+  transform-origin: bottom;
+}
+.watchlist-item:hover::after {
+  transform: scaleY(1);
+}
+.watchlist-item.active {
+  box-shadow: inset 0 0 12px rgba(0, 242, 254, 0.05);
+}
+
+/* AI Analyst Pulsing bias tags */
+.insight-tag {
+  animation: pulsePill 2s infinite ease-in-out;
+}
+@keyframes pulsePill {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.8; }
+}
+
+/* Stock Chart transition */
+.mini-chart-container, .chart-container {
+  animation: fadeInChart 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes fadeInChart {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
