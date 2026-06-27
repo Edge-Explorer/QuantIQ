@@ -457,6 +457,7 @@ export default function App() {
       onSelectPackage={handlePayment}
       onLogout={handleLogout}
       onLogoClick={() => setCurrentView('landing')}
+      onAvatarUpload={(newUrl) => setUser((prev: any) => prev ? { ...prev, pictureUrl: newUrl } : null)}
     />
   );
 }

@@ -27,6 +27,7 @@ interface DashboardProps {
   onSelectPackage: (amountInRupees: number) => Promise<void>;
   onLogout: () => void;
   onLogoClick?: () => void;
+  onAvatarUpload?: (newUrl: string) => void;
 }
 
 export default function Dashboard({
@@ -50,6 +51,7 @@ export default function Dashboard({
   onSelectPackage,
   onLogout,
   onLogoClick,
+  onAvatarUpload,
 }: DashboardProps) {
   return (
     <div className="app-container animate-fade">
@@ -59,6 +61,7 @@ export default function Dashboard({
         onRechargeClick={onOpenRecharge} 
         onLogout={onLogout} 
         onLogoClick={onLogoClick}
+        onAvatarUpload={onAvatarUpload}
       />
 
       {/* Main Grid Content */}
