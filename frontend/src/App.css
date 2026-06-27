@@ -150,10 +150,56 @@
 }
 
 .avatar {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.avatar-upload-wrapper {
+  position: relative;
   width: 32px;
   height: 32px;
   border-radius: 50%;
   border: 1px solid var(--neon-cyan);
+  overflow: hidden;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.05);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.2s ease, transform 0.1s ease;
+}
+
+.avatar-upload-wrapper:hover {
+  border-color: #ffffff;
+}
+
+.avatar-upload-wrapper:active {
+  transform: scale(0.95);
+}
+
+.avatar-hover-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.avatar-upload-wrapper:hover .avatar-hover-overlay {
+  opacity: 1;
+}
+
+.avatar-upload-loading {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .profile-name {
