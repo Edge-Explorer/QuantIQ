@@ -41,7 +41,30 @@ def decode_access_token(token: str) -> Optional[dict]:
         return payload
     except jwt.PyJWTError:
         return None
+
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi import File, UploadFile
+from backend.app.database import models
+from backend.app.services.cloudinary_service import upload_avatar
+import uuid
+
+security= HTTPBearer()
+
+async def get_current_user(credentials: HTTPAuthorizationCredentials= Depends(security), db: AsyncSession= Depends(get_db)) -> models.User:
+    token= credentials.credentials
+    payload= decode_access_token(token)
+    if not payload or "sub" not in payload:
+        raise HTTPException(status_code= 401, detail= "Invalid token or expired session.")
+    try:
+        user_id= uuid.UUID(payload["sub"])
+    except ValueError:
+        raise HTTPException(status_code= 401, detail= "Invalid user ID in token.")
     
+    user= await crud.get_user(db, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail= "User not found.")
+    return user
+
 # REST ENDPOINTS
 @router.post("/auth/google", response_model= schemas.Token)
 async def google_auth(payload: schemas.GoogleAuthRequest, db: AsyncSession= Depends(get_db)):
@@ -270,3 +293,26 @@ async def contact_developer(payload: ContactFormRequest):
         print(f"Message: {message}")
         
     return {"status": "success", "message": "Your message has been sent successfully."}
+
+@router.post("/users/avatar")
+async def upload_user_avatar(file: UploadFile= File(...), current_user: models.User= Depends(get_current_user), db: AsyncSession= Depends(get_db)):
+    """
+    Uploads a new user profile avatar to Cloudinary, updates it in the database, and returns the new picture URL.
+    """
+    if not file.content_type.startswith("image/"):
+        raise HTTPException(status_code= 400, detail= "Uploaded file must be an image.")
+    
+    try:
+        file_bytes= await file.read()
+        secure_url= upload_avatar(file_bytes, str(current_user.id))
+        
+        current_user.picture_url= secure_url
+        db.add(current_user)
+        await db.commit()
+        await db.refresh(current_user)
+        
+        return {"picture_url": secure_url}
+    except ValueError as ve:
+        raise HTTPException(status_code= 400, detail= str(ve))
+    except Exception as e:
+        raise HTTPException(status_code= 500, detail= f"Failed to upload avatar: {str(e)}")
