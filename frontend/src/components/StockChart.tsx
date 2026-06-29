@@ -17,16 +17,14 @@ export default function StockChart({ activeTicker, chartData }: StockChartProps)
   return (
     <div className="glass-panel chart-panel">
       <div className="chart-header">
-        <div>
+        <div className="active-stock-info">
           <h2>{activeTicker}</h2>
-          <div className="active-stock-info">
-            <span className="active-price">
-              {currentPrice !== null ? `$${currentPrice}` : 'Loading...'}
-            </span>
-            <div className="live-indicator">
-              <span className="live-dot"></span>
-              <span>Live</span>
-            </div>
+          <span className="active-price">
+            {currentPrice !== null ? `$${currentPrice.toFixed(2)}` : '—'}
+          </span>
+          <div className="live-indicator">
+            <span className="live-dot"></span>
+            <span>Live</span>
           </div>
         </div>
       </div>
