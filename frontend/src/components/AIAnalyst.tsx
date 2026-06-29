@@ -71,9 +71,14 @@ export default function AIAnalyst({
       {loadingInsight && (
         <div className="insight-loading">
           <div className="spinner"></div>
-          <span style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>
-            Deducting 1 credit & consulting QuantIQ AI Analyst...
-          </span>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
+            <span style={{ color: 'var(--text-primary)', fontSize: '14px', fontWeight: 600 }}>
+              QuantIQ AI is analyzing {activeTicker}...
+            </span>
+            <span style={{ color: 'var(--text-muted)', fontSize: '12px' }}>
+              Running ReAct workflow · Scanning indicators · Generating strategy
+            </span>
+          </div>
         </div>
       )}
 
