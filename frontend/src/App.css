@@ -1,13 +1,35 @@
-/* App Layout & Component Grid Styles */
+/* ==========================================
+   QUANTIQ DASHBOARD — PREMIUM CSS SYSTEM
+   ========================================== */
 
+/* ─── 0. CSS VARIABLES ─────────────────── */
+:root {
+  --neon-cyan:      #00f2fe;
+  --neon-violet:    #a154ff;
+  --bull-green:     #00e676;
+  --bear-red:       #ff1744;
+  --bg-space:       #06070d;
+  --bg-panel:       #0d101b;
+  --bg-card:        #111420;
+  --border-glass:   rgba(255, 255, 255, 0.07);
+  --border-glow:    rgba(0, 242, 254, 0.18);
+  --text-primary:   #f1f5f9;
+  --text-secondary: #94a3b8;
+  --text-muted:     #475569;
+  --font-mono:      'JetBrains Mono', 'Fira Code', monospace;
+  --font-display:   'Instrument Serif', serif;
+}
+
+/* ─── App Layout ────────────────────────── */
 .app-container {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
   width: 100%;
+  background: var(--bg-space);
 }
 
-/* 1. Login Page Styles */
+/* ─── 1. Login Page ─────────────────────── */
 .login-page {
   display: flex;
   align-items: center;
@@ -86,38 +108,43 @@
   border-color: var(--neon-violet);
 }
 
-/* 2. Main Dashboard Styles */
+/* ─── 2. Dashboard Header / Navbar ─────── */
 .dashboard-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 24px;
+  padding: 0 28px;
+  height: 60px;
   border-bottom: 1px solid var(--border-glass);
-  background: rgba(6, 7, 13, 0.8);
-  backdrop-filter: blur(10px);
+  background: rgba(6, 7, 13, 0.92);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   position: sticky;
   top: 0;
   z-index: 100;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04), 0 4px 24px rgba(0, 0, 0, 0.4);
 }
 
 .header-left {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
+  user-select: none;
 }
 
 .logo-text {
-  font-size: 22px;
+  font-size: 20px;
   font-weight: 700;
   background: linear-gradient(135deg, var(--neon-cyan), var(--neon-violet));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
+  letter-spacing: -0.02em;
 }
 
 .header-right {
   display: flex;
   align-items: center;
-  gap: 20px;
+  gap: 16px;
 }
 
 .credits-badge {
@@ -125,28 +152,39 @@
   align-items: center;
   gap: 8px;
   background: rgba(161, 84, 255, 0.08);
-  border: 1px solid rgba(161, 84, 255, 0.25);
-  padding: 6px 12px;
+  border: 1px solid rgba(161, 84, 255, 0.2);
+  padding: 5px 10px 5px 10px;
   border-radius: 99px;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
   color: var(--neon-violet);
+  transition: border-color 0.2s ease;
+}
+
+.credits-badge:hover {
+  border-color: rgba(161, 84, 255, 0.45);
 }
 
 .recharge-btn {
   background: linear-gradient(135deg, var(--neon-cyan), var(--neon-violet));
-  color: #000000;
-  font-weight: 600;
-  font-size: 12px;
-  padding: 4px 10px;
+  color: #08060e;
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  padding: 3px 9px;
   border-radius: 99px;
-  box-shadow: 0 0 10px rgba(0, 242, 254, 0.3);
+  box-shadow: 0 0 10px rgba(0, 242, 254, 0.25);
+  transition: box-shadow 0.2s ease;
+}
+
+.recharge-btn:hover {
+  box-shadow: 0 0 18px rgba(0, 242, 254, 0.5);
 }
 
 .user-profile {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 9px;
 }
 
 .avatar {
@@ -157,25 +195,26 @@
 
 .avatar-upload-wrapper {
   position: relative;
-  width: 32px;
-  height: 32px;
+  width: 34px;
+  height: 34px;
   border-radius: 50%;
-  border: 1px solid var(--neon-cyan);
+  border: 1.5px solid rgba(0, 242, 254, 0.4);
   overflow: hidden;
   cursor: pointer;
   background: rgba(255, 255, 255, 0.05);
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: border-color 0.2s ease, transform 0.1s ease;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
 }
 
 .avatar-upload-wrapper:hover {
-  border-color: #ffffff;
+  border-color: var(--neon-cyan);
+  box-shadow: 0 0 10px rgba(0, 242, 254, 0.3);
 }
 
 .avatar-upload-wrapper:active {
-  transform: scale(0.95);
+  transform: scale(0.93);
 }
 
 .avatar-hover-overlay {
@@ -203,18 +242,23 @@
 }
 
 .profile-name {
-  font-size: 14px;
+  font-size: 13.5px;
   color: var(--text-primary);
   font-weight: 500;
+  letter-spacing: -0.01em;
 }
 
 .logout-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   background: transparent;
-  color: var(--text-secondary);
+  color: var(--text-muted);
   border: 1px solid var(--border-glass);
-  padding: 6px 12px;
-  border-radius: 6px;
-  font-size: 13px;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
 }
 
 .logout-btn:hover {
@@ -223,21 +267,22 @@
   color: var(--bear-red);
 }
 
-/* 3. Grid Structure */
+/* ─── 3. Dashboard Grid ─────────────────── */
 .dashboard-grid {
   display: grid;
-  grid-template-columns: 280px 1fr 320px;
-  gap: 16px;
-  padding: 16px;
+  grid-template-columns: 260px 1fr 300px;
+  gap: 14px;
+  padding: 14px;
   flex: 1;
   max-width: 1600px;
   margin: 0 auto;
   width: 100%;
+  box-sizing: border-box;
 }
 
 @media (max-width: 1200px) {
   .dashboard-grid {
-    grid-template-columns: 260px 1fr;
+    grid-template-columns: 240px 1fr;
   }
   .right-sidebar {
     grid-column: span 2;
@@ -253,18 +298,36 @@
   }
 }
 
-/* Sidebars and Panels */
+/* ─── Glass Panel Base ──────────────────── */
+.glass-panel {
+  background: rgba(13, 16, 27, 0.85);
+  border: 1px solid var(--border-glass);
+  border-radius: 14px;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  overflow: hidden;
+}
+
+.glass-panel:hover {
+  border-color: rgba(0, 242, 254, 0.12);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.25);
+}
+
 .panel-title {
-  font-size: 16px;
-  color: var(--text-primary);
-  padding: 16px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  padding: 14px 16px;
   border-bottom: 1px solid var(--border-glass);
   display: flex;
   align-items: center;
   justify-content: space-between;
 }
 
-/* 4. Watchlist Panel */
+/* ─── 4. Watchlist Panel ────────────────── */
 .watchlist-container {
   display: flex;
   flex-direction: column;
@@ -273,24 +336,51 @@
 }
 
 .watchlist-search {
-  padding: 12px;
+  padding: 10px 12px;
   display: flex;
   gap: 8px;
   border-bottom: 1px solid var(--border-glass);
+  background: rgba(0, 0, 0, 0.15);
 }
 
 .watchlist-search input {
   flex: 1;
   font-size: 13px;
   padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border-glass);
+  border-radius: 8px;
+  color: var(--text-primary);
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.watchlist-search input::placeholder {
+  color: var(--text-muted);
+}
+
+.watchlist-search input:focus {
+  border-color: rgba(0, 242, 254, 0.4);
+  background: rgba(0, 242, 254, 0.03);
 }
 
 .add-btn {
-  background: var(--neon-cyan);
-  color: #000000;
+  background: rgba(0, 242, 254, 0.1);
+  border: 1px solid rgba(0, 242, 254, 0.25);
+  color: var(--neon-cyan);
   width: 36px;
   height: 36px;
   border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.add-btn:hover {
+  background: rgba(0, 242, 254, 0.18);
+  border-color: var(--neon-cyan);
   box-shadow: 0 0 10px rgba(0, 242, 254, 0.2);
 }
 
@@ -298,39 +388,77 @@
   flex: 1;
   overflow-y: auto;
   padding: 8px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.06) transparent;
 }
 
 .watchlist-item {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 16px;
-  border-radius: 8px;
+  padding: 11px 14px;
+  border-radius: 9px;
   cursor: pointer;
-  margin-bottom: 6px;
-  transition: all 0.2s ease;
+  margin-bottom: 4px;
+  border: 1px solid transparent;
+  transition: all 0.18s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.watchlist-item::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  border-radius: 2px 0 0 2px;
+  background: var(--neon-cyan);
+  transform: scaleY(0);
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  transform-origin: bottom;
 }
 
 .watchlist-item:hover {
   background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.06);
+}
+
+.watchlist-item:hover::before {
+  transform: scaleY(1);
 }
 
 .watchlist-item.active {
-  background: rgba(0, 242, 254, 0.05);
-  border-left: 3px solid var(--neon-cyan);
+  background: rgba(0, 242, 254, 0.06);
+  border-color: rgba(0, 242, 254, 0.14);
+  box-shadow: inset 0 0 16px rgba(0, 242, 254, 0.04);
+}
+
+.watchlist-item.active::before {
+  transform: scaleY(1);
 }
 
 .ticker-symbol {
   font-weight: 600;
+  font-size: 14px;
   color: var(--text-primary);
+  letter-spacing: 0.02em;
+}
+
+.watchlist-item.active .ticker-symbol {
+  color: var(--neon-cyan);
 }
 
 .delete-ticker-btn {
   background: transparent;
   color: var(--text-muted);
-  width: 28px;
-  height: 28px;
+  width: 26px;
+  height: 26px;
   border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   opacity: 0;
   transition: all 0.2s ease;
 }
@@ -340,21 +468,21 @@
 }
 
 .delete-ticker-btn:hover {
-  background: rgba(255, 23, 68, 0.1);
+  background: rgba(255, 23, 68, 0.12);
   color: var(--bear-red);
 }
 
-/* 5. Center View (Chart & Insight) */
+/* ─── 5. Center Content (Chart + AI) ───── */
 .center-content {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 14px;
 }
 
 /* Chart Styles */
 .chart-panel {
-  padding: 20px;
-  height: 420px;
+  padding: 20px 20px 16px;
+  min-height: 400px;
   display: flex;
   flex-direction: column;
 }
@@ -362,51 +490,69 @@
 .chart-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
+  align-items: flex-start;
+  margin-bottom: 18px;
 }
 
 .active-stock-info {
   display: flex;
-  align-items: baseline;
-  gap: 12px;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.active-stock-info h2 {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin: 0 0 2px;
 }
 
 .active-price {
-  font-size: 28px;
+  font-size: 32px;
   font-weight: 700;
   color: var(--text-primary);
   font-family: var(--font-display);
+  letter-spacing: -0.02em;
+  line-height: 1;
 }
 
 .live-indicator {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 11px;
+  font-size: 10px;
   color: var(--bull-green);
   text-transform: uppercase;
   font-weight: 700;
   letter-spacing: 0.1em;
+  background: rgba(0, 230, 118, 0.08);
+  border: 1px solid rgba(0, 230, 118, 0.2);
+  padding: 3px 8px;
+  border-radius: 99px;
+  margin-top: 6px;
+  width: fit-content;
 }
 
 .live-dot {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
   background: var(--bull-green);
   border-radius: 50%;
   animation: pulseGlow 1.5s infinite;
+  flex-shrink: 0;
 }
 
 .chart-container {
   flex: 1;
-  min-height: 250px;
+  min-height: 260px;
   position: relative;
 }
 
-/* AI Insights View */
+/* ─── 6. AI Analyst Panel ───────────────── */
 .insight-panel {
-  padding: 24px;
+  padding: 20px;
 }
 
 .insight-cta {
@@ -414,23 +560,37 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 40px;
+  padding: 36px 24px;
   text-align: center;
-  gap: 16px;
+  gap: 18px;
+}
+
+.insight-cta-description {
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 160%;
+  max-width: 460px;
 }
 
 .insight-btn {
   background: linear-gradient(135deg, var(--neon-cyan), var(--neon-violet));
-  color: #000000;
-  font-size: 16px;
-  font-weight: 600;
-  padding: 14px 28px;
+  color: #08060e;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 12px 28px;
   border-radius: 99px;
   box-shadow: 0 0 20px rgba(161, 84, 255, 0.3);
+  letter-spacing: 0.01em;
+  transition: box-shadow 0.25s ease, transform 0.15s ease;
 }
 
 .insight-btn:hover {
-  box-shadow: 0 0 30px rgba(161, 84, 255, 0.5);
+  box-shadow: 0 0 32px rgba(161, 84, 255, 0.55);
+  transform: translateY(-1px);
+}
+
+.insight-btn:active {
+  transform: translateY(0);
 }
 
 .insight-loading {
@@ -443,9 +603,9 @@
 }
 
 .spinner {
-  width: 48px;
-  height: 48px;
-  border: 3px solid rgba(255, 255, 255, 0.05);
+  width: 40px;
+  height: 40px;
+  border: 2px solid rgba(255, 255, 255, 0.05);
   border-top-color: var(--neon-cyan);
   border-radius: 50%;
   animation: spin 1s linear infinite;
@@ -484,14 +644,14 @@
 
 .gauge-bg {
   fill: none;
-  stroke: rgba(255, 255, 255, 0.04);
-  stroke-width: 8;
+  stroke: rgba(255, 255, 255, 0.05);
+  stroke-width: 7;
 }
 
 .gauge-fill {
   fill: none;
   stroke: url(#cyan-violet-grad);
-  stroke-width: 8;
+  stroke-width: 7;
   stroke-linecap: round;
   transition: stroke-dasharray 0.8s cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -504,16 +664,18 @@
 }
 
 .gauge-percentage {
-  font-size: 32px;
+  font-size: 30px;
   font-weight: 700;
   font-family: var(--font-display);
+  color: var(--text-primary);
 }
 
 .gauge-label {
-  font-size: 11px;
+  font-size: 10px;
   color: var(--text-secondary);
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.08em;
+  font-weight: 600;
 }
 
 .insight-text-container {
@@ -527,11 +689,12 @@
   display: inline-flex;
   align-self: flex-start;
   padding: 4px 10px;
-  border-radius: 4px;
-  font-size: 11px;
+  border-radius: 5px;
+  font-size: 10px;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.07em;
+  animation: pulsePill 2s infinite ease-in-out;
 }
 
 .tag-bullish {
@@ -548,15 +711,22 @@
 
 .insight-explanation {
   color: var(--text-secondary);
-  font-size: 15px;
-  line-height: 160%;
+  font-size: 14px;
+  line-height: 165%;
 }
 
-/* 6. Alerts & Config Panel (Right Sidebar) */
+.insight-reason-body p {
+  margin: 0 0 10px 0;
+}
+.insight-reason-body p:last-child {
+  margin-bottom: 0;
+}
+
+/* ─── 7. Right Sidebar (Alerts) ─────────── */
 .right-sidebar {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 14px;
 }
 
 .alerts-panel {
@@ -566,40 +736,76 @@
 }
 
 .alert-form {
-  padding: 16px;
+  padding: 14px;
   border-bottom: 1px solid var(--border-glass);
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
+  background: rgba(0, 0, 0, 0.1);
 }
 
-.alert-form select, .alert-form input {
+.alert-form-row {
+  display: flex;
+  gap: 8px;
+}
+
+.alert-form select,
+.alert-form input[type="number"] {
   font-size: 13px;
   width: 100%;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border-glass);
+  border-radius: 8px;
+  color: var(--text-primary);
+  padding: 8px 10px;
+  outline: none;
+  transition: border-color 0.2s ease;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.alert-form select option {
+  background: var(--bg-panel);
+}
+
+.alert-form select:focus,
+.alert-form input[type="number"]:focus {
+  border-color: rgba(0, 242, 254, 0.4);
+  background: rgba(0, 242, 254, 0.03);
+}
+
+.alert-form input[type="number"]::placeholder {
+  color: var(--text-muted);
 }
 
 .alert-submit-btn {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid var(--border-glass);
-  color: var(--text-primary);
+  background: rgba(0, 242, 254, 0.07);
+  border: 1px solid rgba(0, 242, 254, 0.18);
+  color: var(--neon-cyan);
   width: 100%;
-  padding: 10px;
-  border-radius: 8px;
+  padding: 9px;
+  border-radius: 9px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  transition: all 0.2s ease;
 }
 
 .alert-submit-btn:hover {
-  background: var(--neon-cyan);
-  color: #000000;
+  background: rgba(0, 242, 254, 0.14);
   border-color: var(--neon-cyan);
+  box-shadow: 0 0 12px rgba(0, 242, 254, 0.15);
 }
 
 .alerts-list {
   flex: 1;
   overflow-y: auto;
-  padding: 16px;
+  padding: 12px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.06) transparent;
 }
 
 .alert-item {
@@ -609,60 +815,94 @@
   padding: 10px 12px;
   background: rgba(255, 255, 255, 0.02);
   border: 1px solid var(--border-glass);
-  border-radius: 8px;
+  border-radius: 9px;
+  transition: border-color 0.2s ease;
+}
+
+.alert-item:hover {
+  border-color: rgba(255, 255, 255, 0.12);
 }
 
 .alert-info {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 3px;
 }
 
 .alert-ticker {
-  font-weight: 600;
-  font-size: 14px;
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--text-primary);
+  letter-spacing: 0.03em;
 }
 
 .alert-condition {
   font-size: 11px;
-  color: var(--text-secondary);
+  color: var(--text-muted);
   text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 500;
 }
 
 .deactivate-alert-btn {
   background: transparent;
   color: var(--text-muted);
-  width: 28px;
-  height: 28px;
+  width: 26px;
+  height: 26px;
   border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
 }
 
 .deactivate-alert-btn:hover {
-  background: rgba(255, 23, 68, 0.1);
+  background: rgba(255, 23, 68, 0.12);
   color: var(--bear-red);
 }
 
-/* 7. Recharge / Payment Modal */
+.alerts-empty {
+  padding: 28px 16px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+/* Custom UI badges */
+.triggered-badge {
+  background: rgba(255, 23, 68, 0.12);
+  border: 1px solid rgba(255, 23, 68, 0.3);
+  color: var(--bear-red);
+  font-size: 9px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 4px;
+  letter-spacing: 0.06em;
+}
+
+/* ─── 8. Recharge Modal ─────────────────── */
 .modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.85);
+  background: rgba(0, 0, 0, 0.88);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
-  backdrop-filter: blur(8px);
+  backdrop-filter: blur(10px);
 }
 
 .modal-content {
   width: 420px;
-  max-width: 100%;
+  max-width: calc(100% - 32px);
   padding: 32px;
   text-align: center;
   animation: slideUp 0.3s ease forwards;
+  border-radius: 18px;
 }
 
 .modal-header {
@@ -677,12 +917,22 @@
   color: var(--text-secondary);
   width: 28px;
   height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.close-btn:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-primary);
 }
 
 .recharge-packages {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
   margin-bottom: 24px;
 }
 
@@ -690,33 +940,74 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 16px;
+  padding: 14px 16px;
   background: rgba(255, 255, 255, 0.02);
   border: 1px solid var(--border-glass);
   border-radius: 12px;
   cursor: pointer;
   transition: all 0.2s ease;
+  text-align: left;
 }
 
 .package-card:hover {
-  border-color: var(--neon-cyan);
-  background: rgba(0, 242, 254, 0.03);
+  border-color: rgba(0, 242, 254, 0.3);
+  background: rgba(0, 242, 254, 0.04);
+  box-shadow: 0 0 16px rgba(0, 242, 254, 0.06);
 }
 
 .package-credits {
   font-weight: 600;
-  font-size: 16px;
+  font-size: 15px;
+  color: var(--text-primary);
 }
 
 .package-price {
   color: var(--neon-cyan);
-  font-weight: 600;
+  font-weight: 700;
+  font-size: 15px;
 }
 
-/* ==========================================================================
-   8. Premium Cyberpunk Landing Page Styles
-   ========================================================================== */
+/* ─── 9. Animations ─────────────────────── */
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
 
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes pulseGlow {
+  0%   { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(0, 242, 254, 0.7); }
+  70%  { transform: scale(1.2);  box-shadow: 0 0 0 5px rgba(0, 242, 254, 0); }
+  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(0, 242, 254, 0); }
+}
+
+@keyframes pulsePill {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.7; }
+}
+
+.mini-chart-container,
+.chart-container {
+  animation: fadeInChart 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes fadeInChart {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade {
+  animation: fadeIn 0.4s ease;
+}
+
+/* Neon glow filter helpers */
+.glow-cyan   { filter: drop-shadow(0 0 6px rgba(0, 242, 254, 0.7)); }
+.glow-violet { filter: drop-shadow(0 0 6px rgba(161, 84, 255, 0.7)); }
+
+/* ─── 10. Landing Page Styles ───────────── */
 .landing-page-container {
   min-height: 100vh;
   width: 100%;
@@ -727,13 +1018,9 @@
   overflow-x: hidden;
 }
 
-/* Mesh glowing backgrounds */
 .bg-glow-mesh {
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  top: 0; left: 0; right: 0; bottom: 0;
   pointer-events: none;
   z-index: 0;
   overflow: hidden;
@@ -747,34 +1034,29 @@
 }
 
 .mesh-cyan {
-  width: 400px;
-  height: 400px;
+  width: 400px; height: 400px;
   background: var(--neon-cyan);
-  top: -100px;
-  left: 10%;
+  top: -100px; left: 10%;
   animation: floatLight 20s infinite ease-in-out;
 }
 
 .mesh-violet {
-  width: 500px;
-  height: 500px;
+  width: 500px; height: 500px;
   background: var(--neon-violet);
-  bottom: -150px;
-  right: 10%;
+  bottom: -150px; right: 10%;
   animation: floatLight2 25s infinite ease-in-out;
 }
 
 @keyframes floatLight {
   0%, 100% { transform: translate(0, 0) scale(1); }
-  50% { transform: translate(50px, 30px) scale(1.1); }
+  50%       { transform: translate(50px, 30px) scale(1.1); }
 }
 
 @keyframes floatLight2 {
   0%, 100% { transform: translate(0, 0) scale(1.1); }
-  50% { transform: translate(-40px, -60px) scale(0.9); }
+  50%       { transform: translate(-40px, -60px) scale(0.9); }
 }
 
-/* Landing Header */
 .landing-header {
   display: flex;
   align-items: center;
@@ -799,7 +1081,6 @@
   letter-spacing: -0.02em;
 }
 
-/* Landing Main Grid */
 .landing-main {
   max-width: 1200px;
   width: 100%;
@@ -820,7 +1101,6 @@
   }
 }
 
-/* Hero Section */
 .landing-hero {
   display: flex;
   flex-direction: column;
@@ -858,9 +1138,7 @@
 }
 
 @media (max-width: 640px) {
-  .hero-title {
-    font-size: 36px;
-  }
+  .hero-title { font-size: 36px; }
 }
 
 .hero-subtitle {
@@ -870,7 +1148,6 @@
   margin-bottom: 12px;
 }
 
-/* Dashboard Mockup */
 .dashboard-mockup {
   border-radius: 12px;
   overflow: hidden;
@@ -897,9 +1174,9 @@
   border-radius: 50%;
 }
 
-.mockup-dots .red { background: #ff5f56; }
+.mockup-dots .red    { background: #ff5f56; }
 .mockup-dots .yellow { background: #ffbd2e; }
-.mockup-dots .green { background: #27c93f; }
+.mockup-dots .green  { background: #27c93f; }
 
 .mockup-url {
   margin: 0 auto;
@@ -993,7 +1270,6 @@
   color: var(--text-secondary);
 }
 
-/* Authentication Card */
 .landing-auth-panel {
   display: flex;
   justify-content: center;
@@ -1101,7 +1377,6 @@
   color: var(--text-secondary);
 }
 
-/* Landing Features Grid */
 .landing-features {
   max-width: 1200px;
   width: 100%;
@@ -1117,9 +1392,7 @@
 }
 
 @media (max-width: 768px) {
-  .features-grid {
-    grid-template-columns: 1fr;
-  }
+  .features-grid { grid-template-columns: 1fr; }
 }
 
 .feature-card {
@@ -1154,7 +1427,6 @@
   color: var(--text-secondary);
 }
 
-/* Landing Footer */
 .landing-footer {
   text-align: center;
   padding: 40px 24px;
@@ -1164,106 +1436,3 @@
   font-size: 13px;
   z-index: 10;
 }
-
-/* Custom UI Polish tags */
-.triggered-badge {
-  background: rgba(255, 23, 68, 0.12);
-  border: 1px solid rgba(255, 23, 68, 0.3);
-  color: var(--bear-red);
-  font-size: 9px;
-  font-weight: 700;
-  padding: 2px 6px;
-  border-radius: 4px;
-  letter-spacing: 0.05em;
-}
-
-.insight-reason-body p {
-  margin: 0 0 10px 0;
-}
-.insight-reason-body p:last-child {
-  margin-bottom: 0;
-}
-
-/* ==========================================
-   Animated Cyberpunk Glows & Micro-animations
-   ========================================== */
-@keyframes pulseGlow {
-  0% {
-    transform: scale(0.95);
-    box-shadow: 0 0 0 0 rgba(0, 242, 254, 0.7);
-  }
-  70% {
-    transform: scale(1.2);
-    box-shadow: 0 0 0 6px rgba(0, 242, 254, 0);
-  }
-  100% {
-    transform: scale(0.95);
-    box-shadow: 0 0 0 0 rgba(0, 242, 254, 0);
-  }
-}
-
-/* Neon logo glow effects */
-.glow-cyan {
-  filter: drop-shadow(0 0 6px rgba(0, 242, 254, 0.75));
-}
-.glow-violet {
-  filter: drop-shadow(0 0 6px rgba(161, 84, 255, 0.75));
-}
-
-/* Hover scales and glows on glass panels */
-.glass-panel {
-  transition: border-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
-}
-.glass-panel:hover {
-  border-color: rgba(0, 242, 254, 0.25);
-  box-shadow: 0 8px 32px 0 rgba(0, 242, 254, 0.03), inset 0 0 12px rgba(255, 255, 255, 0.02);
-}
-
-/* Watchlist items neon hover indicator */
-.watchlist-item {
-  position: relative;
-  overflow: hidden;
-}
-.watchlist-item::after {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 3px;
-  background: var(--neon-cyan);
-  transform: scaleY(0);
-  transition: transform 0.2s ease;
-  transform-origin: bottom;
-}
-.watchlist-item:hover::after {
-  transform: scaleY(1);
-}
-.watchlist-item.active {
-  box-shadow: inset 0 0 12px rgba(0, 242, 254, 0.05);
-}
-
-/* AI Analyst Pulsing bias tags */
-.insight-tag {
-  animation: pulsePill 2s infinite ease-in-out;
-}
-@keyframes pulsePill {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.8; }
-}
-
-/* Stock Chart transition */
-.mini-chart-container, .chart-container {
-  animation: fadeInChart 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-}
-@keyframes fadeInChart {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-

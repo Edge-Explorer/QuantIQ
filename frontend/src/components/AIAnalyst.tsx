@@ -50,16 +50,16 @@ export default function AIAnalyst({
 
   return (
     <div className="glass-panel insight-panel">
-      <div className="panel-title" style={{ padding: '0 0 16px', borderBottom: '1px solid var(--border-glass)' }}>
+      <div className="panel-title">
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Sparkles size={18} color="#a154ff" className="glow-violet" />
+          <Sparkles size={16} color="#a154ff" className="glow-violet" />
           <span>QuantIQ AI Analyst</span>
         </div>
       </div>
 
       {!insight && !loadingInsight && (
         <div className="insight-cta">
-          <p style={{ color: 'var(--text-secondary)', marginBottom: '16px' }}>
+          <p className="insight-cta-description">
             Analyze indicators, watchlists, alerts, and model prediction in a single ReAct workflow.
           </p>
           <button className="insight-btn" onClick={onTriggerInsight}>

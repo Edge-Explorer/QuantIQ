@@ -51,7 +51,7 @@ export default function PriceAlerts({
       </div>
 
       <form className="alert-form" onSubmit={handleSubmit}>
-        <div style={{ display: 'flex', gap: '8px' }}>
+        <div className="alert-form-row">
           <select 
             value={alertCondition} 
             onChange={(e) => setAlertCondition(e.target.value)}
@@ -98,7 +98,7 @@ export default function PriceAlerts({
             </div>
           ))
         ) : (
-          <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-muted)' }}>
+          <div className="alerts-empty">
             No active alerts for {activeTicker}.
           </div>
         )}
