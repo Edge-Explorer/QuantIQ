@@ -18,15 +18,12 @@ from backend.app.schemas import schemas
 
 KAFKA_BOOTSTRAP_SERVERS = settings.KAFKA_BOOTSTRAP_SERVERS
 
-# Tickers to poll
-TICKERS = ["AAPL", "TSLA", "TCS.NS", "RELIANCE.NS"]
+# Tickers are dynamically fetched from DB each cycle — no hardcoded list
 
 KAFKA_TOPIC = "stock-ticks"
 
 # In-memory buffer to aggregate ticks into 1-minute candles
-aggregation_buffer: Dict[str, Dict[str, List]] = {
-    ticker: {"prices": [], "volumes": []} for ticker in TICKERS
-}
+aggregation_buffer: Dict[str, Dict[str, List]] = {}
 
 async def get_latest_stock_data(ticker: str) -> Optional[dict]:
     """
@@ -123,33 +120,33 @@ async def main():
             
             # Create a database session for candle aggregation
             async with SessionLocal() as db:
-                for ticker in TICKERS:
-                    # Fetch tick from Yahoo Finance
-                    tick = await get_latest_stock_data(ticker)
+                from sqlalchemy import select
+                from backend.app.database.models import Watchlist 
+                result= await db.execute(select(Watchlist.ticker).distinct())
+                dynamic_tickers= [row[0] for row in result.fetchall()]
+                
+                for t in dynamic_tickers:
+                    if t not in aggregation_buffer:
+                        aggregation_buffer[t]= {"prices": [], "volumes": []}
+                
+                for ticker in dynamic_tickers:
+                    tick= await get_latest_stock_data(ticker)
                     
                     if tick:
-                        # Append to our aggregation buffer
-                        aggregation_buffer[ticker]["prices"].append(tick["price"])
-                        aggregation_buffer[ticker]["volumes"].append(tick["volume"])
+                        aggregation_buffer[ticker] ["prices"].append(tick["price"])
+                        aggregation_buffer[ticker] ["volumes"].append(tick["volume"])
                         
-                        # Create payload for Redpanda Pub/Sub stream
-                        payload = {
+                        payload= {
                             "ticker": ticker,
                             "price": tick["price"],
                             "volume": tick["volume"],
-                            "timestamp": tick["timestamp"].isoformat()
+                            "timestamp": tick["timestamp"].isformat()
                         }
                         
-                        # Send price tick to Redpanda topic
                         await producer.send(KAFKA_TOPIC, payload)
-                        print(f"Tick published: {ticker} = {tick['price']}")
-                        
-                    # If the minute changed, write the aggregated candle to the database
+                        print(f"Tick published: {ticker}= {tick['price']}")
                     if minute_changed:
                         await aggregate_and_save_candle(db, ticker, now)
-            
-            if minute_changed:
-                last_minute = now.minute
 
             # Sleep for 5 seconds (must run outside the loop and minute check)
             elapsed_time = asyncio.get_event_loop().time() - start_time
