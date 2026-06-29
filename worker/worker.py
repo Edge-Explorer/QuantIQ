@@ -140,7 +140,7 @@ async def main():
                             "ticker": ticker,
                             "price": tick["price"],
                             "volume": tick["volume"],
-                            "timestamp": tick["timestamp"].isformat()
+                            "timestamp": tick["timestamp"].isoformat()
                         }
                         
                         await producer.send(KAFKA_TOPIC, payload)
