@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Button } from '../components/ui/button';
-import { X, ArrowRight, Eye, EyeOff, Lock, Mail, User, Globe } from 'lucide-react';
+import { X, Eye, EyeOff, Lock, Mail, User, Globe } from 'lucide-react';
 import Logo from '../components/Logo';
 import LogoLoop from '../components/LogoLoop';
 import { SiReact, SiTypescript, SiFastapi, SiPostgresql, SiGraphql, SiApachekafka, SiRazorpay, SiTailwindcss, SiPython } from 'react-icons/si';
@@ -786,13 +786,7 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
               <div ref={googleButtonRef}></div>
             </div>
 
-            {/* Footer Trust Details */}
-            <div className="mt-6 flex flex-col gap-1.5 w-full text-center">
-              <div className="flex items-center justify-center gap-1.5 text-[10px] text-muted-foreground">
-                <ArrowRight size={10} className="text-cyan-400" />
-                <span>Secure payment transactions verified by Razorpay</span>
-              </div>
-            </div>
+
 
           </div>
         </div>
