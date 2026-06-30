@@ -89,7 +89,13 @@ export default function WatchlistSidebar({
         const response = await fetch(`${API_URL}/api/v1/stocks/search?q=${encodeURIComponent(query)}`);
         if (response.ok) {
           const data = await response.json();
-          setSuggestions(data);
+          if (Array.isArray(data)) {
+            setSuggestions(data);
+          } else {
+            setSuggestions([]);
+          }
+        } else {
+          setSuggestions([]);
         }
       } catch (err) {
         console.error('Error fetching stock suggestions:', err);
@@ -102,7 +108,7 @@ export default function WatchlistSidebar({
   }, [newTicker]);
 
   // Determine what suggestions to display
-  const displaySuggestions = newTicker.trim().length >= 2 ? suggestions : DEFAULT_SUGGESTIONS;
+  const displaySuggestions = (newTicker.trim().length >= 2 && Array.isArray(suggestions)) ? suggestions : DEFAULT_SUGGESTIONS;
 
   const handleAdd = async (ticker: string) => {
     let cleanTicker = ticker.trim().toUpperCase();
