@@ -213,9 +213,13 @@ export default function App() {
     };
 
     fetchHistory();
-    // Reset insight when active stock changes
-    setInsight(null);
   }, [token, activeTicker, chartRange]);
+
+  // Reset AI insight only when active stock ticker changes
+  useEffect(() => {
+    setInsight(null);
+    setInsightError(null);
+  }, [activeTicker]);
 
   // 4. WebSocket Live Price Streaming Subscription (graphql-transport-ws protocol)
   useEffect(() => {
