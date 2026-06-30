@@ -30,7 +30,12 @@ const TYPO_MAP: Record<string, string> = {
   "ADOBE": "ADBE",
   "SALESFORCE": "CRM",
   "COCA COLA": "KO",
-  "PEPSI": "PEP"
+  "PEPSI": "PEP",
+  "ADANI": "ADANIENT.NS",
+  "ADANI ENTERPRISES": "ADANIENT.NS",
+  "ADANIENT": "ADANIENT.NS",
+  "ADANIPORTS": "ADANIPORTS.NS",
+  "ADANIPOWER": "ADANIPOWER.NS"
 };
 
 // Popular global stock suggestions with full names for search helper
@@ -48,7 +53,10 @@ const POPULAR_SUGGESTIONS = [
   { symbol: "INFY", name: "Infosys Ltd" },
   { symbol: "AMD", name: "Advanced Micro Devices" },
   { symbol: "INTC", name: "Intel Corp." },
-  { symbol: "ADBE", name: "Adobe Inc." }
+  { symbol: "ADBE", name: "Adobe Inc." },
+  { symbol: "ADANIENT.NS", name: "Adani Enterprises" },
+  { symbol: "ADANIPORTS.NS", name: "Adani Ports" },
+  { symbol: "ADANIPOWER.NS", name: "Adani Power" }
 ];
 
 export default function WatchlistSidebar({

@@ -95,8 +95,16 @@ export default function StockChart({ activeTicker, chartData, chartRange, onRang
             </AreaChart>
           </ResponsiveContainer>
         ) : (
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
-            <span style={{ color: 'var(--text-secondary)' }}>Waiting for stock ticks from Redpanda...</span>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: '8px', padding: '20px', textAlign: 'center' }}>
+            <span style={{ color: 'var(--text-secondary)', fontSize: '13px', fontWeight: 600 }}>
+              {chartRange === '1d' 
+                ? `Waiting for live ${activeTicker} ticks from Redpanda...`
+                : `No historical data found for ${activeTicker}.`
+              }
+            </span>
+            <span style={{ color: 'var(--text-muted)', fontSize: '11px', maxWidth: '340px', lineHeight: '140%' }}>
+              Please verify if the ticker exists on Yahoo Finance (e.g., ADANIENT.NS for Adani Enterprises, GOOGL for Google).
+            </span>
           </div>
         )}
       </div>
