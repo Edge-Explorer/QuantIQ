@@ -267,15 +267,16 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
   };
 
   return (
-    <div className="relative min-h-screen w-full overflow-y-auto scroll-smooth bg-background text-foreground flex flex-col font-body">
+    <div className="relative min-h-screen w-full overflow-y-auto scroll-smooth text-foreground flex flex-col font-body" style={{ backgroundColor: '#06070d' }}>
       
-      {/* 1. Fullscreen Fixed Loop Background Video */}
+      {/* 1. Fullscreen Fixed Dark Fallback + Background Video */}
+      <div className="fixed inset-0 z-0 pointer-events-none" style={{ backgroundColor: '#06070d' }} />
       <video
         autoPlay
         loop
         muted
         playsInline
-        className="fixed inset-0 w-full h-full object-cover z-0 pointer-events-none"
+        className="fixed inset-0 w-full h-full object-cover z-[1] pointer-events-none"
       >
         <source
           src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260314_131748_f2ca2a28-fed7-44c8-b9a9-bd9acdd5ec31.mp4"
@@ -283,6 +284,8 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
         />
         Your browser does not support the video tag.
       </video>
+      {/* Dark overlay over video to ensure text is always readable */}
+      <div className="fixed inset-0 z-[2] pointer-events-none" style={{ background: 'rgba(6, 7, 13, 0.45)' }} />
 
       {/* 2. Glassmorphic Navigation Bar */}
       <header className="relative z-10 w-full backdrop-blur-[2px] border-b border-white/3">
