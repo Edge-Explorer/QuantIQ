@@ -316,3 +316,44 @@ async def upload_user_avatar(file: UploadFile= File(...), current_user: models.U
         raise HTTPException(status_code= 400, detail= str(ve))
     except Exception as e:
         raise HTTPException(status_code= 500, detail= f"Failed to upload avatar: {str(e)}")
+
+@router.get("/stocks/search")
+async def search_stocks(q: str):
+    """
+    Proxies Yahoo Finance's autocomplete API to suggest matching stock tickers.
+    """
+    if not q or len(q.strip()) < 2:
+        return []
+        
+    query = q.strip()
+    url = f"https://query1.finance.yahoo.com/v1/finance/search?q={query}&quotesCount=8&newsCount=0"
+    
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+    }
+    
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.get(url, headers=headers, timeout=5.0)
+            if response.status_code != 200:
+                return []
+            
+            data = response.json()
+            quotes = data.get("quotes", [])
+            
+            results = []
+            for quote in quotes:
+                symbol = quote.get("symbol")
+                quote_type = quote.get("quoteType")
+                name = quote.get("shortname") or quote.get("longname") or symbol
+                
+                # Filter to only return actual tradeable assets
+                if symbol and quote_type in ["EQUITY", "ETF", "CRYPTOCURRENCY", "INDEX"]:
+                    results.append({
+                        "symbol": symbol,
+                        "name": name
+                    })
+            return results
+        except Exception as e:
+            print(f"Error querying Yahoo Finance search API: {str(e)}")
+            return []
