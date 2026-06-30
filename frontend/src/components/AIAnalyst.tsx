@@ -1,5 +1,4 @@
-
-import { Sparkles } from 'lucide-react';
+import Logo from './Logo';
 
 interface AIInsight {
   ticker: string;
@@ -52,7 +51,7 @@ export default function AIAnalyst({
     <div className="glass-panel insight-panel">
       <div className="panel-title">
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Sparkles size={16} color="#a154ff" className="glow-violet" />
+          <Logo size={18} className="glow-cyan" />
           <span>QuantIQ AI Analyst</span>
         </div>
       </div>
