@@ -5,12 +5,15 @@ import StockChart from '../components/StockChart';
 import AIAnalyst from '../components/AIAnalyst';
 import PriceAlerts from '../components/PriceAlerts';
 import RechargeModal from '../components/RechargeModal';
+import TickerTape from '../components/TickerTape';
 
 interface DashboardProps {
   user: any;
   watchlist: string[];
+  watchlistQuotes: Record<string, { price: number; changePercent: number }>;
   activeTicker: string;
   chartData: any[];
+  activeStats: any;
   alerts: any[];
   insight: any;
   loadingInsight: boolean;
@@ -30,13 +33,16 @@ interface DashboardProps {
   onLogout: () => void;
   onLogoClick?: () => void;
   onAvatarUpload?: (newUrl: string) => void;
+  indices: any[];
 }
 
 export default function Dashboard({
   user,
   watchlist,
+  watchlistQuotes,
   activeTicker,
   chartData,
+  activeStats,
   alerts,
   insight,
   loadingInsight,
@@ -56,6 +62,7 @@ export default function Dashboard({
   onLogout,
   onLogoClick,
   onAvatarUpload,
+  indices,
 }: DashboardProps) {
   return (
     <div className="app-container animate-fade">
@@ -68,12 +75,16 @@ export default function Dashboard({
         onAvatarUpload={onAvatarUpload}
       />
 
+      {/* Scrolling Index Ticker Tape */}
+      <TickerTape indices={indices} />
+
       {/* Main Grid Content */}
       <main className="dashboard-grid">
         
         {/* Left Sidebar: Watchlist */}
         <WatchlistSidebar
           watchlist={watchlist}
+          watchlistQuotes={watchlistQuotes}
           activeTicker={activeTicker}
           onSelectTicker={onSelectTicker}
           onAddTicker={onAddTicker}
@@ -85,6 +96,7 @@ export default function Dashboard({
           <StockChart 
             activeTicker={activeTicker} 
             chartData={chartData} 
+            activeStats={activeStats}
             chartRange={chartRange}
             onRangeChange={onRangeChange}
           />
