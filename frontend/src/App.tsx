@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import LandingPage from './pages/LandingPage';
 import Dashboard from './pages/Dashboard';
+import UpgradePage from './pages/UpgradePage';
 import './App.css';
 
 // Declare global types for external scripts
@@ -44,7 +45,7 @@ export default function App() {
   // Auth State
   const [token, setToken] = useState<string | null>(localStorage.getItem('quantiq_jwt'));
   const [user, setUser] = useState<any>(null);
-  const [currentView, setCurrentView] = useState<'landing' | 'dashboard'>(localStorage.getItem('quantiq_jwt') ? 'dashboard' : 'landing');
+  const [currentView, setCurrentView] = useState<'landing' | 'dashboard' | 'upgrade'>(localStorage.getItem('quantiq_jwt') ? 'dashboard' : 'landing');
   
   // Dashboard Core State
   const [watchlist, setWatchlist] = useState<string[]>(['AAPL', 'TSLA', 'TCS.NS', 'RELIANCE.NS']);
@@ -62,8 +63,7 @@ export default function App() {
   const [loadingInsight, setLoadingInsight] = useState<boolean>(false);
   const [insightError, setInsightError] = useState<string | null>(null);
 
-  // Recharge Modal State
-  const [showRecharge, setShowRecharge] = useState<boolean>(false);
+
 
   // 1. Load external Razorpay Script on mount
   useEffect(() => {
@@ -439,7 +439,7 @@ export default function App() {
   // 8. Call QuantIQ AI Analyst Agent
   const triggerAIInsight = async () => {
     if (!user || (user.credits <= 0 && user.email !== 'karanshelar8775@gmail.com')) {
-      setShowRecharge(true);
+      setCurrentView('upgrade');
       return;
     }
 
@@ -508,7 +508,7 @@ export default function App() {
             }
           }, 2000);
           
-          setShowRecharge(false);
+          setCurrentView('dashboard');
         },
         prefill: {
           name: user.fullName || 'QuantIQ User',
@@ -540,6 +540,16 @@ export default function App() {
     );
   }
 
+  if (currentView === 'upgrade') {
+    return (
+      <UpgradePage
+        user={user}
+        onBack={() => setCurrentView('dashboard')}
+        onSelectPackage={handlePayment}
+      />
+    );
+  }
+
   return (
     <Dashboard
       user={user}
@@ -553,7 +563,6 @@ export default function App() {
       savedStrategies={savedStrategies}
       loadingInsight={loadingInsight}
       insightError={insightError}
-      showRecharge={showRecharge}
       chartRange={chartRange}
       onRangeChange={setChartRange}
       onSelectTicker={setActiveTicker}
@@ -562,9 +571,7 @@ export default function App() {
       onCreateAlert={handleCreateAlert}
       onDeactivateAlert={handleDeactivateAlert}
       onTriggerInsight={triggerAIInsight}
-      onCloseRecharge={() => setShowRecharge(false)}
-      onOpenRecharge={() => setShowRecharge(true)}
-      onSelectPackage={handlePayment}
+      onOpenRecharge={() => setCurrentView('upgrade')}
       onLogout={handleLogout}
       onLogoClick={() => setCurrentView('landing')}
       onAvatarUpload={(newUrl) => setUser((prev: any) => prev ? { ...prev, pictureUrl: newUrl } : null)}
