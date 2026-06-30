@@ -101,22 +101,6 @@ def get_authenticated_user(info: Info) -> models.User:
     return user
 
 
-# ==========================================
-# GRAPHQL QUERIES (Read Operations)
-# ==========================================
-
-@strawberry.type
-class Query:
-    @strawberry.field
-    async def me(self, info: Info) -> UserType:
-        """Fetch the authenticated user's profile and refresh credits if applicable."""
-        user = get_authenticated_user(info)
-        db = info.context["db"]
-        
-        # Check and apply credit refresh cycle
-        updated_user = await crud.refresh_user_credits(db, user)
-        return updated_user
-
 # In-memory cache for watchlist ticker quotes to optimize performance and prevent rate limiting
 _watchlist_quote_cache = {}
 
@@ -164,6 +148,23 @@ async def get_cached_ticker_quote(ticker: str) -> dict:
         "timestamp": now
     }
     return data
+
+
+# ==========================================
+# GRAPHQL QUERIES (Read Operations)
+# ==========================================
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    async def me(self, info: Info) -> UserType:
+        """Fetch the authenticated user's profile and refresh credits if applicable."""
+        user = get_authenticated_user(info)
+        db = info.context["db"]
+        
+        # Check and apply credit refresh cycle
+        updated_user = await crud.refresh_user_credits(db, user)
+        return updated_user
 
     @strawberry.field
     async def watchlist(self, info: Info) -> List[WatchlistType]:
