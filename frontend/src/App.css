@@ -1697,3 +1697,63 @@
 .modal-confirm-btn:active {
   transform: translateY(0);
 }
+
+/* Pricing & SaaS Plans Recharge Modal Styles */
+.pricing-modal-content {
+  background: rgba(10, 12, 22, 0.9) !important;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.7), inset 0 1px 1px rgba(255, 255, 255, 0.05) !important;
+}
+
+.pricing-card {
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.pricing-card:hover {
+  transform: translateY(-4px);
+  background: rgba(255, 255, 255, 0.04) !important;
+  border-color: rgba(255, 255, 255, 0.15) !important;
+}
+
+.pricing-card.hot-deal-card:hover {
+  background: rgba(161, 84, 255, 0.08) !important;
+  border-color: rgba(161, 84, 255, 0.5) !important;
+  box-shadow: 0 12px 40px rgba(161, 84, 255, 0.18) !important;
+}
+
+.pricing-card.lifetime-deal-card:hover {
+  background: rgba(0, 242, 254, 0.08) !important;
+  border-color: rgba(0, 242, 254, 0.7) !important;
+  box-shadow: 0 12px 40px rgba(0, 242, 254, 0.25) !important;
+}
+
+@keyframes pulse-cyan-glow {
+  0%, 100% {
+    border-color: rgba(0, 242, 254, 0.4);
+    box-shadow: 0 8px 32px rgba(0, 242, 254, 0.1);
+  }
+  50% {
+    border-color: rgba(0, 242, 254, 0.8);
+    box-shadow: 0 8px 40px rgba(0, 242, 254, 0.25);
+  }
+}
+
+.lifetime-deal-card {
+  animation: pulse-cyan-glow 3s infinite ease-in-out;
+}
+
+@keyframes slide-right-infinite {
+  0% {
+    opacity: 0.7;
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.03);
+  }
+  100% {
+    opacity: 0.7;
+  }
+}
+
+.offer-countdown {
+  animation: slide-right-infinite 2s infinite ease-in-out;
+}

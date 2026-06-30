@@ -126,6 +126,7 @@ export default function Dashboard({
       {/* Recharge Modal */}
       {showRecharge && (
         <RechargeModal 
+          user={user}
           onClose={onCloseRecharge} 
           onSelectPackage={onSelectPackage} 
         />
