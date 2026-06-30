@@ -9,6 +9,8 @@ interface WatchlistSidebarProps {
   onRemoveTicker: (ticker: string) => Promise<void>;
 }
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+
 // Typo mapping to automatically resolve company names to correct tickers
 const TYPO_MAP: Record<string, string> = {
   "GOOGLE": "GOOGL",
@@ -38,25 +40,15 @@ const TYPO_MAP: Record<string, string> = {
   "ADANIPOWER": "ADANIPOWER.NS"
 };
 
-// Popular global stock suggestions with full names for search helper
-const POPULAR_SUGGESTIONS = [
+// Popular default suggestions to show when search is empty
+const DEFAULT_SUGGESTIONS = [
   { symbol: "AAPL", name: "Apple Inc." },
   { symbol: "TSLA", name: "Tesla Inc." },
   { symbol: "META", name: "Meta Platforms" },
   { symbol: "GOOGL", name: "Alphabet (Google)" },
   { symbol: "MSFT", name: "Microsoft Corp." },
-  { symbol: "AMZN", name: "Amazon.com Inc." },
-  { symbol: "NVDA", name: "NVIDIA Corp." },
-  { symbol: "NFLX", name: "Netflix Inc." },
-  { symbol: "TCS.NS", name: "Tata Consultancy Services" },
-  { symbol: "RELIANCE.NS", name: "Reliance Industries" },
-  { symbol: "INFY", name: "Infosys Ltd" },
-  { symbol: "AMD", name: "Advanced Micro Devices" },
-  { symbol: "INTC", name: "Intel Corp." },
-  { symbol: "ADBE", name: "Adobe Inc." },
   { symbol: "ADANIENT.NS", name: "Adani Enterprises" },
-  { symbol: "ADANIPORTS.NS", name: "Adani Ports" },
-  { symbol: "ADANIPOWER.NS", name: "Adani Power" }
+  { symbol: "RELIANCE.NS", name: "Reliance Industries" }
 ];
 
 export default function WatchlistSidebar({
@@ -67,7 +59,9 @@ export default function WatchlistSidebar({
   onRemoveTicker,
 }: WatchlistSidebarProps) {
   const [newTicker, setNewTicker] = useState('');
+  const [suggestions, setSuggestions] = useState<{ symbol: string; name: string }[]>([]);
   const [showDropdown, setShowDropdown] = useState(false);
+  const [loading, setLoading] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Close dropdown on click outside
@@ -81,25 +75,40 @@ export default function WatchlistSidebar({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Filter popular suggestions dynamically
-  const getSuggestions = () => {
-    const inputClean = newTicker.trim().toUpperCase();
-    if (!inputClean) return [];
-    
-    return POPULAR_SUGGESTIONS.filter(item => {
-      const matchSymbol = item.symbol.toUpperCase().includes(inputClean);
-      const matchName = item.name.toUpperCase().includes(inputClean);
-      return matchSymbol || matchName;
-    });
-  };
+  // Debounced dynamic search from Yahoo Finance proxy API
+  useEffect(() => {
+    const query = newTicker.trim();
+    if (query.length < 2) {
+      setSuggestions([]);
+      return;
+    }
 
-  const activeSuggestions = getSuggestions();
+    const delayDebounce = setTimeout(async () => {
+      setLoading(true);
+      try {
+        const response = await fetch(`${API_URL}/api/v1/stocks/search?q=${encodeURIComponent(query)}`);
+        if (response.ok) {
+          const data = await response.json();
+          setSuggestions(data);
+        }
+      } catch (err) {
+        console.error('Error fetching stock suggestions:', err);
+      } finally {
+        setLoading(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(delayDebounce);
+  }, [newTicker]);
+
+  // Determine what suggestions to display
+  const displaySuggestions = newTicker.trim().length >= 2 ? suggestions : DEFAULT_SUGGESTIONS;
 
   const handleAdd = async (ticker: string) => {
     let cleanTicker = ticker.trim().toUpperCase();
     if (!cleanTicker) return;
 
-    // Auto-correct dictionary matching
+    // Apply auto-correct map if matched
     if (TYPO_MAP[cleanTicker]) {
       cleanTicker = TYPO_MAP[cleanTicker];
     }
@@ -151,9 +160,14 @@ export default function WatchlistSidebar({
           </button>
         </form>
 
-        {showDropdown && activeSuggestions.length > 0 && (
+        {showDropdown && displaySuggestions.length > 0 && (
           <div className="suggestions-dropdown">
-            {activeSuggestions.map((item) => (
+            {loading && (
+              <div style={{ padding: '8px 14px', fontSize: '11px', color: 'var(--text-muted)' }}>
+                Searching global markets...
+              </div>
+            )}
+            {displaySuggestions.map((item) => (
               <div 
                 key={item.symbol} 
                 className="suggestion-item"
