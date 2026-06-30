@@ -169,6 +169,10 @@ export default function AIAnalyst({
                   <div className="insight-reason-body">
                     {formatReason(insight.reason)}
                   </div>
+                  <div style={{ marginTop: '16px', paddingTop: '12px', borderTop: '1px solid rgba(255, 255, 255, 0.05)', fontSize: '11px', color: 'var(--text-muted)', display: 'flex', gap: '6px', lineHeight: '140%', textAlign: 'left' }}>
+                    <span style={{ color: 'var(--neon-cyan)', fontWeight: 600 }}>Disclaimer:</span>
+                    <span>QuantIQ AI is an automated strategy assistant and can make mistakes. All analysis is for informational purposes only and should not be considered financial advice. Please verify financial data independently.</span>
+                  </div>
                 </div>
               </div>
             )}
@@ -208,6 +212,10 @@ export default function AIAnalyst({
                     </div>
                     <div className="insight-reason-body">
                       {formatReason(selectedHistoryItem.reason)}
+                    </div>
+                    <div style={{ marginTop: '16px', paddingTop: '12px', borderTop: '1px solid rgba(255, 255, 255, 0.05)', fontSize: '11px', color: 'var(--text-muted)', display: 'flex', gap: '6px', lineHeight: '140%', textAlign: 'left' }}>
+                      <span style={{ color: 'var(--neon-cyan)', fontWeight: 600 }}>Disclaimer:</span>
+                      <span>QuantIQ AI is an automated strategy assistant and can make mistakes. All analysis is for informational purposes only and should not be considered financial advice. Please verify financial data independently.</span>
                     </div>
                   </div>
                 </div>
