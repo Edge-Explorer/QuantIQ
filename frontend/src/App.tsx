@@ -242,10 +242,12 @@ export default function App() {
 
     return () => {
       clearInterval(keepAliveInterval);
-      if (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING) {
-        ws.send(JSON.stringify({ id: 'stock-tick-sub', type: 'complete' }));
-        ws.close();
+      if (ws.readyState === WebSocket.OPEN) {
+        try {
+          ws.send(JSON.stringify({ id: 'stock-tick-sub', type: 'complete' }));
+        } catch (_) { /* ignore send errors on cleanup */ }
       }
+      ws.close();
     };
   }, [token, activeTicker]);
 

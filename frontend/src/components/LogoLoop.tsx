@@ -1,7 +1,8 @@
+import type { ReactNode } from 'react';
 import './LogoLoop.css';
 
 interface LogoItem {
-  node: React.ReactNode;
+  node: ReactNode;
   title?: string;
   href?: string;
 }
