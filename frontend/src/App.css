@@ -2,24 +2,6 @@
    QUANTIQ DASHBOARD — PREMIUM CSS SYSTEM
    ========================================== */
 
-/* ─── 0. CSS VARIABLES ─────────────────── */
-:root {
-  --neon-cyan:      #00f2fe;
-  --neon-violet:    #a154ff;
-  --bull-green:     #00e676;
-  --bear-red:       #ff1744;
-  --bg-space:       #06070d;
-  --bg-panel:       #0d101b;
-  --bg-card:        #111420;
-  --border-glass:   rgba(255, 255, 255, 0.07);
-  --border-glow:    rgba(0, 242, 254, 0.18);
-  --text-primary:   #f1f5f9;
-  --text-secondary: #94a3b8;
-  --text-muted:     #475569;
-  --font-mono:      'JetBrains Mono', 'Fira Code', monospace;
-  --font-display:   'Instrument Serif', serif;
-}
-
 /* ─── App Layout ────────────────────────── */
 .app-container {
   display: flex;
