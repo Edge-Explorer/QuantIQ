@@ -137,6 +137,9 @@ export default function WatchlistSidebar({
 
   const handleRemove = async (ticker: string, e: React.MouseEvent) => {
     e.stopPropagation(); // Avoid selecting as active ticker
+    const confirmDelete = window.confirm(`Are you sure you want to remove ${ticker} from your watchlist?`);
+    if (!confirmDelete) return;
+    
     try {
       await onRemoveTicker(ticker);
     } catch (err) {
