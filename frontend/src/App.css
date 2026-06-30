@@ -1631,3 +1631,69 @@
 .text-bear {
   color: var(--bear-red) !important;
 }
+
+/* Custom Modern Glassmorphic Modal */
+.custom-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(4, 6, 12, 0.7);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.custom-modal-content {
+  width: 400px;
+  max-width: 90%;
+  padding: 24px;
+  border-radius: 16px;
+  background: rgba(13, 16, 27, 0.85);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.1);
+  text-align: left;
+}
+
+.modal-cancel-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-glass);
+  color: var(--text-secondary);
+  padding: 8px 20px;
+  border-radius: 8px;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  outline: none;
+}
+
+.modal-cancel-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.modal-confirm-btn {
+  background: linear-gradient(135deg, #ff1744, #d50000);
+  border: none;
+  color: white;
+  padding: 8px 20px;
+  border-radius: 8px;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(255, 23, 68, 0.3);
+  transition: all 0.2s ease;
+  outline: none;
+}
+
+.modal-confirm-btn:hover {
+  box-shadow: 0 4px 25px rgba(255, 23, 68, 0.5);
+  transform: translateY(-1px);
+}
+
+.modal-confirm-btn:active {
+  transform: translateY(0);
+}
