@@ -433,8 +433,18 @@ class Mutation:
         if not order_id:
             order_id= f"order_rp_{uuid.uuid4().hex[:12]}"
             
-        # Determine credits based on ₹10 = 1 credit (₹100 = 10 credits package)
-        credits_credited= (amount // 10)
+        # Determine credits dynamically based on chosen package amount
+        if amount == 500:
+            credits_credited = 10
+        elif amount == 1500:
+            credits_credited = 50
+        elif amount == 2500:
+            credits_credited = 100
+        elif amount == 10500:
+            credits_credited = 999999  # Code for Unlimited / Lifetime
+        else:
+            credits_credited = amount // 50
+        
         
         # Log the pending transaction in Postgres
         await crud.create_payment_transaction(
