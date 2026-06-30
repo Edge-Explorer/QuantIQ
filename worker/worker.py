@@ -118,35 +118,41 @@ async def main():
             # Check if a new minute has started
             minute_changed = now.minute != last_minute
             
-            # Create a database session for candle aggregation
-            async with SessionLocal() as db:
-                from sqlalchemy import select
-                from backend.app.database.models import Watchlist 
-                result= await db.execute(select(Watchlist.ticker).distinct())
-                dynamic_tickers= [row[0] for row in result.fetchall()]
-                
-                for t in dynamic_tickers:
-                    if t not in aggregation_buffer:
-                        aggregation_buffer[t]= {"prices": [], "volumes": []}
-                
-                for ticker in dynamic_tickers:
-                    tick= await get_latest_stock_data(ticker)
+            try:
+                # Create a database session for candle aggregation
+                async with SessionLocal() as db:
+                    from sqlalchemy import select
+                    from backend.app.database.models import Watchlist 
+                    result= await db.execute(select(Watchlist.ticker).distinct())
+                    dynamic_tickers= [row[0] for row in result.fetchall()]
                     
-                    if tick:
-                        aggregation_buffer[ticker] ["prices"].append(tick["price"])
-                        aggregation_buffer[ticker] ["volumes"].append(tick["volume"])
+                    for t in dynamic_tickers:
+                        if t not in aggregation_buffer:
+                            aggregation_buffer[t]= {"prices": [], "volumes": []}
+                    
+                    for ticker in dynamic_tickers:
+                        tick= await get_latest_stock_data(ticker)
                         
-                        payload= {
-                            "ticker": ticker,
-                            "price": tick["price"],
-                            "volume": tick["volume"],
-                            "timestamp": tick["timestamp"].isoformat()
-                        }
-                        
-                        await producer.send(KAFKA_TOPIC, payload)
-                        print(f"Tick published: {ticker}= {tick['price']}")
-                    if minute_changed:
-                        await aggregate_and_save_candle(db, ticker, now)
+                        if tick:
+                            aggregation_buffer[ticker]["prices"].append(tick["price"])
+                            aggregation_buffer[ticker]["volumes"].append(tick["volume"])
+                            
+                            payload= {
+                                "ticker": ticker,
+                                "price": tick["price"],
+                                "volume": tick["volume"],
+                                "timestamp": tick["timestamp"].isoformat()
+                            }
+                            
+                            await producer.send(KAFKA_TOPIC, payload)
+                            print(f"Tick published: {ticker} = {tick['price']}")
+                        if minute_changed:
+                            await aggregate_and_save_candle(db, ticker, now)
+                
+                if minute_changed:
+                    last_minute = now.minute
+            except Exception as loop_err:
+                print(f"Error in poll cycle (database/network drop): {str(loop_err)}")
 
             # Sleep for 5 seconds (must run outside the loop and minute check)
             elapsed_time = asyncio.get_event_loop().time() - start_time
