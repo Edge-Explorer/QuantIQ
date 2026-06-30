@@ -48,10 +48,13 @@ export default function App() {
   
   // Dashboard Core State
   const [watchlist, setWatchlist] = useState<string[]>(['AAPL', 'TSLA', 'TCS.NS', 'RELIANCE.NS']);
+  const [watchlistQuotes, setWatchlistQuotes] = useState<Record<string, { price: number; changePercent: number }>>({});
   const [activeTicker, setActiveTicker] = useState<string>('AAPL');
   const [chartData, setChartData] = useState<any[]>([]);
+  const [activeStats, setActiveStats] = useState<any>(null);
   const [alerts, setAlerts] = useState<any[]>([]);
   const [chartRange, setChartRange] = useState<string>('1d');
+  const [indices, setIndices] = useState<any[]>([]);
   
   // AI Insights State
   const [insight, setInsight] = useState<any>(null);
@@ -99,12 +102,23 @@ export default function App() {
           query {
             watchlist {
               ticker
+              price
+              changePercent
             }
           }
         `);
         if (watchlistData.watchlist.length > 0) {
           const tickers = watchlistData.watchlist.map((w: any) => w.ticker);
           setWatchlist(tickers);
+          
+          const quotes: Record<string, { price: number; changePercent: number }> = {};
+          watchlistData.watchlist.forEach((w: any) => {
+            if (w.price !== null && w.price !== undefined) {
+              quotes[w.ticker] = { price: w.price, changePercent: w.changePercent || 0.0 };
+            }
+          });
+          setWatchlistQuotes(quotes);
+          
           // Default to the first watchlisted item
           setActiveTicker(tickers[0]);
         }
@@ -142,12 +156,40 @@ export default function App() {
           query GetHistory($ticker: String!, $range: String!) {
             stockHistory(ticker: $ticker, range: $range) {
               timestamp
+              open
+              high
+              low
               close
+              volume
             }
           }
         `, { ticker: activeTicker, range: chartRange });
         
-        const formatted = historyData.stockHistory.map((h: any) => {
+        const history = historyData.stockHistory || [];
+        if (history.length > 0) {
+          const prices = history.map((h: any) => h.close);
+          const high = Math.max(...prices);
+          const low = Math.min(...prices);
+          const open = history[0].open || prices[0];
+          const close = history[history.length - 1].close;
+          const volume = history.reduce((sum: number, h: any) => sum + (h.volume || 0), 0);
+          const change = close - open;
+          const changePercent = (change / open) * 100;
+          
+          setActiveStats({
+            open,
+            high,
+            low,
+            close,
+            volume,
+            change,
+            changePercent
+          });
+        } else {
+          setActiveStats(null);
+        }
+
+        const formatted = history.map((h: any) => {
           const dateObj = new Date(h.timestamp);
           let timeLabel = '';
           if (chartRange === '1d') {
@@ -250,6 +292,25 @@ export default function App() {
       ws.close();
     };
   }, [token, activeTicker]);
+
+  // 4b. Fetch global indices and poll every 60s
+  useEffect(() => {
+    const fetchIndices = async () => {
+      try {
+        const response = await fetch(`${API_URL}/api/v1/stocks/indices`);
+        if (response.ok) {
+          const data = await response.json();
+          setIndices(data);
+        }
+      } catch (err) {
+        console.error('Failed to fetch global indices:', err);
+      }
+    };
+    
+    fetchIndices();
+    const interval = setInterval(fetchIndices, 60000);
+    return () => clearInterval(interval);
+  }, []);
 
   // 5. Handle Authentication Callbacks (Google Sign-In response)
   const handleAuthSuccess = (accessToken: string) => {
@@ -455,8 +516,10 @@ export default function App() {
     <Dashboard
       user={user}
       watchlist={watchlist}
+      watchlistQuotes={watchlistQuotes}
       activeTicker={activeTicker}
       chartData={chartData}
+      activeStats={activeStats}
       alerts={alerts}
       insight={insight}
       loadingInsight={loadingInsight}
@@ -476,6 +539,7 @@ export default function App() {
       onLogout={handleLogout}
       onLogoClick={() => setCurrentView('landing')}
       onAvatarUpload={(newUrl) => setUser((prev: any) => prev ? { ...prev, pictureUrl: newUrl } : null)}
+      indices={indices}
     />
   );
 }

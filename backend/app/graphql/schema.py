@@ -36,6 +36,8 @@ class WatchlistType:
     user_id: uuid.UUID
     ticker: str
     created_at: datetime.datetime
+    price: Optional[float] = None
+    change_percent: Optional[float] = None
 
 @strawberry.type
 class AlertType:
@@ -115,12 +117,81 @@ class Query:
         updated_user = await crud.refresh_user_credits(db, user)
         return updated_user
 
+# In-memory cache for watchlist ticker quotes to optimize performance and prevent rate limiting
+_watchlist_quote_cache = {}
+
+async def get_cached_ticker_quote(ticker: str) -> dict:
+    global _watchlist_quote_cache
+    now = datetime.datetime.now(datetime.timezone.utc)
+    
+    if ticker in _watchlist_quote_cache:
+        cached = _watchlist_quote_cache[ticker]
+        if now - cached["timestamp"] < datetime.timedelta(seconds=60):
+            return cached["data"]
+            
+    # Fetch quote from yfinance
+    price = 0.0
+    change_percent = 0.0
+    try:
+        import yfinance as yf
+        import asyncio
+        loop = asyncio.get_event_loop()
+        yf_ticker = yf.Ticker(ticker)
+        df = await loop.run_in_executor(
+            None,
+            lambda: yf_ticker.history(period="2d")
+        )
+        if not df.empty and "Close" in df.columns:
+            close_series = df["Close"].dropna()
+            open_series = df["Open"].dropna()
+            
+            if len(close_series) >= 2:
+                curr = float(close_series.iloc[-1])
+                prev = float(close_series.iloc[-2])
+                price = curr
+                change_percent = ((curr - prev) / prev) * 100
+            elif len(close_series) == 1:
+                curr = float(close_series.iloc[-1])
+                op = float(open_series.iloc[-1]) if not open_series.empty else curr
+                price = curr
+                change_percent = ((curr - op) / op) * 100 if op != 0 else 0.0
+    except Exception as e:
+        print(f"Error fetching quote for watchlist ticker {ticker}: {e}")
+        
+    data = {"price": round(price, 2), "change_percent": round(change_percent, 2)}
+    _watchlist_quote_cache[ticker] = {
+        "data": data,
+        "timestamp": now
+    }
+    return data
+
     @strawberry.field
     async def watchlist(self, info: Info) -> List[WatchlistType]:
-        """Fetch the authenticated user's watchlist."""
+        """Fetch the authenticated user's watchlist, enriched with live prices and 24h changes."""
         user = get_authenticated_user(info)
         db = info.context["db"]
-        return await crud.get_user_watchlist(db, user.id)
+        items = await crud.get_user_watchlist(db, user.id)
+        
+        if not items:
+            return []
+            
+        # Fetch live quotes for all watchlist items in parallel
+        tasks = [get_cached_ticker_quote(item.ticker) for item in items]
+        quotes = await asyncio.gather(*tasks)
+        
+        watchlist_items = []
+        for item, quote in zip(items, quotes):
+            watchlist_items.append(
+                WatchlistType(
+                    id=item.id,
+                    user_id=item.user_id,
+                    ticker=item.ticker,
+                    created_at=item.created_at,
+                    price=quote["price"],
+                    change_percent=quote["change_percent"]
+                )
+            )
+        return watchlist_items
 
     @strawberry.field
     async def alerts(self, info: Info) -> List[AlertType]:

@@ -3,6 +3,7 @@ import { Plus, Trash, Activity } from 'lucide-react';
 
 interface WatchlistSidebarProps {
   watchlist: string[];
+  watchlistQuotes: Record<string, { price: number; changePercent: number }>;
   activeTicker: string;
   onSelectTicker: (ticker: string) => void;
   onAddTicker: (ticker: string) => Promise<void>;
@@ -53,6 +54,7 @@ const DEFAULT_SUGGESTIONS = [
 
 export default function WatchlistSidebar({
   watchlist,
+  watchlistQuotes,
   activeTicker,
   onSelectTicker,
   onAddTicker,
@@ -188,22 +190,33 @@ export default function WatchlistSidebar({
       </div>
 
       <div className="watchlist-items">
-        {watchlist.map((ticker) => (
-          <div 
-            key={ticker}
-            className={`watchlist-item ${activeTicker === ticker ? 'active' : ''}`}
-            onClick={() => onSelectTicker(ticker)}
-          >
-            <span className="ticker-symbol">{ticker}</span>
-            <button 
-              className="delete-ticker-btn"
-              onClick={(e) => handleRemove(ticker, e)}
-              aria-label={`Remove ${ticker} from watchlist`}
+        {watchlist.map((ticker) => {
+          const quote = watchlistQuotes ? watchlistQuotes[ticker] : null;
+          const isPositive = quote ? quote.changePercent >= 0 : true;
+          return (
+            <div 
+              key={ticker}
+              className={`watchlist-item ${activeTicker === ticker ? 'active' : ''}`}
+              onClick={() => onSelectTicker(ticker)}
             >
-              <Trash size={14} />
-            </button>
-          </div>
-        ))}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'flex-start' }}>
+                <span className="ticker-symbol">{ticker}</span>
+                {quote && (
+                  <span className={`ticker-quote-badge ${isPositive ? 'text-bull' : 'text-bear'}`} style={{ fontSize: '11px', fontWeight: 500 }}>
+                    ${quote.price.toFixed(2)} ({isPositive ? '+' : ''}{quote.changePercent.toFixed(2)}%)
+                  </span>
+                )}
+              </div>
+              <button 
+                className="delete-ticker-btn"
+                onClick={(e) => handleRemove(ticker, e)}
+                aria-label={`Remove ${ticker} from watchlist`}
+              >
+                <Trash size={14} />
+              </button>
+            </div>
+          );
+        })}
       </div>
     </section>
   );

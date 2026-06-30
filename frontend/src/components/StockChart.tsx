@@ -9,11 +9,12 @@ interface ChartDataPoint {
 interface StockChartProps {
   activeTicker: string;
   chartData: ChartDataPoint[];
+  activeStats: any;
   chartRange: string;
   onRangeChange: (range: string) => void;
 }
 
-export default function StockChart({ activeTicker, chartData, chartRange, onRangeChange }: StockChartProps) {
+export default function StockChart({ activeTicker, chartData, activeStats, chartRange, onRangeChange }: StockChartProps) {
   const currentPrice = chartData.length > 0 ? chartData[chartData.length - 1].price : null;
 
   const ranges = [
@@ -53,6 +54,39 @@ export default function StockChart({ activeTicker, chartData, chartRange, onRang
           ))}
         </div>
       </div>
+
+      {activeStats && (
+        <div className="stock-metrics-grid">
+          <div className="metric-item">
+            <span className="metric-label">Open</span>
+            <span className="metric-value">${activeStats.open.toFixed(2)}</span>
+          </div>
+          <div className="metric-item">
+            <span className="metric-label">High</span>
+            <span className="metric-value">${activeStats.high.toFixed(2)}</span>
+          </div>
+          <div className="metric-item">
+            <span className="metric-label">Low</span>
+            <span className="metric-value">${activeStats.low.toFixed(2)}</span>
+          </div>
+          <div className="metric-item">
+            <span className="metric-label">Volume</span>
+            <span className="metric-value">{activeStats.volume.toLocaleString()}</span>
+          </div>
+          <div className="metric-item">
+            <span className="metric-label">Change</span>
+            <span className={`metric-value ${activeStats.change >= 0 ? 'text-bull' : 'text-bear'}`}>
+              ${activeStats.change.toFixed(2)}
+            </span>
+          </div>
+          <div className="metric-item">
+            <span className="metric-label">Range Change %</span>
+            <span className={`metric-value ${activeStats.changePercent >= 0 ? 'text-bull' : 'text-bear'}`}>
+              {activeStats.changePercent >= 0 ? '+' : ''}{activeStats.changePercent.toFixed(2)}%
+            </span>
+          </div>
+        </div>
+      )}
 
       <div className="chart-container">
         {chartData.length > 0 ? (
