@@ -51,6 +51,7 @@ export default function App() {
   const [activeTicker, setActiveTicker] = useState<string>('AAPL');
   const [chartData, setChartData] = useState<any[]>([]);
   const [alerts, setAlerts] = useState<any[]>([]);
+  const [chartRange, setChartRange] = useState<string>('1d');
   
   // AI Insights State
   const [insight, setInsight] = useState<any>(null);
@@ -138,18 +139,31 @@ export default function App() {
     const fetchHistory = async () => {
       try {
         const historyData = await graphqlRequest(`
-          query GetHistory($ticker: String!) {
-            stockHistory(ticker: $ticker, limit: 30) {
+          query GetHistory($ticker: String!, $range: String!) {
+            stockHistory(ticker: $ticker, range: $range) {
               timestamp
               close
             }
           }
-        `, { ticker: activeTicker });
+        `, { ticker: activeTicker, range: chartRange });
         
-        const formatted = historyData.stockHistory.map((h: any) => ({
-          time: new Date(h.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          price: parseFloat(h.close.toFixed(2)),
-        }));
+        const formatted = historyData.stockHistory.map((h: any) => {
+          const dateObj = new Date(h.timestamp);
+          let timeLabel = '';
+          if (chartRange === '1d') {
+            timeLabel = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          } else if (chartRange === '5d') {
+            timeLabel = dateObj.toLocaleDateString([], { month: 'short', day: 'numeric' }) + ' ' + dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          } else if (chartRange === '1y' || chartRange === '5y' || chartRange === 'max') {
+            timeLabel = dateObj.toLocaleDateString([], { year: '2-digit', month: 'short' });
+          } else {
+            timeLabel = dateObj.toLocaleDateString([], { month: 'short', day: 'numeric' });
+          }
+          return {
+            time: timeLabel,
+            price: parseFloat(h.close.toFixed(2)),
+          };
+        });
         setChartData(formatted);
       } catch (err) {
         console.error('Failed to load stock history', err);
@@ -159,7 +173,7 @@ export default function App() {
     fetchHistory();
     // Reset insight when active stock changes
     setInsight(null);
-  }, [token, activeTicker]);
+  }, [token, activeTicker, chartRange]);
 
   // 4. WebSocket Live Price Streaming Subscription (graphql-transport-ws protocol)
   useEffect(() => {
@@ -446,6 +460,8 @@ export default function App() {
       loadingInsight={loadingInsight}
       insightError={insightError}
       showRecharge={showRecharge}
+      chartRange={chartRange}
+      onRangeChange={setChartRange}
       onSelectTicker={setActiveTicker}
       onAddTicker={handleAddWatchlist}
       onRemoveTicker={handleRemoveWatchlist}

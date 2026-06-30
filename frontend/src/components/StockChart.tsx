@@ -9,10 +9,23 @@ interface ChartDataPoint {
 interface StockChartProps {
   activeTicker: string;
   chartData: ChartDataPoint[];
+  chartRange: string;
+  onRangeChange: (range: string) => void;
 }
 
-export default function StockChart({ activeTicker, chartData }: StockChartProps) {
+export default function StockChart({ activeTicker, chartData, chartRange, onRangeChange }: StockChartProps) {
   const currentPrice = chartData.length > 0 ? chartData[chartData.length - 1].price : null;
+
+  const ranges = [
+    { label: '1D', value: '1d' },
+    { label: '5D', value: '5d' },
+    { label: '1M', value: '1m' },
+    { label: '6M', value: '6m' },
+    { label: 'YTD', value: 'ytd' },
+    { label: '1Y', value: '1y' },
+    { label: '5Y', value: '5y' },
+    { label: 'MAX', value: 'max' }
+  ];
 
   return (
     <div className="glass-panel chart-panel">
@@ -26,6 +39,18 @@ export default function StockChart({ activeTicker, chartData }: StockChartProps)
             <span className="live-dot"></span>
             <span>Live</span>
           </div>
+        </div>
+
+        <div className="chart-range-selector">
+          {ranges.map((r) => (
+            <button
+              key={r.value}
+              className={`range-btn ${chartRange === r.value ? 'active' : ''}`}
+              onClick={() => onRangeChange(r.value)}
+            >
+              {r.label}
+            </button>
+          ))}
         </div>
       </div>
 
