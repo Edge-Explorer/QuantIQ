@@ -16,6 +16,8 @@ interface DashboardProps {
   loadingInsight: boolean;
   insightError: string | null;
   showRecharge: boolean;
+  chartRange: string;
+  onRangeChange: (range: string) => void;
   onSelectTicker: (ticker: string) => void;
   onAddTicker: (ticker: string) => Promise<void>;
   onRemoveTicker: (ticker: string) => Promise<void>;
@@ -40,6 +42,8 @@ export default function Dashboard({
   loadingInsight,
   insightError,
   showRecharge,
+  chartRange,
+  onRangeChange,
   onSelectTicker,
   onAddTicker,
   onRemoveTicker,
@@ -81,6 +85,8 @@ export default function Dashboard({
           <StockChart 
             activeTicker={activeTicker} 
             chartData={chartData} 
+            chartRange={chartRange}
+            onRangeChange={onRangeChange}
           />
           <AIAnalyst
             activeTicker={activeTicker}
