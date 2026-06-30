@@ -64,6 +64,7 @@ export default function WatchlistSidebar({
   const [suggestions, setSuggestions] = useState<{ symbol: string; name: string }[]>([]);
   const [showDropdown, setShowDropdown] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [tickerToDelete, setTickerToDelete] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Close dropdown on click outside
@@ -137,14 +138,7 @@ export default function WatchlistSidebar({
 
   const handleRemove = async (ticker: string, e: React.MouseEvent) => {
     e.stopPropagation(); // Avoid selecting as active ticker
-    const confirmDelete = window.confirm(`Are you sure you want to remove ${ticker} from your watchlist?`);
-    if (!confirmDelete) return;
-    
-    try {
-      await onRemoveTicker(ticker);
-    } catch (err) {
-      console.error('Error removing ticker:', err);
-    }
+    setTickerToDelete(ticker);
   };
 
   return (
@@ -221,6 +215,41 @@ export default function WatchlistSidebar({
           );
         })}
       </div>
+
+      {tickerToDelete && (
+        <div className="custom-modal-overlay">
+          <div className="custom-modal-content glass-panel liquid-glass animate-fade-rise" style={{ border: '1px solid rgba(255, 23, 68, 0.3)' }}>
+            <h3 style={{ fontSize: '18px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '12px' }}>
+              Confirm Deletion
+            </h3>
+            <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '24px', lineHeight: '150%' }}>
+              Are you sure you want to remove <strong style={{ color: 'var(--neon-cyan)' }}>{tickerToDelete}</strong> from your watchlist?
+            </p>
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+              <button 
+                onClick={() => setTickerToDelete(null)}
+                className="modal-cancel-btn"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={async () => {
+                  const ticker = tickerToDelete;
+                  setTickerToDelete(null);
+                  try {
+                    await onRemoveTicker(ticker);
+                  } catch (err) {
+                    console.error('Error removing ticker:', err);
+                  }
+                }}
+                className="modal-confirm-btn"
+              >
+                Remove
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 }
