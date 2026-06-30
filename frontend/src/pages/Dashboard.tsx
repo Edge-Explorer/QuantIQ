@@ -16,6 +16,7 @@ interface DashboardProps {
   activeStats: any;
   alerts: any[];
   insight: any;
+  savedStrategies: any[];
   loadingInsight: boolean;
   insightError: string | null;
   showRecharge: boolean;
@@ -45,6 +46,7 @@ export default function Dashboard({
   activeStats,
   alerts,
   insight,
+  savedStrategies,
   loadingInsight,
   insightError,
   showRecharge,
@@ -103,6 +105,7 @@ export default function Dashboard({
           <AIAnalyst
             activeTicker={activeTicker}
             insight={insight}
+            savedStrategies={savedStrategies}
             loadingInsight={loadingInsight}
             insightError={insightError}
             onTriggerInsight={onTriggerInsight}

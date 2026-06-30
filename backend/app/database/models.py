@@ -31,6 +31,7 @@ class User(Base):
     watchlists: Mapped[List["Watchlist"]] = relationship(back_populates="user", cascade="all, delete-orphan")
     alerts: Mapped[List["Alert"]] = relationship(back_populates="user", cascade="all, delete-orphan")
     transactions: Mapped[List["PaymentTransaction"]] = relationship(back_populates="user", cascade="all, delete-orphan")
+    saved_strategies: Mapped[List["SavedStrategy"]] = relationship(back_populates="user", cascade="all, delete-orphan")
 
 
 class PaymentTransaction(Base):
@@ -110,4 +111,22 @@ class StockHistory(Base):
     __table_args__ = (
         UniqueConstraint("ticker", "timestamp", name="uq_ticker_timestamp"),
     )
+
+
+class SavedStrategy(Base):
+    __tablename__ = "saved_strategies"
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    ticker: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
+    bullish_probability: Mapped[int] = mapped_column(Integer, nullable=False)
+    reason: Mapped[str] = mapped_column(String(5000), nullable=False)
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime(timezone=True), 
+        server_default=func.now(), 
+        nullable=False
+    )
+
+    # Relationship
+    user: Mapped["User"] = relationship(back_populates="saved_strategies")
     

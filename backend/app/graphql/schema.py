@@ -81,6 +81,14 @@ class GeminiInsightType:
     credits_remaining: int
 
 @strawberry.type
+class SavedStrategyType:
+    id: uuid.UUID
+    ticker: str
+    bullish_probability: int
+    reason: str
+    created_at: datetime.datetime
+
+@strawberry.type
 class AuthTokenType:
     access_token: str
     token_type: str = "bearer"
@@ -200,6 +208,22 @@ class Query:
         user = get_authenticated_user(info)
         db = info.context["db"]
         return await crud.get_user_alerts(db, user.id)
+
+    @strawberry.field
+    async def saved_strategies(self, info: Info) -> List[SavedStrategyType]:
+        """Fetch the authenticated user's saved strategy reports history."""
+        user = get_authenticated_user(info)
+        db = info.context["db"]
+        strategies = await crud.get_user_saved_strategies(db, user.id)
+        return [
+            SavedStrategyType(
+                id=s.id,
+                ticker=s.ticker,
+                bullish_probability=s.bullish_probability,
+                reason=s.reason,
+                created_at=s.created_at
+            ) for s in strategies
+        ]
 
     @strawberry.field
     async def stock_history(self, info: Info, ticker: str, range: str = "1d") -> List[StockHistoryType]:
@@ -445,6 +469,18 @@ class Mutation:
         )
         insight_data = await gemini.run_agent_chat(db, user.id, prompt)
         
+        # 3. Auto-save the generated strategy in the database
+        try:
+            await crud.create_saved_strategy(
+                db=db,
+                user_id=user.id,
+                ticker=ticker.upper(),
+                bullish_probability=insight_data["bullish_probability"],
+                reason=insight_data["reason"]
+            )
+        except Exception as save_err:
+            print(f"Error auto-saving strategy to database: {save_err}")
+            
         # Refresh the user object to get the updated credit balance
         await db.refresh(user)
         

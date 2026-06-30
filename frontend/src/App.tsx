@@ -58,6 +58,7 @@ export default function App() {
   
   // AI Insights State
   const [insight, setInsight] = useState<any>(null);
+  const [savedStrategies, setSavedStrategies] = useState<any[]>([]);
   const [loadingInsight, setLoadingInsight] = useState<boolean>(false);
   const [insightError, setInsightError] = useState<string | null>(null);
 
@@ -76,6 +77,26 @@ export default function App() {
       document.body.removeChild(rzpScript);
     };
   }, []);
+
+  const fetchStrategyHistory = async () => {
+    if (!token) return;
+    try {
+      const data = await graphqlRequest(`
+        query {
+          savedStrategies {
+            id
+            ticker
+            bullishProbability
+            reason
+            createdAt
+          }
+        }
+      `);
+      setSavedStrategies(data.savedStrategies || []);
+    } catch (err) {
+      console.error('Failed to load strategy history', err);
+    }
+  };
 
   // 2. Fetch user profile, watchlist, alerts, and historical data once logged in
   useEffect(() => {
@@ -136,6 +157,7 @@ export default function App() {
           }
         `);
         setAlerts(alertsData.alerts);
+        await fetchStrategyHistory();
       } catch (err) {
         console.error('Failed to load profile / user data', err);
         // If unauthorized or token expired, log out
@@ -438,6 +460,7 @@ export default function App() {
 
       setInsight(insightData.getAiInsight);
       setUser({ ...user, credits: insightData.getAiInsight.creditsRemaining });
+      await fetchStrategyHistory();
     } catch (err: any) {
       console.error('QuantIQ AI Analyst Agent loop error:', err);
       setInsightError(err.message || 'Error compiling strategy.');
@@ -526,6 +549,7 @@ export default function App() {
       activeStats={activeStats}
       alerts={alerts}
       insight={insight}
+      savedStrategies={savedStrategies}
       loadingInsight={loadingInsight}
       insightError={insightError}
       showRecharge={showRecharge}

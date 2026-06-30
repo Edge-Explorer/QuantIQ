@@ -243,3 +243,25 @@ async def capture_payment_transaction(
     await db.commit()
     await db.refresh(tx)
     return tx
+
+async def create_saved_strategy(
+    db: AsyncSession, user_id: uuid.UUID, ticker: str, bullish_probability: int, reason: str
+) -> models.SavedStrategy:
+    db_strategy = models.SavedStrategy(
+        user_id=user_id,
+        ticker=ticker.upper(),
+        bullish_probability=bullish_probability,
+        reason=reason
+    )
+    db.add(db_strategy)
+    await db.commit()
+    await db.refresh(db_strategy)
+    return db_strategy
+
+async def get_user_saved_strategies(db: AsyncSession, user_id: uuid.UUID) -> List[models.SavedStrategy]:
+    result = await db.execute(
+        select(models.SavedStrategy)
+        .where(models.SavedStrategy.user_id == user_id)
+        .order_by(models.SavedStrategy.created_at.desc())
+    )
+    return list(result.scalars().all())
