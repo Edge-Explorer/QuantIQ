@@ -1757,3 +1757,41 @@
 .offer-countdown {
   animation: slide-right-infinite 2s infinite ease-in-out;
 }
+
+/* Full Page Upgrade Pricing Styles */
+.upgrade-page-container {
+  animation: fadeIn 0.4s ease-out;
+}
+
+.back-dashboard-btn:hover {
+  background: rgba(255, 255, 255, 0.06) !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
+  color: var(--neon-cyan) !important;
+}
+
+.pricing-full-card {
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.pricing-full-card:hover {
+  transform: translateY(-6px);
+  background: rgba(255, 255, 255, 0.04) !important;
+  border-color: rgba(255, 255, 255, 0.15) !important;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4) !important;
+}
+
+.pricing-full-card.hot-deal-card:hover {
+  background: rgba(161, 84, 255, 0.08) !important;
+  border-color: rgba(161, 84, 255, 0.6) !important;
+  box-shadow: 0 20px 50px rgba(161, 84, 255, 0.25) !important;
+}
+
+.pricing-full-card.lifetime-deal-card:hover {
+  background: rgba(0, 242, 254, 0.08) !important;
+  border-color: rgba(0, 242, 254, 0.8) !important;
+  box-shadow: 0 20px 50px rgba(0, 242, 254, 0.3) !important;
+}
+
+.pricing-full-card.lifetime-deal-card {
+  animation: pulse-cyan-glow 3s infinite ease-in-out;
+}
