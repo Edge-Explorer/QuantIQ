@@ -49,9 +49,9 @@ export default function App() {
   const [currentView, setCurrentView] = useState<'landing' | 'dashboard' | 'upgrade'>(localStorage.getItem('quantiq_jwt') ? 'dashboard' : 'landing');
   
   // Dashboard Core State
-  const [watchlist, setWatchlist] = useState<string[]>(['AAPL', 'TSLA', 'TCS.NS', 'RELIANCE.NS']);
+  const [watchlist, setWatchlist] = useState<string[]>([]);
   const [watchlistQuotes, setWatchlistQuotes] = useState<Record<string, { price: number; changePercent: number }>>({});
-  const [activeTicker, setActiveTicker] = useState<string>('AAPL');
+  const [activeTicker, setActiveTicker] = useState<string>('');
   const [chartData, setChartData] = useState<any[]>([]);
   const [activeStats, setActiveStats] = useState<any>(null);
   const [alerts, setAlerts] = useState<any[]>([]);
@@ -144,7 +144,7 @@ export default function App() {
             }
           }
         `);
-        if (watchlistData.watchlist.length > 0) {
+        if (watchlistData && watchlistData.watchlist) {
           const tickers = watchlistData.watchlist.map((w: any) => w.ticker);
           setWatchlist(tickers);
           
@@ -156,8 +156,12 @@ export default function App() {
           });
           setWatchlistQuotes(quotes);
           
-          // Default to the first watchlisted item
-          setActiveTicker(tickers[0]);
+          if (tickers.length > 0) {
+            // Default to the first watchlisted item
+            setActiveTicker(tickers[0]);
+          } else {
+            setActiveTicker('');
+          }
         }
 
         // Fetch alerts
