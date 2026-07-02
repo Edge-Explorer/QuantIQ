@@ -260,13 +260,13 @@ export default function StockChart({ activeTicker, chartData, activeStats, chart
     zIndex: 9999,
     background: 'rgba(9, 11, 20, 0.98)',
     backdropFilter: 'blur(24px)',
-    padding: '30px 40px',
+    padding: '20px 24px',
     boxSizing: 'border-box',
     display: 'flex',
     flexDirection: 'column',
     borderRadius: 0,
     border: 'none',
-    overflowY: 'auto'
+    overflow: 'hidden'
   } : {};
 
   return (
@@ -406,9 +406,21 @@ export default function StockChart({ activeTicker, chartData, activeStats, chart
       </div>
 
       {/* Main Chart Area */}
-      <div className="chart-container" style={{ position: 'relative', display: 'flex', flexDirection: 'column', gap: '16px', padding: '16px 16px 0', height: isMaximized ? 'calc(100vh - 280px)' : '340px' }}>
+      <div className="chart-container" style={{ 
+        position: 'relative', 
+        display: 'flex', 
+        flexDirection: 'column', 
+        gap: isMaximized ? '24px' : '16px', 
+        padding: '16px 16px 0', 
+        height: isMaximized ? 'calc(100vh - 200px)' : '340px' 
+      }}>
         {processedData.length > 0 ? (
-          <div style={{ height: showRSI ? 'calc(100% - 120px)' : '100%', width: '100%' }}>
+          <div style={{ 
+            height: showRSI 
+              ? (isMaximized ? '74%' : 'calc(100% - 110px)') 
+              : '100%', 
+            width: '100%' 
+          }}>
             <ResponsiveContainer width="100%" height="100%">
               <ComposedChart data={processedData} margin={{ top: 10, right: 5, left: 20, bottom: 25 }}>
                 <defs>
@@ -494,7 +506,7 @@ export default function StockChart({ activeTicker, chartData, activeStats, chart
 
         {/* Technical Indicator panel: RSI 14 (Auxiliary Chart below main price chart) */}
         {showRSI && rsiData.length > 0 && (
-          <div style={{ height: '100px', width: '100%', borderTop: '1px dashed var(--border-glass)', paddingTop: '10px' }}>
+          <div style={{ height: isMaximized ? '22%' : '100px', width: '100%', borderTop: '1px dashed var(--border-glass)', paddingTop: '10px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--text-secondary)', marginBottom: '4px', paddingLeft: '10px' }}>
               <span style={{ fontWeight: 700, color: 'var(--neon-cyan)' }}>RSI (14)</span>
               <span style={{ color: 'var(--text-muted)' }}>Overbought &gt;70 | Oversold &lt;30</span>
