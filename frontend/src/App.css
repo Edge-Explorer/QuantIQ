@@ -1944,13 +1944,24 @@
   background: rgba(255, 255, 255, 0.2) !important;
 }
 
-/* Hide number input spin buttons (up/down arrows) globally for clean styling */
+/* Style number input spin buttons (up/down arrows) to fit premium dark theme */
 input::-webkit-outer-spin-button,
 input::-webkit-inner-spin-button {
-  -webkit-appearance: none !important;
-  margin: 0 !important;
+  -webkit-appearance: inner-spin-button !important;
+  display: block !important;
+  filter: invert(1) brightness(0.85) !important;
+  opacity: 0.6 !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  background: transparent !important;
+}
+
+input::-webkit-outer-spin-button:hover,
+input::-webkit-inner-spin-button:hover {
+  opacity: 1 !important;
+  filter: invert(1) brightness(1.1) !important;
 }
 
 input[type=number] {
-  -moz-appearance: textfield !important;
+  -moz-appearance: number-input !important;
 }
