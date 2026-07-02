@@ -50,38 +50,119 @@ export default function TrendingHub({ onAddTicker }: TrendingHubProps) {
   ];
 
   return (
-    <div className="trending-hub-container animate-fade" style={{ display: 'flex', flexDirection: 'column', gap: '24px', width: '100%', boxSizing: 'border-box' }}>
+    <div 
+      className="trending-hub-container animate-fade" 
+      style={{ 
+        display: 'flex', 
+        flexDirection: 'column', 
+        gap: '24px', 
+        width: '100%', 
+        boxSizing: 'border-box',
+        position: 'relative',
+        overflow: 'hidden',
+        padding: '8px'
+      }}
+    >
       
-      {/* Welcome Banner */}
+      {/* Background Neon Glowing Orbs */}
+      <div style={{
+        position: 'absolute',
+        top: '-15%',
+        left: '-10%',
+        width: '350px',
+        height: '350px',
+        background: 'radial-gradient(circle, rgba(0, 242, 254, 0.07) 0%, transparent 70%)',
+        filter: 'blur(50px)',
+        zIndex: 0,
+        pointerEvents: 'none'
+      }} />
+      <div style={{
+        position: 'absolute',
+        bottom: '-15%',
+        right: '-10%',
+        width: '400px',
+        height: '400px',
+        background: 'radial-gradient(circle, rgba(161, 84, 255, 0.05) 0%, transparent 70%)',
+        filter: 'blur(60px)',
+        zIndex: 0,
+        pointerEvents: 'none'
+      }} />
+
+      {/* Cyber Grid Pattern Background Overlay */}
+      <div style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundImage: 'radial-gradient(rgba(255, 255, 255, 0.015) 1px, transparent 1px)',
+        backgroundSize: '20px 20px',
+        zIndex: 0,
+        pointerEvents: 'none'
+      }} />
+
+      {/* Massive Cyber Watermark Text behind cards */}
+      <div style={{
+        position: 'absolute',
+        top: '55%',
+        left: '50%',
+        transform: 'translate(-50%, -50%) rotate(-12deg)',
+        fontSize: '110px',
+        fontWeight: 900,
+        color: 'rgba(255, 255, 255, 0.012)',
+        textShadow: '0 0 60px rgba(0, 242, 254, 0.03)',
+        letterSpacing: '0.15em',
+        pointerEvents: 'none',
+        userSelect: 'none',
+        zIndex: 0,
+        whiteSpace: 'nowrap',
+        fontFamily: 'system-ui, sans-serif'
+      }}>
+        QUANTIQ TERMINAL
+      </div>
+
+      {/* Welcome Banner with neon gradient border */}
       <div 
-        className="glass-panel" 
+        className="glass-panel welcome-gradient-border" 
         style={{ 
-          padding: '24px', 
-          background: 'linear-gradient(135deg, rgba(0, 242, 254, 0.05) 0%, rgba(161, 84, 255, 0.05) 100%)', 
-          border: '1px solid var(--border-glass)',
+          padding: '28px 24px', 
+          background: 'linear-gradient(#0d101b, #0d101b) padding-box, linear-gradient(135deg, rgba(0, 242, 254, 0.3) 0%, rgba(161, 84, 255, 0.3) 100%) border-box',
+          border: '1px solid transparent',
           borderRadius: '16px',
           display: 'flex',
           flexDirection: 'column',
-          gap: '8px',
-          textAlign: 'left'
+          gap: '10px',
+          textAlign: 'left',
+          position: 'relative',
+          zIndex: 1,
+          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)'
         }}
       >
-        <h2 style={{ margin: 0, fontSize: '20px', fontWeight: 700, color: '#fff', letterSpacing: '-0.02em' }}>
-          Welcome to QuantIQ Terminal
+        <h2 style={{ 
+          margin: 0, 
+          fontSize: '22px', 
+          fontWeight: 800, 
+          background: 'linear-gradient(90deg, #fff 0%, #00f2fe 50%, #a154ff 100%)',
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent',
+          letterSpacing: '-0.02em'
+        }}>
+          QUANTIQ TERMINAL LIVE
         </h2>
-        <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.5, maxWidth: '600px' }}>
-          Your watchlist is currently empty. Add ticker symbols on the left sidebar to start live streaming charts and utilizing the Quant ReAct AI strategy generator. Or, quickly add a trending asset below to begin.
+        <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.6, maxWidth: '680px' }}>
+          Your watchlist is currently empty. Pin ticker symbols on the left panel to trigger charting and full-scale ReAct agent strategy workflows. Or click <strong style={{ color: 'var(--neon-cyan)' }}>+ Watch</strong> on any hot asset below to instantly spawn live analytics.
         </p>
       </div>
 
       {/* Main Split Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '24px', position: 'relative', zIndex: 1 }}>
         
         {/* Left Column: Trending Assets */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', textAlign: 'left' }}>
-            <TrendingUp size={18} color="var(--neon-cyan)" />
-            <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: '#fff', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Trending Assets</h3>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', textAlign: 'left' }}>
+            <div style={{ width: '6px', height: '18px', background: 'var(--neon-cyan)', borderRadius: '2px' }} />
+            <TrendingUp size={16} color="var(--neon-cyan)" />
+            <h3 style={{ margin: 0, fontSize: '13px', fontWeight: 700, color: '#fff', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Trending Assets</h3>
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
@@ -90,42 +171,61 @@ export default function TrendingHub({ onAddTicker }: TrendingHubProps) {
               return (
                 <div 
                   key={asset.symbol} 
-                  className="glass-panel trend-card"
+                  className="glass-panel genz-trend-card"
                   style={{ 
-                    padding: '16px', 
+                    padding: '18px 16px', 
                     borderRadius: '12px', 
                     display: 'flex', 
                     flexDirection: 'column', 
-                    gap: '10px',
+                    gap: '12px',
                     textAlign: 'left',
                     position: 'relative',
                     overflow: 'hidden',
-                    border: '1px solid var(--border-glass)'
+                    border: '1px solid var(--border-glass)',
+                    transition: 'all 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
+                    background: 'rgba(13, 16, 27, 0.6)',
+                    backdropFilter: 'blur(10px)',
+                    cursor: 'pointer'
                   }}
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                     <div>
-                      <span style={{ background: asset.category === 'Crypto' ? 'rgba(0, 242, 254, 0.1)' : 'rgba(161, 84, 255, 0.1)', color: asset.category === 'Crypto' ? 'var(--neon-cyan)' : 'var(--neon-violet)', padding: '2px 6px', borderRadius: '4px', fontWeight: 600, textTransform: 'uppercase', fontSize: '9px' }}>
+                      <span style={{ 
+                        background: asset.category === 'Crypto' ? 'rgba(0, 242, 254, 0.08)' : 'rgba(161, 84, 255, 0.08)', 
+                        color: asset.category === 'Crypto' ? 'var(--neon-cyan)' : 'var(--neon-violet)', 
+                        padding: '3px 8px', 
+                        borderRadius: '6px', 
+                        fontWeight: 700, 
+                        textTransform: 'uppercase', 
+                        fontSize: '9px',
+                        letterSpacing: '0.04em',
+                        border: `1px solid ${asset.category === 'Crypto' ? 'rgba(0, 242, 254, 0.15)' : 'rgba(161, 84, 255, 0.15)'}`
+                      }}>
                         {asset.category}
                       </span>
-                      <h4 style={{ margin: '6px 0 2px', fontSize: '14px', fontWeight: 700, color: '#fff' }}>{asset.symbol}</h4>
+                      <h4 style={{ margin: '8px 0 2px', fontSize: '15px', fontWeight: 800, color: '#fff', letterSpacing: '-0.01em' }}>{asset.symbol}</h4>
                       <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{asset.name}</span>
                     </div>
                     
                     <button 
-                      onClick={() => onAddTicker(asset.symbol)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onAddTicker(asset.symbol);
+                      }}
                       className="control-toggle-btn active"
                       style={{ 
-                        padding: '4px 8px', 
-                        borderRadius: '6px', 
-                        background: 'rgba(0, 242, 254, 0.08)', 
-                        border: '1px solid rgba(0, 242, 254, 0.2)', 
+                        padding: '5px 10px', 
+                        borderRadius: '8px', 
+                        background: 'rgba(0, 242, 254, 0.1)', 
+                        border: '1px solid rgba(0, 242, 254, 0.25)', 
                         color: 'var(--neon-cyan)', 
                         cursor: 'pointer',
                         fontSize: '11px',
+                        fontWeight: 600,
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '2px'
+                        gap: '3px',
+                        boxShadow: '0 0 10px rgba(0, 242, 254, 0.15)'
                       }}
                       title="Add to Watchlist"
                     >
@@ -133,20 +233,21 @@ export default function TrendingHub({ onAddTicker }: TrendingHubProps) {
                     </button>
                   </div>
 
-                  <div style={{ borderTop: '1px solid rgba(255,255,255,0.03)', paddingTop: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+                  <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
                     <div>
-                      <span style={{ fontSize: '10px', color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase' }}>Price</span>
-                      <span style={{ fontSize: '14px', fontWeight: 600, color: '#fff' }}>${asset.price.toLocaleString()}</span>
+                      <span style={{ fontSize: '9px', color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Price</span>
+                      <span style={{ fontSize: '15px', fontWeight: 800, color: '#fff' }}>${asset.price.toLocaleString()}</span>
                     </div>
                     <div style={{ textAlign: 'right' }}>
                       <span 
                         style={{ 
                           fontSize: '11px', 
-                          fontWeight: 600, 
+                          fontWeight: 700, 
                           color: isBull ? '#10b981' : '#ef4444', 
-                          background: isBull ? 'rgba(16, 185, 129, 0.08)' : 'rgba(239, 68, 68, 0.08)',
-                          padding: '2px 6px',
-                          borderRadius: '6px'
+                          background: isBull ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                          padding: '3px 8px',
+                          borderRadius: '6px',
+                          border: `1px solid ${isBull ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)'}`
                         }}
                       >
                         {isBull ? '+' : ''}{asset.change}%
@@ -161,16 +262,17 @@ export default function TrendingHub({ onAddTicker }: TrendingHubProps) {
 
         {/* Right Column: Trending News */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', textAlign: 'left' }}>
-            <Newspaper size={18} color="var(--neon-violet)" />
-            <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: '#fff', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Fresh Financial News</h3>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', textAlign: 'left' }}>
+            <div style={{ width: '6px', height: '18px', background: 'var(--neon-violet)', borderRadius: '2px' }} />
+            <Newspaper size={16} color="var(--neon-violet)" />
+            <h3 style={{ margin: 0, fontSize: '13px', fontWeight: 700, color: '#fff', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Financial Feed</h3>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             {trendingNews.map((news) => (
               <div 
                 key={news.id} 
-                className="glass-panel news-card"
+                className="glass-panel genz-news-card"
                 style={{ 
                   padding: '16px', 
                   borderRadius: '12px', 
@@ -178,26 +280,40 @@ export default function TrendingHub({ onAddTicker }: TrendingHubProps) {
                   flexDirection: 'column', 
                   gap: '8px',
                   textAlign: 'left',
-                  border: '1px solid var(--border-glass)'
+                  border: '1px solid var(--border-glass)',
+                  transition: 'all 0.2s ease',
+                  background: 'rgba(13, 16, 27, 0.5)',
+                  backdropFilter: 'blur(10px)',
+                  cursor: 'pointer'
                 }}
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: '9px', background: 'rgba(255,255,255,0.03)', color: 'var(--text-secondary)', padding: '2px 6px', borderRadius: '4px', border: '1px solid var(--border-glass)', fontWeight: 600 }}>
+                  <span style={{ 
+                    fontSize: '9px', 
+                    background: 'rgba(255,255,255,0.03)', 
+                    color: 'var(--text-secondary)', 
+                    padding: '2px 8px', 
+                    borderRadius: '6px', 
+                    border: '1px solid var(--border-glass)', 
+                    fontWeight: 700,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.03em'
+                  }}>
                     {news.category}
                   </span>
                   <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{news.time}</span>
                 </div>
                 
-                <h4 style={{ margin: 0, fontSize: '13px', fontWeight: 600, color: '#fff', lineHeight: 1.4 }}>
+                <h4 style={{ margin: 0, fontSize: '14px', fontWeight: 700, color: '#fff', lineHeight: 1.45 }}>
                   {news.title}
                 </h4>
                 
-                <p style={{ margin: 0, fontSize: '11px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.55 }}>
                   {news.summary}
                 </p>
 
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid rgba(255,255,255,0.03)', paddingTop: '8px', fontSize: '10px', color: 'var(--text-muted)' }}>
-                  <span>Source: {news.source}</span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '8px', fontSize: '11px', color: 'var(--text-muted)' }}>
+                  <span>Source: <strong style={{ color: 'var(--text-secondary)' }}>{news.source}</strong></span>
                 </div>
               </div>
             ))}

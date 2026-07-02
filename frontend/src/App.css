@@ -1972,3 +1972,18 @@ input::-webkit-inner-spin-button:hover {
 input[type=number] {
   -moz-appearance: number-input !important;
 }
+
+/* GenZ Trending Hub Card Hover Glow Effects */
+.genz-trend-card:hover {
+  transform: translateY(-4px) !important;
+  border-color: rgba(0, 242, 254, 0.4) !important;
+  box-shadow: 0 12px 30px rgba(0, 242, 254, 0.08) !important;
+  background: rgba(13, 16, 27, 0.75) !important;
+}
+
+.genz-news-card:hover {
+  transform: translateY(-2px) !important;
+  border-color: rgba(161, 84, 255, 0.4) !important;
+  box-shadow: 0 12px 30px rgba(161, 84, 255, 0.06) !important;
+  background: rgba(13, 16, 27, 0.65) !important;
+}
