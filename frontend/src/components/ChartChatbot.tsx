@@ -36,7 +36,34 @@ export default function ChartChatbot({ ticker, markers, activeIndicators, user, 
   });
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+
+  // Helper to format text markdown bold/italics
+  const formatMessageContent = (text: string) => {
+    if (!text) return '';
+    const parts = text.split(/(\*\*.*?\*\*|\*.*?\*)/g);
+    return parts.map((part, i) => {
+      if (part.startsWith('**') && part.endsWith('**')) {
+        return <strong key={i} style={{ color: '#fff', fontWeight: 700 }}>{part.slice(2, -2)}</strong>;
+      } else if (part.startsWith('*') && part.endsWith('*')) {
+        return <span key={i} style={{ color: 'var(--neon-cyan)', fontWeight: 500 }}>{part.slice(1, -1)}</span>;
+      }
+      return part;
+    });
+  };
+
+  // Auto adjust textarea height on input change
+  const adjustHeight = () => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 120)}px`;
+    }
+  };
+
+  useEffect(() => {
+    adjustHeight();
+  }, [input]);
 
   // Check if user is a paid tier (Trader/Pro packs have > 10 credits) or is the test email
   const isPaidUser = user && (user.credits > 10 || user.email === 'karanshelar8775@gmail.com');
@@ -67,12 +94,15 @@ export default function ChartChatbot({ ticker, markers, activeIndicators, user, 
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, ticker]);
 
-  const handleSendMessage = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSendMessage = async (e?: React.FormEvent | React.KeyboardEvent) => {
+    if (e) e.preventDefault();
     if (!input.trim() || loading || isTrialLocked) return;
 
     const userMessage = input.trim();
     setInput('');
+    if (textareaRef.current) {
+      textareaRef.current.style.height = '38px';
+    }
     setLoading(true);
 
     // Add user message to log
@@ -253,7 +283,9 @@ export default function ChartChatbot({ ticker, markers, activeIndicators, user, 
                   : '0 0 12px rgba(161, 84, 255, 0.05)'
               }}
             >
-              {msg.content}
+              <div style={{ whiteSpace: 'pre-wrap' }}>
+                {formatMessageContent(msg.content)}
+              </div>
             </div>
           );
         })}
@@ -330,23 +362,36 @@ export default function ChartChatbot({ ticker, markers, activeIndicators, user, 
           </div>
         ) : (
           <form onSubmit={handleSendMessage} style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-            <input 
-              type="text"
+            <textarea 
+              ref={textareaRef}
+              rows={1}
               value={input}
               onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSendMessage(e);
+                }
+              }}
               placeholder="Ask Advisor about markers..."
               disabled={loading}
               style={{
                 flex: 1,
                 background: 'rgba(255, 255, 255, 0.02)',
                 border: '1px solid rgba(255, 255, 255, 0.08)',
-                borderRadius: '20px',
-                padding: '10px 16px',
+                borderRadius: '16px',
+                padding: '10px 14px',
                 color: '#fff',
                 fontSize: '12px',
                 outline: 'none',
-                transition: 'all 0.3s ease',
-                boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.2)'
+                resize: 'none',
+                lineHeight: 1.4,
+                maxHeight: '120px',
+                minHeight: '38px',
+                height: '38px',
+                transition: 'border-color 0.2s, box-shadow 0.2s',
+                boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.2)',
+                fontFamily: 'inherit'
               }}
               onFocus={(e) => {
                 e.target.style.borderColor = 'rgba(0, 242, 254, 0.4)';
