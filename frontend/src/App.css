@@ -1923,3 +1923,23 @@
   background: rgba(255, 255, 255, 0.05) !important;
   color: var(--neon-cyan) !important;
 }
+
+/* Custom Scrollbars for Webkit browsers (Chrome, Safari, Edge) */
+::-webkit-scrollbar {
+  width: 6px !important;
+  height: 6px !important;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent !important;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1) !important;
+  border-radius: 10px !important;
+  border: 1px solid transparent !important;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2) !important;
+}
