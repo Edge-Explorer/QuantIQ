@@ -80,6 +80,80 @@ const CandlestickBar = (props: any) => {
   );
 };
 
+// Custom premium Tooltip component for stock chart hover stats
+const CustomTooltip = ({ active, payload, label }: any) => {
+  if (active && payload && payload.length) {
+    const data = payload[0].payload;
+    const isCandle = data.open !== undefined && data.close !== undefined;
+    
+    return (
+      <div style={{
+        background: 'rgba(13, 16, 27, 0.9)',
+        backdropFilter: 'blur(12px)',
+        border: '1px solid rgba(255, 255, 255, 0.1)',
+        borderRadius: '8px',
+        padding: '12px 16px',
+        boxShadow: '0 12px 24px rgba(0, 0, 0, 0.6)',
+        color: '#fff',
+        fontSize: '12px',
+        fontFamily: 'inherit',
+        minWidth: '160px'
+      }}>
+        <div style={{ fontWeight: 600, color: 'var(--text-secondary)', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '6px', marginBottom: '8px' }}>
+          {label}
+        </div>
+        
+        {isCandle ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: '16px' }}>
+              <span style={{ color: 'var(--text-muted)' }}>Open</span>
+              <span style={{ fontWeight: 600, color: '#fff' }}>${data.open.toFixed(2)}</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: '16px' }}>
+              <span style={{ color: 'var(--text-muted)' }}>High</span>
+              <span style={{ fontWeight: 600, color: '#10b981' }}>${data.high?.toFixed(2)}</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: '16px' }}>
+              <span style={{ color: 'var(--text-muted)' }}>Low</span>
+              <span style={{ fontWeight: 600, color: '#ef4444' }}>${data.low?.toFixed(2)}</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: '16px' }}>
+              <span style={{ color: 'var(--text-muted)' }}>Close</span>
+              <span style={{ fontWeight: 600, color: '#fff' }}>${data.close.toFixed(2)}</span>
+            </div>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', justifyContent: 'space-between', gap: '16px' }}>
+            <span style={{ color: 'var(--text-muted)' }}>Price</span>
+            <span style={{ fontWeight: 600, color: 'var(--neon-cyan)' }}>${data.price.toFixed(2)}</span>
+          </div>
+        )}
+        
+        {payload.map((entry: any, index: number) => {
+          if (entry.dataKey === 'sma' && entry.value !== undefined && entry.value !== null) {
+            return (
+              <div key={`sma-${index}`} style={{ display: 'flex', justifyContent: 'space-between', gap: '16px', color: 'var(--neon-violet)', borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '4px', marginTop: '4px' }}>
+                <span>SMA 20</span>
+                <span style={{ fontWeight: 600 }}>${entry.value.toFixed(2)}</span>
+              </div>
+            );
+          }
+          if (entry.dataKey === 'ema' && entry.value !== undefined && entry.value !== null) {
+            return (
+              <div key={`ema-${index}`} style={{ display: 'flex', justifyContent: 'space-between', gap: '16px', color: '#fb923c', borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '4px', marginTop: '4px' }}>
+                <span>EMA 20</span>
+                <span style={{ fontWeight: 600 }}>${entry.value.toFixed(2)}</span>
+              </div>
+            );
+          }
+          return null;
+        })}
+      </div>
+    );
+  }
+  return null;
+};
+
 export default function StockChart({ activeTicker, chartData, activeStats, chartRange, onRangeChange }: StockChartProps) {
   const currentPrice = chartData.length > 0 ? chartData[chartData.length - 1].price : null;
 
@@ -315,15 +389,7 @@ export default function StockChart({ activeTicker, chartData, activeStats, chart
                   tickLine={false}
                 />
                 
-                <Tooltip 
-                  contentStyle={{ 
-                    background: '#0d101b', 
-                    borderColor: '#2e303a',
-                    borderRadius: '8px',
-                    color: '#fff',
-                    fontSize: '12px'
-                  }}
-                />
+                <Tooltip content={<CustomTooltip />} />
 
                 {/* Primary Chart Type Representation */}
                 {chartType === 'line' ? (
