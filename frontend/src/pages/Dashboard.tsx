@@ -100,6 +100,7 @@ export default function Dashboard({
                 activeStats={activeStats}
                 chartRange={chartRange}
                 onRangeChange={onRangeChange}
+                user={user}
               />
               <AIAnalyst
                 activeTicker={activeTicker}
