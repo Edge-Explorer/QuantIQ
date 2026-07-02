@@ -5,6 +5,7 @@ import StockChart from '../components/StockChart';
 import AIAnalyst from '../components/AIAnalyst';
 import PriceAlerts from '../components/PriceAlerts';
 import TickerTape from '../components/TickerTape';
+import TrendingHub from '../components/TrendingHub';
 
 interface DashboardProps {
   user: any;
@@ -85,36 +86,43 @@ export default function Dashboard({
           onRemoveTicker={onRemoveTicker}
         />
 
-        {/* Center Section: Live Chart & AI analyst */}
-        <section className="center-content">
-          <StockChart 
-            activeTicker={activeTicker} 
-            chartData={chartData} 
-            activeStats={activeStats}
-            chartRange={chartRange}
-            onRangeChange={onRangeChange}
-          />
-          <AIAnalyst
-            activeTicker={activeTicker}
-            insight={insight}
-            savedStrategies={savedStrategies}
-            loadingInsight={loadingInsight}
-            insightError={insightError}
-            onTriggerInsight={onTriggerInsight}
-          />
-        </section>
+        {watchlist.length === 0 ? (
+          <section className="center-content" style={{ gridColumn: 'span 2' }}>
+            <TrendingHub onAddTicker={onAddTicker} />
+          </section>
+        ) : (
+          <>
+            {/* Center Section: Live Chart & AI analyst */}
+            <section className="center-content">
+              <StockChart 
+                activeTicker={activeTicker} 
+                chartData={chartData} 
+                activeStats={activeStats}
+                chartRange={chartRange}
+                onRangeChange={onRangeChange}
+              />
+              <AIAnalyst
+                activeTicker={activeTicker}
+                insight={insight}
+                savedStrategies={savedStrategies}
+                loadingInsight={loadingInsight}
+                insightError={insightError}
+                onTriggerInsight={onTriggerInsight}
+              />
+            </section>
 
-        {/* Right Sidebar: Alerts Panel */}
-        <section className="right-sidebar">
-          <PriceAlerts
-            activeTicker={activeTicker}
-            alerts={alerts}
-            onCreateAlert={onCreateAlert}
-            onDeactivateAlert={onDeactivateAlert}
-          />
-        </section>
+            {/* Right Sidebar: Alerts Panel */}
+            <section className="right-sidebar">
+              <PriceAlerts
+                activeTicker={activeTicker}
+                alerts={alerts}
+                onCreateAlert={onCreateAlert}
+                onDeactivateAlert={onDeactivateAlert}
+              />
+            </section>
+          </>
+        )}
       </main>
-
     </div>
   );
 }
