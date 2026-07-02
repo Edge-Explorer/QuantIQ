@@ -289,9 +289,9 @@ export default function StockChart({ activeTicker, chartData, activeStats, chart
       </div>
 
       {/* Main Chart Area */}
-      <div className="chart-container" style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '16px', padding: '16px 16px 0', position: 'relative' }}>
+      <div className="chart-container" style={{ position: 'relative', display: 'flex', flexDirection: 'column', gap: '16px', padding: '16px 16px 0', height: '340px' }}>
         {processedData.length > 0 ? (
-          <div style={{ height: showRSI ? 'calc(100% - 120px)' : '100%', width: '100%', minHeight: '220px' }}>
+          <div style={{ height: showRSI ? '220px' : '340px', width: '100%' }}>
             <ResponsiveContainer width="100%" height="100%">
               <ComposedChart data={processedData} margin={{ top: 10, right: 5, left: 20, bottom: 25 }}>
                 <defs>
