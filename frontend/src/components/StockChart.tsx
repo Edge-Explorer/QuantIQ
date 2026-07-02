@@ -165,6 +165,19 @@ export default function StockChart({ activeTicker, chartData, activeStats, chart
   const [showRSI, setShowRSI] = useState<boolean>(false);
   const [isMaximized, setIsMaximized] = useState<boolean>(false);
 
+  // Markers state for drawing entry/exit lines
+  interface ChartMarker {
+    id: string;
+    price: number;
+    label: string;
+    color: string;
+  }
+  const [markers, setMarkers] = useState<ChartMarker[]>([]);
+  const [showAddMarkerForm, setShowAddMarkerForm] = useState<boolean>(false);
+  const [newMarkerLabel, setNewMarkerLabel] = useState<string>('Entry');
+  const [newMarkerPrice, setNewMarkerPrice] = useState<string>('');
+  const [newMarkerColor, setNewMarkerColor] = useState<string>('#10b981'); // Default green
+
   const ranges = [
     { label: '1D', value: '1d' },
     { label: '5D', value: '5d' },
@@ -405,6 +418,65 @@ export default function StockChart({ activeTicker, chartData, activeStats, chart
         </div>
       </div>
 
+      {/* Maximized-only marker controls bar */}
+      {isMaximized && (
+        <div className="chart-marker-controls" style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '8px 16px', background: 'rgba(255,255,255,0.015)', borderBottom: '1px solid var(--border-glass)', flexWrap: 'wrap' }}>
+          <span style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Chart Markers</span>
+          <button 
+            onClick={() => {
+              setNewMarkerPrice(currentPrice ? currentPrice.toFixed(2) : '');
+              setShowAddMarkerForm(!showAddMarkerForm);
+            }}
+            className="control-toggle-btn active"
+            style={{ padding: '6px 12px', background: 'rgba(0, 242, 254, 0.1)', border: '1px solid rgba(0, 242, 254, 0.25)', borderRadius: '6px', cursor: 'pointer', color: 'var(--neon-cyan)', fontSize: '12px', outline: 'none' }}
+          >
+            + Add Marker
+          </button>
+
+          {/* Active markers list with delete buttons */}
+          {markers.length > 0 && (
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+              <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>| Active:</span>
+              {markers.map(m => (
+                <span 
+                  key={m.id} 
+                  style={{ 
+                    fontSize: '11px', 
+                    background: 'rgba(255,255,255,0.02)', 
+                    border: `1px solid ${m.color}80`, 
+                    borderRadius: '6px', 
+                    padding: '4px 8px', 
+                    color: m.color, 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: '6px' 
+                  }}
+                >
+                  <span style={{ fontWeight: 600 }}>{m.label}</span> (${m.price.toFixed(2)})
+                  <button 
+                    onClick={() => setMarkers(markers.filter(item => item.id !== m.id))} 
+                    style={{ 
+                      background: 'none', 
+                      border: 'none', 
+                      color: 'var(--text-muted)', 
+                      cursor: 'pointer', 
+                      fontSize: '14px', 
+                      padding: 0,
+                      lineHeight: 1,
+                      display: 'flex',
+                      alignItems: 'center'
+                    }}
+                    title="Remove marker"
+                  >
+                    ×
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Main Chart Area */}
       <div className="chart-container" style={{ 
         position: 'relative', 
@@ -414,6 +486,111 @@ export default function StockChart({ activeTicker, chartData, activeStats, chart
         padding: '16px 16px 0', 
         height: isMaximized ? 'calc(100vh - 200px)' : '340px' 
       }}>
+        {/* Floating Add Marker Form */}
+        {showAddMarkerForm && (
+          <div 
+            style={{
+              position: 'absolute',
+              top: '20px',
+              right: '20px',
+              background: 'rgba(13, 16, 27, 0.95)',
+              backdropFilter: 'blur(20px)',
+              WebkitBackdropFilter: 'blur(20px)',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+              borderRadius: '12px',
+              padding: '16px',
+              zIndex: 1000,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '12px',
+              width: '240px',
+              boxShadow: '0 16px 40px rgba(0, 0, 0, 0.7)'
+            }}
+          >
+            <div style={{ fontWeight: 600, fontSize: '13px', color: '#fff', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '6px' }}>
+              Add Reference Marker
+            </div>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <label style={{ fontSize: '10px', color: 'var(--text-secondary)', fontWeight: 600 }}>Label / Name</label>
+              <input 
+                type="text" 
+                value={newMarkerLabel}
+                onChange={(e) => setNewMarkerLabel(e.target.value)}
+                style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border-glass)', borderRadius: '6px', padding: '6px 8px', color: '#fff', fontSize: '12px', outline: 'none' }}
+                placeholder="e.g. Entry, TP 1, Stop Loss"
+              />
+            </div>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <label style={{ fontSize: '10px', color: 'var(--text-secondary)', fontWeight: 600 }}>Price Level ($)</label>
+              <input 
+                type="number" 
+                value={newMarkerPrice}
+                onChange={(e) => setNewMarkerPrice(e.target.value)}
+                style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border-glass)', borderRadius: '6px', padding: '6px 8px', color: '#fff', fontSize: '12px', outline: 'none' }}
+                placeholder="e.g. 60000"
+              />
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <label style={{ fontSize: '10px', color: 'var(--text-secondary)', fontWeight: 600 }}>Marker Color</label>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                {[
+                  { value: '#10b981', label: 'Green' },
+                  { value: '#ef4444', label: 'Red' },
+                  { value: '#00f2fe', label: 'Cyan' },
+                  { value: '#fb923c', label: 'Orange' },
+                  { value: '#a154ff', label: 'Purple' }
+                ].map((c) => (
+                  <button 
+                    key={c.value}
+                    onClick={() => setNewMarkerColor(c.value)}
+                    style={{
+                      width: '20px',
+                      height: '20px',
+                      borderRadius: '50%',
+                      background: c.value,
+                      border: newMarkerColor === c.value ? '2px solid #fff' : 'none',
+                      cursor: 'pointer',
+                      padding: 0,
+                      outline: 'none'
+                    }}
+                    title={c.label}
+                  />
+                ))}
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+              <button 
+                onClick={() => {
+                  if (!newMarkerPrice || isNaN(parseFloat(newMarkerPrice))) return;
+                  const newMarker = {
+                    id: Math.random().toString(),
+                    price: parseFloat(newMarkerPrice),
+                    label: newMarkerLabel,
+                    color: newMarkerColor
+                  };
+                  setMarkers([...markers, newMarker]);
+                  setShowAddMarkerForm(false);
+                }}
+                className="insight-btn"
+                style={{ flex: 1, padding: '6px 12px', fontSize: '11px' }}
+              >
+                Save
+              </button>
+              <button 
+                onClick={() => setShowAddMarkerForm(false)}
+                className="control-toggle-btn"
+                style={{ flex: 1, padding: '6px 12px', fontSize: '11px', border: '1px solid var(--border-glass)', borderRadius: '6px', cursor: 'pointer', background: 'none', color: 'var(--text-secondary)' }}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
+
         {processedData.length > 0 ? (
           <div style={{ 
             height: showRSI 
@@ -445,6 +622,23 @@ export default function StockChart({ activeTicker, chartData, activeStats, chart
                 />
                 
                 <Tooltip content={<CustomTooltip />} />
+
+                {/* User Defined Markers / Reference Lines */}
+                {markers.map((marker) => (
+                  <ReferenceLine 
+                    key={marker.id}
+                    y={marker.price}
+                    stroke={marker.color}
+                    strokeWidth={1.5}
+                    strokeDasharray="4 4"
+                    label={{
+                      value: `${marker.label} ($${marker.price.toFixed(2)})`,
+                      fill: marker.color,
+                      fontSize: 10,
+                      position: 'insideBottomLeft'
+                    }}
+                  />
+                ))}
 
                 {/* Primary Chart Type Representation */}
                 {chartType === 'line' ? (
