@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, Bot, Sparkles, Lock, ArrowRight, Loader2 } from 'lucide-react';
+import { Send, Sparkles, Lock, ArrowRight, Loader2 } from 'lucide-react';
+import Logo from './Logo';
 
 interface ChartChatbotProps {
   ticker: string;
@@ -145,17 +146,17 @@ export default function ChartChatbot({ ticker, markers, activeIndicators, user, 
           width: '32px',
           height: '32px',
           borderRadius: '50%',
-          background: 'rgba(0, 242, 254, 0.1)',
+          background: 'rgba(0, 242, 254, 0.05)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          border: '1px solid rgba(0, 242, 254, 0.3)'
+          border: '1px solid rgba(0, 242, 254, 0.2)'
         }}>
-          <Bot size={18} color="var(--neon-cyan)" />
+          <Logo size={18} />
         </div>
         <div style={{ textAlign: 'left' }}>
           <h3 style={{ margin: 0, fontSize: '13px', fontWeight: 700, color: '#fff', display: 'flex', alignItems: 'center', gap: '4px' }}>
-            AI Strategy Advisor <Sparkles size={11} color="var(--neon-violet)" />
+            Quant AI Advisor <Sparkles size={11} color="var(--neon-violet)" />
           </h3>
           <span style={{ fontSize: '10px', color: 'var(--text-secondary)' }}>Live Canvas Interactive Chat</span>
         </div>
@@ -187,9 +188,22 @@ export default function ChartChatbot({ ticker, markers, activeIndicators, user, 
           overflowY: 'auto',
           display: 'flex',
           flexDirection: 'column',
-          gap: '12px'
+          gap: '12px',
+          position: 'relative'
         }}
       >
+        {/* Faint Logo Watermark Background */}
+        <div style={{
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          opacity: 0.025,
+          pointerEvents: 'none',
+          zIndex: 0
+        }}>
+          <Logo size={130} />
+        </div>
         {messages.map((msg, index) => {
           const isUser = msg.role === 'user';
           return (
@@ -205,7 +219,9 @@ export default function ChartChatbot({ ticker, markers, activeIndicators, user, 
                 color: isUser ? '#fff' : 'var(--text-secondary)',
                 fontSize: '12px',
                 lineHeight: 1.5,
-                textAlign: 'left'
+                textAlign: 'left',
+                position: 'relative',
+                zIndex: 1
               }}
             >
               {msg.content}
