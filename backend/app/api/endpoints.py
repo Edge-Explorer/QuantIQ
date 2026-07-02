@@ -509,3 +509,70 @@ async def get_market_news():
         except Exception as e:
             print("Failed to fetch market news:", e)
             return []
+
+from pydantic import BaseModel
+from typing import List, Dict, Any
+
+class ChatRequest(BaseModel):
+    ticker: str
+    message: str
+    history: List[Dict[str, str]]
+    markers: List[Dict[str, Any]]
+    activeIndicators: Dict[str, bool]
+
+@router.post("/analyst/chat")
+async def chat_with_analyst(payload: ChatRequest):
+    """
+    Takes the user's message, drawing markers, active indicators, and chat history,
+    and returns a cooperative analysis message from Gemini.
+    """
+    ticker = payload.ticker
+    message = payload.message
+    history = payload.history
+    markers = payload.markers
+    active_indicators = payload.activeIndicators
+
+    # Format the markers list into text
+    markers_text = ""
+    if markers:
+        markers_text = "\n".join([f"- Level: ${m.get('price')} ({m.get('label') or 'Unnamed'})" for m in markers])
+    else:
+        markers_text = "No custom price level markers have been drawn on the chart."
+
+    # Format indicators
+    indicators_list = []
+    if active_indicators.get("sma"):
+        indicators_list.append("SMA 20 Overlay")
+    if active_indicators.get("ema"):
+        indicators_list.append("EMA 20 Overlay")
+    if active_indicators.get("rsi"):
+        indicators_list.append("RSI 14 Panel")
+    indicators_text = ", ".join(indicators_list) if indicators_list else "None"
+
+    # Construct system instructions
+    system_prompt = (
+        "You are the QuantIQ Cooperative AI Strategy Advisor. A trader is chatting with you "
+        f"while viewing a live chart for {ticker}.\n\n"
+        "Here is the context of their active workspace:\n"
+        f"- Active Ticker: {ticker}\n"
+        f"- Active Indicators on Screen: {indicators_text}\n"
+        f"- Trader's Custom reference level markers drawn on the canvas:\n{markers_text}\n\n"
+        "Guidelines:\n"
+        "1. Act as a professional quantitative mentor. Evaluate their drawn levels (e.g. entry, target, stop loss) "
+        "relative to the stock price context.\n"
+        "2. Keep your answers concise, practical, and highly engaging (using sleek developer/quant trader vibe).\n"
+        "3. Provide realistic risk-to-reward ratios and volatility warnings based on the asset.\n\n"
+        "Below is the conversation history and the user's latest question. Respond to their latest question directly."
+    )
+
+    # Format chat history
+    formatted_history = ""
+    for turn in history[-6:]: # Keep last 6 turns for context
+        role = "Trader" if turn.get("role") == "user" else "Advisor"
+        formatted_history += f"\n{role}: {turn.get('content')}"
+
+    full_prompt = f"{system_prompt}\n\nChat History:{formatted_history}\nTrader: {message}\nAdvisor:"
+
+    from backend.app.services.gemini import generate_text
+    response_text = await generate_text(full_prompt)
+    return {"response": response_text}

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ResponsiveContainer, ComposedChart, Area, Bar, Line, XAxis, YAxis, Tooltip, ReferenceLine, LineChart } from 'recharts';
 import { AreaChart as AreaIcon, BarChart2 as CandleIcon, Activity, Eye, EyeOff, Maximize2, Minimize2 } from 'lucide-react';
+import ChartChatbot from './ChartChatbot';
 
 
 interface ChartDataPoint {
@@ -19,6 +20,7 @@ interface StockChartProps {
   activeStats: any;
   chartRange: string;
   onRangeChange: (range: string) => void;
+  user?: any;
 }
 
 // Custom SVG component to draw wicks and body for candlestick bars
@@ -155,7 +157,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   return null;
 };
 
-export default function StockChart({ activeTicker, chartData, activeStats, chartRange, onRangeChange }: StockChartProps) {
+export default function StockChart({ activeTicker, chartData, activeStats, chartRange, onRangeChange, user }: StockChartProps) {
   const currentPrice = chartData.length > 0 ? chartData[chartData.length - 1].price : null;
 
   // Chart States
@@ -332,7 +334,30 @@ export default function StockChart({ activeTicker, chartData, activeStats, chart
         </div>
       </div>
 
-      {activeStats && (
+      {/* Horizontal Flex Split View when Maximized */}
+      <div 
+        style={{ 
+          display: 'flex', 
+          flexDirection: 'row', 
+          gap: '20px', 
+          flex: 1, 
+          width: '100%', 
+          height: isMaximized ? 'calc(100% - 60px)' : 'auto', 
+          overflow: isMaximized ? 'hidden' : 'visible'
+        }}
+      >
+        {/* Left Column: Metrics grid, controls, and charts */}
+        <div 
+          style={{ 
+            flex: 1, 
+            display: 'flex', 
+            flexDirection: 'column', 
+            height: '100%', 
+            overflow: isMaximized ? 'hidden' : 'visible',
+            gap: isMaximized ? '14px' : '0'
+          }}
+        >
+          {activeStats && (
         <div className="stock-metrics-grid">
           <div className="metric-item">
             <span className="metric-label">Open</span>
@@ -735,6 +760,18 @@ export default function StockChart({ activeTicker, chartData, activeStats, chart
               </LineChart>
             </ResponsiveContainer>
           </div>
+        )}
+        </div> {/* closes chart-container */}
+        </div> {/* closes Left Column */}
+
+        {/* Right Column: AI Chatbot (Only rendered in maximized layout) */}
+        {isMaximized && (
+          <ChartChatbot 
+            ticker={activeTicker}
+            markers={markers}
+            activeIndicators={{ sma: showSMA, ema: showEMA, rsi: showRSI }}
+            user={user}
+          />
         )}
       </div>
     </div>
