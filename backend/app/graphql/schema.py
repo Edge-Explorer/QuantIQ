@@ -457,7 +457,13 @@ class Mutation:
         return PaymentOrderType(order_id= order_id, amount= amount * 100, currency= "INR")
     
     @strawberry.mutation
-    async def get_ai_insight(self, info: Info, ticker: str) -> GeminiInsightType:
+    async def get_ai_insight(
+        self, 
+        info: Info, 
+        ticker: str, 
+        trading_style: Optional[str] = None, 
+        risk_tolerance: Optional[str] = None
+    ) -> GeminiInsightType:
         """
         Deducts 1 credit, executes the local ONNX ML prediction, and calls
         the Gemini ReAct agent loop to return market insights.
@@ -471,8 +477,12 @@ class Mutation:
             raise Exception("Insufficient credits. Please recharge via Razorpay.")
             
         # 2. Call the Gemini ReAct agent loop
+        style_label = (trading_style or "swing_trading").replace("_", " ")
+        risk_label = risk_tolerance or "moderate"
         prompt = (
             f"Analyze stock ticker {ticker.upper()}. "
+            f"The user's trading style is {style_label} and their risk profile is {risk_label}. "
+            "Tailor your analysis, support/resistance levels, entry/exit targets, and strategy report to match this style and risk profile. "
             "Retrieve its latest technical indicators and quantitative ML prediction using your tools. "
             "Check if the user has any active price alerts or watchlists set up for it. "
             "Perform a holistic qualitative and quantitative analysis of this stock."
