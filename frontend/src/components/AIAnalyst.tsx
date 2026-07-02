@@ -141,9 +141,10 @@ export default function AIAnalyst({
                   <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px', textAlign: 'left' }}>
                     <label style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Trading Style</label>
                     <select 
+                      className="premium-select"
                       value={tradingStyle}
                       onChange={(e) => setTradingStyle(e.target.value)}
-                      style={{ width: '100%', padding: '10px 14px', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-glass)', borderRadius: '10px', color: 'var(--text-primary)', outline: 'none', cursor: 'pointer', fontSize: '12px', transition: 'all 0.2s ease' }}
+                      style={{ width: '100%', padding: '10px 36px 10px 14px', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-glass)', borderRadius: '10px', color: 'var(--text-primary)', outline: 'none', cursor: 'pointer', fontSize: '12px', transition: 'all 0.2s ease' }}
                     >
                       <option value="day_trading">Day Trading</option>
                       <option value="swing_trading">Swing Trading</option>
@@ -153,9 +154,10 @@ export default function AIAnalyst({
                   <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px', textAlign: 'left' }}>
                     <label style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Risk Profile</label>
                     <select 
+                      className="premium-select"
                       value={riskTolerance}
                       onChange={(e) => setRiskTolerance(e.target.value)}
-                      style={{ width: '100%', padding: '10px 14px', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-glass)', borderRadius: '10px', color: 'var(--text-primary)', outline: 'none', cursor: 'pointer', fontSize: '12px', transition: 'all 0.2s ease' }}
+                      style={{ width: '100%', padding: '10px 36px 10px 14px', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-glass)', borderRadius: '10px', color: 'var(--text-primary)', outline: 'none', cursor: 'pointer', fontSize: '12px', transition: 'all 0.2s ease' }}
                     >
                       <option value="conservative">Conservative</option>
                       <option value="moderate">Moderate</option>
