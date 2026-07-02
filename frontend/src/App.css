@@ -1950,12 +1950,19 @@ input::-webkit-inner-spin-button {
   -webkit-appearance: inner-spin-button !important;
   display: block !important;
   filter: invert(1) brightness(0.85) !important;
-  opacity: 0.6 !important;
+  opacity: 0 !important; /* Hidden by default */
   cursor: pointer !important;
-  transition: all 0.2s ease !important;
+  transition: opacity 0.2s ease-in-out !important;
   background: transparent !important;
 }
 
+/* Reveal arrows when the input field is hovered */
+input[type=number]:hover::-webkit-outer-spin-button,
+input[type=number]:hover::-webkit-inner-spin-button {
+  opacity: 0.7 !important;
+}
+
+/* Highlight arrows when directly hovered */
 input::-webkit-outer-spin-button:hover,
 input::-webkit-inner-spin-button:hover {
   opacity: 1 !important;
