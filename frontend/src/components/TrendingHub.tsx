@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { TrendingUp, Newspaper, Plus } from 'lucide-react';
+import Logo from './Logo';
 
 interface TrendingHubProps {
   onAddTicker: (ticker: string) => Promise<void>;
@@ -140,24 +141,35 @@ export default function TrendingHub({ onAddTicker }: TrendingHubProps) {
         pointerEvents: 'none'
       }} />
 
-      {/* Massive Cyber Watermark Text behind cards */}
+      {/* Massive centered Logo watermark behind cards */}
       <div style={{
         position: 'absolute',
         top: '55%',
         left: '50%',
-        transform: 'translate(-50%, -50%) rotate(-12deg)',
-        fontSize: '110px',
-        fontWeight: 900,
-        color: 'rgba(255, 255, 255, 0.012)',
-        textShadow: '0 0 60px rgba(0, 242, 254, 0.03)',
-        letterSpacing: '0.15em',
+        transform: 'translate(-50%, -50%)',
+        opacity: 0.035, // Balanced readability vs visibility
         pointerEvents: 'none',
         userSelect: 'none',
         zIndex: 0,
-        whiteSpace: 'nowrap',
-        fontFamily: 'system-ui, sans-serif'
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        whiteSpace: 'nowrap'
       }}>
-        QUANTIQ TERMINAL
+        <Logo size={360} />
+        <span style={{ 
+          fontSize: '36px', 
+          fontWeight: 900, 
+          color: '#fff', 
+          opacity: 0.8,
+          letterSpacing: '0.3em', 
+          marginTop: '20px',
+          textTransform: 'uppercase',
+          fontFamily: 'system-ui, sans-serif'
+        }}>
+          QuantIQ
+        </span>
       </div>
 
       {/* Welcome Banner with neon gradient border */}
