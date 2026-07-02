@@ -58,13 +58,13 @@ class StockHistoryType:
     high: float
     low: float
     close: float
-    volume: int
+    volume: float
 
 @strawberry.type
 class StockTickType:
     ticker: str
     price: float
-    volume: int
+    volume: float
     timestamp: str
 
 @strawberry.type
