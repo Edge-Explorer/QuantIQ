@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ResponsiveContainer, ComposedChart, Area, Bar, Line, XAxis, YAxis, Tooltip, ReferenceLine, LineChart } from 'recharts';
-import { AreaChart as AreaIcon, BarChart2 as CandleIcon, Activity, Eye, EyeOff } from 'lucide-react';
+import { AreaChart as AreaIcon, BarChart2 as CandleIcon, Activity, Eye, EyeOff, Maximize2, Minimize2 } from 'lucide-react';
+
 
 interface ChartDataPoint {
   time: string;
@@ -162,6 +163,7 @@ export default function StockChart({ activeTicker, chartData, activeStats, chart
   const [showSMA, setShowSMA] = useState<boolean>(false);
   const [showEMA, setShowEMA] = useState<boolean>(false);
   const [showRSI, setShowRSI] = useState<boolean>(false);
+  const [isMaximized, setIsMaximized] = useState<boolean>(false);
 
   const ranges = [
     { label: '1D', value: '1d' },
@@ -249,8 +251,26 @@ export default function StockChart({ activeTicker, chartData, activeStats, chart
   const yMin = rawMinPrice === rawMaxPrice ? rawMinPrice * 0.95 : (rawMinPrice > 0 ? rawMinPrice * 0.95 : rawMinPrice);
   const yMax = rawMinPrice === rawMaxPrice ? rawMaxPrice * 1.05 : rawMaxPrice * 1.05;
 
+  const chartPanelStyle: React.CSSProperties = isMaximized ? {
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    width: '100vw',
+    height: '100vh',
+    zIndex: 9999,
+    background: 'rgba(9, 11, 20, 0.98)',
+    backdropFilter: 'blur(24px)',
+    padding: '30px 40px',
+    boxSizing: 'border-box',
+    display: 'flex',
+    flexDirection: 'column',
+    borderRadius: 0,
+    border: 'none',
+    overflowY: 'auto'
+  } : {};
+
   return (
-    <div className="glass-panel chart-panel">
+    <div className="glass-panel chart-panel" style={chartPanelStyle}>
       <div className="chart-header">
         <div className="active-stock-info">
           <h2>{activeTicker}</h2>
@@ -263,16 +283,39 @@ export default function StockChart({ activeTicker, chartData, activeStats, chart
           </div>
         </div>
 
-        <div className="chart-range-selector">
-          {ranges.map((r) => (
-            <button
-              key={r.value}
-              className={`range-btn ${chartRange === r.value ? 'active' : ''}`}
-              onClick={() => onRangeChange(r.value)}
-            >
-              {r.label}
-            </button>
-          ))}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div className="chart-range-selector">
+            {ranges.map((r) => (
+              <button
+                key={r.value}
+                className={`range-btn ${chartRange === r.value ? 'active' : ''}`}
+                onClick={() => onRangeChange(r.value)}
+              >
+                {r.label}
+              </button>
+            ))}
+          </div>
+
+          <button
+            onClick={() => setIsMaximized(!isMaximized)}
+            className="control-toggle-btn"
+            title={isMaximized ? "Minimize Chart" : "Maximize Chart"}
+            style={{
+              padding: '6px 10px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              background: 'rgba(255, 255, 255, 0.03)',
+              border: '1px solid var(--border-glass)',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              color: 'var(--text-secondary)',
+              transition: 'all 0.2s ease',
+              outline: 'none'
+            }}
+          >
+            {isMaximized ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
+          </button>
         </div>
       </div>
 
@@ -363,9 +406,9 @@ export default function StockChart({ activeTicker, chartData, activeStats, chart
       </div>
 
       {/* Main Chart Area */}
-      <div className="chart-container" style={{ position: 'relative', display: 'flex', flexDirection: 'column', gap: '16px', padding: '16px 16px 0', height: '340px' }}>
+      <div className="chart-container" style={{ position: 'relative', display: 'flex', flexDirection: 'column', gap: '16px', padding: '16px 16px 0', height: isMaximized ? 'calc(100vh - 280px)' : '340px' }}>
         {processedData.length > 0 ? (
-          <div style={{ height: showRSI ? '220px' : '340px', width: '100%' }}>
+          <div style={{ height: showRSI ? 'calc(100% - 120px)' : '100%', width: '100%' }}>
             <ResponsiveContainer width="100%" height="100%">
               <ComposedChart data={processedData} margin={{ top: 10, right: 5, left: 20, bottom: 25 }}>
                 <defs>
