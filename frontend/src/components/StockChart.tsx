@@ -22,26 +22,42 @@ interface StockChartProps {
 
 // Custom SVG component to draw wicks and body for candlestick bars
 const CandlestickBar = (props: any) => {
-  const { x, y, width, height, open, close, high, low } = props;
-  if (open === undefined || close === undefined || high === undefined || low === undefined) return null;
+  const { x, y, width, height, minPrice } = props;
+  
+  // Extract values safely from props or nested payload
+  const open = props.open !== undefined ? props.open : props.payload?.open;
+  const close = props.close !== undefined ? props.close : props.payload?.close;
+  const high = props.high !== undefined ? props.high : props.payload?.high;
+  const low = props.low !== undefined ? props.low : props.payload?.low;
+
+  if (open === undefined || close === undefined || high === undefined || low === undefined || minPrice === undefined) return null;
 
   const isUp = close >= open;
   const color = isUp ? '#10b981' : '#ef4444'; // green or red
   
-  const bodyHigh = Math.max(open, close);
-  const bodyLow = Math.min(open, close);
+
+  // Calculate scale: pixels per unit price
+  // The bottom of the bar corresponds to minPrice. The top of the bar (y) corresponds to close.
+  const priceRange = close - minPrice;
+  const scale = priceRange > 0 ? height / priceRange : 1;
   
-  const bodyHeight = Math.abs(open - close);
-  const scale = bodyHeight > 0 ? height / bodyHeight : 1;
-  
-  const yHigh = y - (high - bodyHigh) * scale;
-  const yLow = (y + height) + (bodyLow - low) * scale;
+  // Project prices to SVG coordinates
+  const yClose = y;
+  const yOpen = y + (close - open) * scale;
+  const yHigh = y + (close - high) * scale;
+  const yLow = y + (close - low) * scale;
   
   const cx = x + width / 2;
+  const rectY = Math.min(yClose, yOpen);
+  const rectHeight = Math.max(Math.abs(yClose - yOpen), 2); // Ensure at least 2px height for body
   
+  // For dense charts (like MAX range), bars can become less than 1px. We cap the minimum body width to 2px so it remains visible.
+  const bodyWidth = Math.max(width, 2);
+  const bodyX = x - (bodyWidth - width) / 2; // Center the body
+
   return (
     <g>
-      {/* Wick / Shadow */}
+      {/* Wick / Shadow (vertical line from high to low) */}
       <line 
         x1={cx} 
         y1={yHigh} 
@@ -52,10 +68,10 @@ const CandlestickBar = (props: any) => {
       />
       {/* Candle Body */}
       <rect 
-        x={x} 
-        y={y} 
-        width={width} 
-        height={Math.max(height, 2)} // Ensure at least 2px height for flat candles
+        x={bodyX} 
+        y={rectY} 
+        width={bodyWidth} 
+        height={rectHeight} 
         fill={color} 
         stroke={color}
         strokeWidth={1}
@@ -146,6 +162,18 @@ export default function StockChart({ activeTicker, chartData, activeStats, chart
   if (showEMA) processedData = computeEMA(processedData, 20);
   
   const rsiData = showRSI ? computeRSI(chartData, 14) : [];
+
+  // Calculate global Y-axis domain bounds dynamically to prevent clipping
+  const prices = processedData.map(d => d.price);
+  const highs = processedData.map(d => d.high ?? d.price);
+  const lows = processedData.map(d => d.low ?? d.price);
+
+  const rawMinPrice = Math.min(...lows, ...prices);
+  const rawMaxPrice = Math.max(...highs, ...prices);
+
+  // Add 5% padding to top/bottom to prevent lines touching borders
+  const yMin = rawMinPrice === rawMaxPrice ? rawMinPrice * 0.95 : (rawMinPrice > 0 ? rawMinPrice * 0.95 : rawMinPrice);
+  const yMax = rawMinPrice === rawMaxPrice ? rawMaxPrice * 1.05 : rawMaxPrice * 1.05;
 
   return (
     <div className="glass-panel chart-panel">
@@ -265,7 +293,7 @@ export default function StockChart({ activeTicker, chartData, activeStats, chart
         {processedData.length > 0 ? (
           <div style={{ flex: 1, width: '100%', minHeight: '220px' }}>
             <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart data={processedData} margin={{ top: 10, right: 5, left: -20, bottom: 0 }}>
+              <ComposedChart data={processedData} margin={{ top: 10, right: 5, left: 20, bottom: 0 }}>
                 <defs>
                   <linearGradient id="chartGlow" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#00f2fe" stopOpacity={0.2}/>
@@ -283,7 +311,7 @@ export default function StockChart({ activeTicker, chartData, activeStats, chart
                 <YAxis 
                   stroke="#475569" 
                   fontSize={11}
-                  domain={['auto', 'auto']}
+                  domain={[yMin, yMax]}
                   tickLine={false}
                 />
                 
@@ -310,8 +338,8 @@ export default function StockChart({ activeTicker, chartData, activeStats, chart
                   />
                 ) : (
                   <Bar 
-                    dataKey="range" 
-                    shape={<CandlestickBar />}
+                    dataKey="close"
+                    shape={<CandlestickBar minPrice={yMin} />}
                     name="Candlestick"
                   />
                 )}
@@ -363,7 +391,7 @@ export default function StockChart({ activeTicker, chartData, activeStats, chart
               <span style={{ color: 'var(--text-muted)' }}>Overbought &gt;70 | Oversold &lt;30</span>
             </div>
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={rsiData} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
+              <LineChart data={rsiData} margin={{ top: 5, right: 5, left: 20, bottom: 5 }}>
                 <XAxis dataKey="time" hide />
                 <YAxis stroke="#475569" fontSize={9} domain={[0, 100]} tickLine={false} ticks={[30, 50, 70]} />
                 <Tooltip 
