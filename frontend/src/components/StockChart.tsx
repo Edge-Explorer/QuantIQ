@@ -21,6 +21,7 @@ interface StockChartProps {
   chartRange: string;
   onRangeChange: (range: string) => void;
   user?: any;
+  onOpenRecharge?: () => void;
 }
 
 // Custom SVG component to draw wicks and body for candlestick bars
@@ -157,7 +158,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   return null;
 };
 
-export default function StockChart({ activeTicker, chartData, activeStats, chartRange, onRangeChange, user }: StockChartProps) {
+export default function StockChart({ activeTicker, chartData, activeStats, chartRange, onRangeChange, user, onOpenRecharge }: StockChartProps) {
   const currentPrice = chartData.length > 0 ? chartData[chartData.length - 1].price : null;
 
   // Chart States
@@ -771,6 +772,7 @@ export default function StockChart({ activeTicker, chartData, activeStats, chart
             markers={markers}
             activeIndicators={{ sma: showSMA, ema: showEMA, rsi: showRSI }}
             user={user}
+            onOpenRecharge={onOpenRecharge}
           />
         )}
       </div>
