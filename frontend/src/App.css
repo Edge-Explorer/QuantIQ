@@ -464,7 +464,7 @@
 /* Chart Styles */
 .chart-panel {
   padding: 20px 20px 16px;
-  min-height: 400px;
+  height: 520px; /* Fixed height for consistent, stable layout */
   display: flex;
   flex-direction: column;
 }

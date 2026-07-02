@@ -289,11 +289,11 @@ export default function StockChart({ activeTicker, chartData, activeStats, chart
       </div>
 
       {/* Main Chart Area */}
-      <div className="chart-container" style={{ display: 'flex', flexDirection: 'column', gap: '16px', height: showRSI ? 'calc(100% - 190px)' : 'calc(100% - 70px)', padding: '16px' }}>
+      <div className="chart-container" style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '16px', padding: '16px 16px 0', position: 'relative' }}>
         {processedData.length > 0 ? (
-          <div style={{ flex: 1, width: '100%', minHeight: '220px' }}>
+          <div style={{ height: showRSI ? 'calc(100% - 120px)' : '100%', width: '100%', minHeight: '220px' }}>
             <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart data={processedData} margin={{ top: 10, right: 5, left: 20, bottom: 0 }}>
+              <ComposedChart data={processedData} margin={{ top: 10, right: 5, left: 20, bottom: 25 }}>
                 <defs>
                   <linearGradient id="chartGlow" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#00f2fe" stopOpacity={0.2}/>
