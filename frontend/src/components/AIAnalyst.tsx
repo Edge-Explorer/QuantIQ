@@ -29,6 +29,8 @@ export default function AIAnalyst({
   const [selectedHistoryItem, setSelectedHistoryItem] = useState<any | null>(null);
   const [tradingStyle, setTradingStyle] = useState('swing_trading');
   const [riskTolerance, setRiskTolerance] = useState('moderate');
+  const [isStyleOpen, setIsStyleOpen] = useState(false);
+  const [isRiskOpen, setIsRiskOpen] = useState(false);
 
   // Custom parser to format **bold** words in neon-cyan and support paragraph newlines
   const formatReason = (text: string) => {
@@ -137,32 +139,230 @@ export default function AIAnalyst({
                 </p>
                 
                 {/* Style & Risk selectors */}
-                <div className="ai-param-selectors" style={{ display: 'flex', gap: '16px', justifyContent: 'center', width: '100%', maxWidth: '400px' }}>
-                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px', textAlign: 'left' }}>
+                {/* Style & Risk selectors */}
+                <div className="ai-param-selectors" style={{ display: 'flex', gap: '16px', justifyContent: 'center', width: '100%', maxWidth: '400px', marginBottom: '8px' }}>
+                  {/* Trading Style Custom Select */}
+                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px', textAlign: 'left', position: 'relative' }}>
                     <label style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Trading Style</label>
-                    <select 
+                    <div 
+                      onClick={() => {
+                        setIsStyleOpen(!isStyleOpen);
+                        setIsRiskOpen(false);
+                      }}
                       className="premium-select"
-                      value={tradingStyle}
-                      onChange={(e) => setTradingStyle(e.target.value)}
-                      style={{ width: '100%', padding: '10px 36px 10px 14px', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-glass)', borderRadius: '10px', color: 'var(--text-primary)', outline: 'none', cursor: 'pointer', fontSize: '12px', transition: 'all 0.2s ease' }}
+                      style={{ 
+                        width: '100%', 
+                        padding: '10px 14px', 
+                        background: 'rgba(255,255,255,0.02)', 
+                        border: '1px solid var(--border-glass)', 
+                        borderRadius: '10px', 
+                        color: 'var(--text-primary)', 
+                        cursor: 'pointer', 
+                        fontSize: '12px', 
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        boxSizing: 'border-box',
+                        minHeight: '38px'
+                      }}
                     >
-                      <option value="day_trading">Day Trading</option>
-                      <option value="swing_trading">Swing Trading</option>
-                      <option value="investing">Long-term Investing</option>
-                    </select>
+                      <span>
+                        {tradingStyle === 'day_trading' && 'Day Trading'}
+                        {tradingStyle === 'swing_trading' && 'Swing Trading'}
+                        {tradingStyle === 'investing' && 'Long-term Investing'}
+                      </span>
+                    </div>
+
+                    {isStyleOpen && (
+                      <div 
+                        className="glass-dropdown-menu"
+                        style={{
+                          position: 'absolute',
+                          top: '65px',
+                          left: 0,
+                          width: '100%',
+                          background: 'rgba(13, 16, 27, 0.85)',
+                          backdropFilter: 'blur(20px)',
+                          WebkitBackdropFilter: 'blur(20px)',
+                          border: '1px solid rgba(255, 255, 255, 0.08)',
+                          borderRadius: '12px',
+                          boxShadow: '0 12px 32px rgba(0, 0, 0, 0.5)',
+                          zIndex: 100,
+                          padding: '6px',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '2px',
+                          boxSizing: 'border-box'
+                        }}
+                      >
+                        <div 
+                          className="glass-dropdown-item"
+                          onClick={() => {
+                            setTradingStyle('day_trading');
+                            setIsStyleOpen(false);
+                          }}
+                          style={{
+                            padding: '10px 12px',
+                            borderRadius: '8px',
+                            cursor: 'pointer',
+                            color: tradingStyle === 'day_trading' ? 'var(--neon-cyan)' : 'var(--text-secondary)',
+                            background: tradingStyle === 'day_trading' ? 'rgba(0, 242, 254, 0.06)' : 'none',
+                            fontSize: '12px',
+                            transition: 'all 0.15s ease'
+                          }}
+                        >
+                          Day Trading
+                        </div>
+                        <div 
+                          className="glass-dropdown-item"
+                          onClick={() => {
+                            setTradingStyle('swing_trading');
+                            setIsStyleOpen(false);
+                          }}
+                          style={{
+                            padding: '10px 12px',
+                            borderRadius: '8px',
+                            cursor: 'pointer',
+                            color: tradingStyle === 'swing_trading' ? 'var(--neon-cyan)' : 'var(--text-secondary)',
+                            background: tradingStyle === 'swing_trading' ? 'rgba(0, 242, 254, 0.06)' : 'none',
+                            fontSize: '12px',
+                            transition: 'all 0.15s ease'
+                          }}
+                        >
+                          Swing Trading
+                        </div>
+                        <div 
+                          className="glass-dropdown-item"
+                          onClick={() => {
+                            setTradingStyle('investing');
+                            setIsStyleOpen(false);
+                          }}
+                          style={{
+                            padding: '10px 12px',
+                            borderRadius: '8px',
+                            cursor: 'pointer',
+                            color: tradingStyle === 'investing' ? 'var(--neon-cyan)' : 'var(--text-secondary)',
+                            background: tradingStyle === 'investing' ? 'rgba(0, 242, 254, 0.06)' : 'none',
+                            fontSize: '12px',
+                            transition: 'all 0.15s ease'
+                          }}
+                        >
+                          Long-term Investing
+                        </div>
+                      </div>
+                    )}
                   </div>
-                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px', textAlign: 'left' }}>
+
+                  {/* Risk Profile Custom Select */}
+                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px', textAlign: 'left', position: 'relative' }}>
                     <label style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Risk Profile</label>
-                    <select 
+                    <div 
+                      onClick={() => {
+                        setIsRiskOpen(!isRiskOpen);
+                        setIsStyleOpen(false);
+                      }}
                       className="premium-select"
-                      value={riskTolerance}
-                      onChange={(e) => setRiskTolerance(e.target.value)}
-                      style={{ width: '100%', padding: '10px 36px 10px 14px', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-glass)', borderRadius: '10px', color: 'var(--text-primary)', outline: 'none', cursor: 'pointer', fontSize: '12px', transition: 'all 0.2s ease' }}
+                      style={{ 
+                        width: '100%', 
+                        padding: '10px 14px', 
+                        background: 'rgba(255,255,255,0.02)', 
+                        border: '1px solid var(--border-glass)', 
+                        borderRadius: '10px', 
+                        color: 'var(--text-primary)', 
+                        cursor: 'pointer', 
+                        fontSize: '12px', 
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        boxSizing: 'border-box',
+                        minHeight: '38px'
+                      }}
                     >
-                      <option value="conservative">Conservative</option>
-                      <option value="moderate">Moderate</option>
-                      <option value="aggressive">Aggressive</option>
-                    </select>
+                      <span>
+                        {riskTolerance === 'conservative' && 'Conservative'}
+                        {riskTolerance === 'moderate' && 'Moderate'}
+                        {riskTolerance === 'aggressive' && 'Aggressive'}
+                      </span>
+                    </div>
+
+                    {isRiskOpen && (
+                      <div 
+                        className="glass-dropdown-menu"
+                        style={{
+                          position: 'absolute',
+                          top: '65px',
+                          left: 0,
+                          width: '100%',
+                          background: 'rgba(13, 16, 27, 0.85)',
+                          backdropFilter: 'blur(20px)',
+                          WebkitBackdropFilter: 'blur(20px)',
+                          border: '1px solid rgba(255, 255, 255, 0.08)',
+                          borderRadius: '12px',
+                          boxShadow: '0 12px 32px rgba(0, 0, 0, 0.5)',
+                          zIndex: 100,
+                          padding: '6px',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '2px',
+                          boxSizing: 'border-box'
+                        }}
+                      >
+                        <div 
+                          className="glass-dropdown-item"
+                          onClick={() => {
+                            setRiskTolerance('conservative');
+                            setIsRiskOpen(false);
+                          }}
+                          style={{
+                            padding: '10px 12px',
+                            borderRadius: '8px',
+                            cursor: 'pointer',
+                            color: riskTolerance === 'conservative' ? 'var(--neon-cyan)' : 'var(--text-secondary)',
+                            background: riskTolerance === 'conservative' ? 'rgba(0, 242, 254, 0.06)' : 'none',
+                            fontSize: '12px',
+                            transition: 'all 0.15s ease'
+                          }}
+                        >
+                          Conservative
+                        </div>
+                        <div 
+                          className="glass-dropdown-item"
+                          onClick={() => {
+                            setRiskTolerance('moderate');
+                            setIsRiskOpen(false);
+                          }}
+                          style={{
+                            padding: '10px 12px',
+                            borderRadius: '8px',
+                            cursor: 'pointer',
+                            color: riskTolerance === 'moderate' ? 'var(--neon-cyan)' : 'var(--text-secondary)',
+                            background: riskTolerance === 'moderate' ? 'rgba(0, 242, 254, 0.06)' : 'none',
+                            fontSize: '12px',
+                            transition: 'all 0.15s ease'
+                          }}
+                        >
+                          Moderate
+                        </div>
+                        <div 
+                          className="glass-dropdown-item"
+                          onClick={() => {
+                            setRiskTolerance('aggressive');
+                            setIsRiskOpen(false);
+                          }}
+                          style={{
+                            padding: '10px 12px',
+                            borderRadius: '8px',
+                            cursor: 'pointer',
+                            color: riskTolerance === 'aggressive' ? 'var(--neon-cyan)' : 'var(--text-secondary)',
+                            background: riskTolerance === 'aggressive' ? 'rgba(0, 242, 254, 0.06)' : 'none',
+                            fontSize: '12px',
+                            transition: 'all 0.15s ease'
+                          }}
+                        >
+                          Aggressive
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
 
