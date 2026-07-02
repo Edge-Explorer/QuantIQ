@@ -39,17 +39,64 @@ export default function ChartChatbot({ ticker, markers, activeIndicators, user, 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
-  // Helper to format text markdown bold/italics
+  // Helper to format text markdown bold/italics, headers, bullets, and clean up stray symbols
   const formatMessageContent = (text: string) => {
     if (!text) return '';
-    const parts = text.split(/(\*\*.*?\*\*|\*.*?\*)/g);
-    return parts.map((part, i) => {
-      if (part.startsWith('**') && part.endsWith('**')) {
-        return <strong key={i} style={{ color: '#fff', fontWeight: 700 }}>{part.slice(2, -2)}</strong>;
-      } else if (part.startsWith('*') && part.endsWith('*')) {
-        return <span key={i} style={{ color: 'var(--neon-cyan)', fontWeight: 500 }}>{part.slice(1, -1)}</span>;
+    const lines = text.split('\n');
+    return lines.map((line, lineIdx) => {
+      let cleanedLine = line;
+      
+      // 1. Convert headers (e.g., #### Header or ### Header) to clean bold blocks
+      const headerMatch = cleanedLine.match(/^(#{1,6})\s*(.*)$/);
+      let isHeader = false;
+      if (headerMatch) {
+        cleanedLine = headerMatch[2];
+        isHeader = true;
       }
-      return part;
+      
+      // 2. Convert bullet list points into clean lists
+      const bulletMatch = cleanedLine.match(/^(\*|-)\s+(.*)$/);
+      let isBullet = false;
+      if (bulletMatch) {
+        cleanedLine = bulletMatch[2];
+        isBullet = true;
+      }
+      
+      // 3. Parse inline bold (**text**) and italic (*text*) segments
+      const parts = cleanedLine.split(/(\*\*.*?\*\*|\*.*?\*)/g);
+      const parsedInline = parts.map((part, i) => {
+        if (part.startsWith('**') && part.endsWith('**')) {
+          return <strong key={i} style={{ color: '#fff', fontWeight: 700 }}>{part.slice(2, -2)}</strong>;
+        } else if (part.startsWith('*') && part.endsWith('*')) {
+          return <span key={i} style={{ color: 'var(--neon-cyan)', fontWeight: 500 }}>{part.slice(1, -1)}</span>;
+        }
+        // Remove any leftover stray asterisks in plain text segments
+        return part.replace(/\*/g, '');
+      });
+
+      // Render line structure
+      if (isHeader) {
+        return (
+          <h4 key={lineIdx} style={{ margin: '14px 0 6px 0', fontSize: '13px', fontWeight: 700, color: '#fff', lineHeight: 1.4 }}>
+            {parsedInline}
+          </h4>
+        );
+      }
+      
+      if (isBullet) {
+        return (
+          <div key={lineIdx} style={{ display: 'flex', gap: '6px', alignItems: 'flex-start', margin: '4px 0 4px 8px' }}>
+            <span style={{ color: 'var(--neon-cyan)', fontSize: '12px', lineHeight: '18px' }}>•</span>
+            <div style={{ flex: 1 }}>{parsedInline}</div>
+          </div>
+        );
+      }
+      
+      return (
+        <p key={lineIdx} style={{ margin: cleanedLine.trim() === '' ? '0' : '0 0 8px 0', minHeight: cleanedLine.trim() === '' ? '8px' : 'auto' }}>
+          {parsedInline}
+        </p>
+      );
     });
   };
 
