@@ -304,7 +304,7 @@ export default function ChartChatbot({ ticker, markers, activeIndicators, user, 
               color: 'var(--text-muted)'
             }}
           >
-            <Loader2 size={12} className="animate-spin" /> Analyzing canvas strategy...
+            <Loader2 size={12} className="animate-spin" /> Analyzing Quant AI Strategy...
           </div>
         )}
         <div ref={messagesEndRef} />
