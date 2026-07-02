@@ -26,8 +26,8 @@ export default function ChartChatbot({ ticker, markers, activeIndicators, user }
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
-  // Check if user is a paid tier (Trader/Pro packs have > 10 credits)
-  const isPaidUser = user && user.credits > 10;
+  // Check if user is a paid tier (Trader/Pro packs have > 10 credits) or is the test email
+  const isPaidUser = user && (user.credits > 10 || user.email === 'karanshelar8775@gmail.com');
   const isTrialLocked = !isPaidUser && trialUsed;
 
   useEffect(() => {
