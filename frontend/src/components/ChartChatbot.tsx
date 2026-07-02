@@ -122,15 +122,37 @@ export default function ChartChatbot({ ticker, markers, activeIndicators, user, 
         display: 'flex',
         flexDirection: 'column',
         height: '100%',
-        border: '1px solid var(--border-glass)',
+        border: '1px solid rgba(255, 255, 255, 0.06)',
         borderRadius: '16px',
         overflow: 'hidden',
-        background: 'rgba(13, 16, 27, 0.85)',
-        backdropFilter: 'blur(24px)',
+        background: 'rgba(8, 9, 16, 0.9)',
+        backdropFilter: 'blur(30px)',
         zIndex: 10,
-        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4)'
+        boxShadow: '0 12px 48px rgba(0, 0, 0, 0.6), inset 0 0 20px rgba(0, 242, 254, 0.02)',
+        position: 'relative'
       }}
     >
+      {/* Background Cyber Glowing Orbs */}
+      <div style={{
+        position: 'absolute',
+        top: '-40px',
+        right: '-40px',
+        width: '160px',
+        height: '160px',
+        background: 'radial-gradient(circle, rgba(161, 84, 255, 0.08) 0%, transparent 70%)',
+        pointerEvents: 'none',
+        zIndex: 0
+      }} />
+      <div style={{
+        position: 'absolute',
+        bottom: '60px',
+        left: '-40px',
+        width: '160px',
+        height: '160px',
+        background: 'radial-gradient(circle, rgba(0, 242, 254, 0.06) 0%, transparent 70%)',
+        pointerEvents: 'none',
+        zIndex: 0
+      }} />
       {/* Header */}
       <div 
         style={{
@@ -212,16 +234,23 @@ export default function ChartChatbot({ ticker, markers, activeIndicators, user, 
               style={{
                 alignSelf: isUser ? 'flex-end' : 'flex-start',
                 maxWidth: '85%',
-                background: isUser ? 'rgba(0, 242, 254, 0.1)' : 'rgba(255, 255, 255, 0.03)',
-                border: `1px solid ${isUser ? 'rgba(0, 242, 254, 0.2)' : 'rgba(255, 255, 255, 0.05)'}`,
-                borderRadius: isUser ? '12px 12px 2px 12px' : '12px 12px 12px 2px',
-                padding: '10px 12px',
-                color: isUser ? '#fff' : 'var(--text-secondary)',
+                background: isUser 
+                  ? 'linear-gradient(135deg, rgba(0, 242, 254, 0.15) 0%, rgba(0, 242, 254, 0.02) 100%)' 
+                  : 'linear-gradient(135deg, rgba(161, 84, 255, 0.1) 0%, rgba(161, 84, 255, 0.02) 100%)',
+                border: isUser 
+                  ? '1px solid rgba(0, 242, 254, 0.25)' 
+                  : '1px solid rgba(161, 84, 255, 0.18)',
+                borderRadius: isUser ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
+                padding: '10px 14px',
+                color: isUser ? '#fff' : 'rgba(255, 255, 255, 0.9)',
                 fontSize: '12px',
                 lineHeight: 1.5,
                 textAlign: 'left',
                 position: 'relative',
-                zIndex: 1
+                zIndex: 1,
+                boxShadow: isUser 
+                  ? '0 0 12px rgba(0, 242, 254, 0.1)' 
+                  : '0 0 12px rgba(161, 84, 255, 0.05)'
               }}
             >
               {msg.content}
@@ -300,7 +329,7 @@ export default function ChartChatbot({ ticker, markers, activeIndicators, user, 
             </button>
           </div>
         ) : (
-          <form onSubmit={handleSendMessage} style={{ display: 'flex', gap: '8px' }}>
+          <form onSubmit={handleSendMessage} style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
             <input 
               type="text"
               value={input}
@@ -309,31 +338,54 @@ export default function ChartChatbot({ ticker, markers, activeIndicators, user, 
               disabled={loading}
               style={{
                 flex: 1,
-                background: 'rgba(255, 255, 255, 0.03)',
-                border: '1px solid var(--border-glass)',
-                borderRadius: '8px',
-                padding: '8px 12px',
+                background: 'rgba(255, 255, 255, 0.02)',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
+                borderRadius: '20px',
+                padding: '10px 16px',
                 color: '#fff',
                 fontSize: '12px',
-                outline: 'none'
+                outline: 'none',
+                transition: 'all 0.3s ease',
+                boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.2)'
+              }}
+              onFocus={(e) => {
+                e.target.style.borderColor = 'rgba(0, 242, 254, 0.4)';
+                e.target.style.boxShadow = '0 0 12px rgba(0, 242, 254, 0.15), inset 0 1px 2px rgba(0,0,0,0.2)';
+              }}
+              onBlur={(e) => {
+                e.target.style.borderColor = 'rgba(255, 255, 255, 0.08)';
+                e.target.style.boxShadow = 'inset 0 1px 2px rgba(0,0,0,0.2)';
               }}
             />
             <button
               type="submit"
               disabled={!input.trim() || loading}
               style={{
-                width: '32px',
-                height: '32px',
-                borderRadius: '8px',
-                background: 'var(--neon-cyan)',
-                color: '#000',
+                width: '36px',
+                height: '36px',
+                borderRadius: '50%',
+                background: (!input.trim() || loading) 
+                  ? 'rgba(255, 255, 255, 0.05)' 
+                  : 'linear-gradient(135deg, var(--neon-cyan) 0%, var(--neon-violet) 100%)',
+                color: (!input.trim() || loading) ? 'rgba(255,255,255,0.3)' : '#000',
                 border: 'none',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                cursor: 'pointer',
-                opacity: (!input.trim() || loading) ? 0.5 : 1,
-                transition: 'all 0.2s'
+                cursor: (!input.trim() || loading) ? 'not-allowed' : 'pointer',
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                boxShadow: (!input.trim() || loading) ? 'none' : '0 4px 12px rgba(0, 242, 254, 0.3)',
+                transform: 'scale(1)'
+              }}
+              onMouseEnter={(e) => {
+                if (input.trim() && !loading) {
+                  e.currentTarget.style.transform = 'scale(1.1)';
+                  e.currentTarget.style.boxShadow = '0 6px 16px rgba(0, 242, 254, 0.5)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'scale(1)';
+                e.currentTarget.style.boxShadow = (!input.trim() || loading) ? 'none' : '0 4px 12px rgba(0, 242, 254, 0.3)';
               }}
             >
               <Send size={14} />
