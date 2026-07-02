@@ -6,9 +6,10 @@ interface ChartChatbotProps {
   markers: Array<{ price: number; label: string; color: string }>;
   activeIndicators: { sma: boolean; ema: boolean; rsi: boolean };
   user: any;
+  onOpenRecharge?: () => void;
 }
 
-export default function ChartChatbot({ ticker, markers, activeIndicators, user }: ChartChatbotProps) {
+export default function ChartChatbot({ ticker, markers, activeIndicators, user, onOpenRecharge }: ChartChatbotProps) {
   const [messages, setMessages] = useState<Array<{ role: 'user' | 'assistant'; content: string }>>([
     {
       role: 'assistant',
@@ -227,10 +228,7 @@ export default function ChartChatbot({ ticker, markers, activeIndicators, user }
               Unlock unlimited interactive chatbot sessions and custom indicator weights.
             </p>
             <button 
-              onClick={() => {
-                // Trigger scroll to pricing/upgrade or alert
-                alert("Go to Dashboard page and choose the Trader Pack or Pro Pack to unlock full AI sandbox features!");
-              }}
+              onClick={() => onOpenRecharge?.()}
               style={{
                 width: '100%',
                 padding: '6px 12px',

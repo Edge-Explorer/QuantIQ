@@ -101,6 +101,7 @@ export default function Dashboard({
                 chartRange={chartRange}
                 onRangeChange={onRangeChange}
                 user={user}
+                onOpenRecharge={onOpenRecharge}
               />
               <AIAnalyst
                 activeTicker={activeTicker}
