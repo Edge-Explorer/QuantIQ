@@ -10,12 +10,22 @@ interface ChartChatbotProps {
 }
 
 export default function ChartChatbot({ ticker, markers, activeIndicators, user, onOpenRecharge }: ChartChatbotProps) {
-  const [messages, setMessages] = useState<Array<{ role: 'user' | 'assistant'; content: string }>>([
-    {
-      role: 'assistant',
-      content: `Hello! I am your QuantIQ AI Strategy Advisor. I have analyzed the chart for ${ticker} and loaded your custom reference markers. Ask me anything about your entry/exit levels or risk setup!`
+  const [messages, setMessages] = useState<Array<{ role: 'user' | 'assistant'; content: string }>>(() => {
+    const saved = localStorage.getItem(`quantiq_chat_history_${ticker}`);
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        console.error('Failed to parse chat history:', e);
+      }
     }
-  ]);
+    return [
+      {
+        role: 'assistant',
+        content: `Hello! I am your QuantIQ AI Strategy Advisor. I have analyzed the chart for ${ticker} and loaded your custom reference markers. Ask me anything about your entry/exit levels or risk setup!`
+      }
+    ];
+  });
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   
@@ -31,9 +41,30 @@ export default function ChartChatbot({ ticker, markers, activeIndicators, user, 
   const isPaidUser = user && (user.credits > 10 || user.email === 'karanshelar8775@gmail.com');
   const isTrialLocked = !isPaidUser && trialUsed;
 
+  // Load chat history on ticker change
   useEffect(() => {
+    const saved = localStorage.getItem(`quantiq_chat_history_${ticker}`);
+    if (saved) {
+      try {
+        setMessages(JSON.parse(saved));
+        return;
+      } catch (e) {
+        console.error('Failed to parse chat history on ticker change:', e);
+      }
+    }
+    setMessages([
+      {
+        role: 'assistant',
+        content: `Hello! I am your QuantIQ AI Strategy Advisor. I have analyzed the chart for ${ticker} and loaded your custom reference markers. Ask me anything about your entry/exit levels or risk setup!`
+      }
+    ]);
+  }, [ticker]);
+
+  // Save chat history to localStorage and scroll to bottom
+  useEffect(() => {
+    localStorage.setItem(`quantiq_chat_history_${ticker}`, JSON.stringify(messages));
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  }, [messages, ticker]);
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -228,7 +259,10 @@ export default function ChartChatbot({ ticker, markers, activeIndicators, user, 
               Unlock unlimited interactive chatbot sessions and custom indicator weights.
             </p>
             <button 
-              onClick={() => onOpenRecharge?.()}
+              onClick={() => {
+                sessionStorage.setItem('quantiq_restore_maximized_chart', 'true');
+                onOpenRecharge?.();
+              }}
               style={{
                 width: '100%',
                 padding: '6px 12px',

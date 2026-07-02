@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ResponsiveContainer, ComposedChart, Area, Bar, Line, XAxis, YAxis, Tooltip, ReferenceLine, LineChart } from 'recharts';
 import { AreaChart as AreaIcon, BarChart2 as CandleIcon, Activity, Eye, EyeOff, Maximize2, Minimize2 } from 'lucide-react';
 import ChartChatbot from './ChartChatbot';
@@ -166,7 +166,16 @@ export default function StockChart({ activeTicker, chartData, activeStats, chart
   const [showSMA, setShowSMA] = useState<boolean>(false);
   const [showEMA, setShowEMA] = useState<boolean>(false);
   const [showRSI, setShowRSI] = useState<boolean>(false);
-  const [isMaximized, setIsMaximized] = useState<boolean>(false);
+  const [isMaximized, setIsMaximized] = useState<boolean>(() => {
+    return sessionStorage.getItem('quantiq_restore_maximized_chart') === 'true';
+  });
+
+  // Clear restoration flag on mount
+  useEffect(() => {
+    if (sessionStorage.getItem('quantiq_restore_maximized_chart') === 'true') {
+      sessionStorage.removeItem('quantiq_restore_maximized_chart');
+    }
+  }, []);
 
   // Markers state for drawing entry/exit lines
   interface ChartMarker {
