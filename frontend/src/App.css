@@ -1880,3 +1880,12 @@
 .control-toggle-btn.active:hover {
   opacity: 0.9;
 }
+
+/* Remove default focus outline/border on chart clicks */
+.recharts-wrapper:focus,
+.recharts-wrapper *:focus,
+.recharts-surface:focus,
+.recharts-surface *:focus {
+  outline: none !important;
+  box-shadow: none !important;
+}
