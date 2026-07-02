@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import LandingPage from './pages/LandingPage';
 import Dashboard from './pages/Dashboard';
 import UpgradePage from './pages/UpgradePage';
+import { X } from 'lucide-react';
 import './App.css';
 
 // Declare global types for external scripts
@@ -56,6 +57,20 @@ export default function App() {
   const [alerts, setAlerts] = useState<any[]>([]);
   const [chartRange, setChartRange] = useState<string>('1d');
   const [indices, setIndices] = useState<any[]>([]);
+  const [toasts, setToasts] = useState<Array<{ id: string; message: string; type: 'success' | 'alert' }>>([]);
+
+  const alertsRef = useRef<any[]>([]);
+  useEffect(() => {
+    alertsRef.current = alerts;
+  }, [alerts]);
+
+  const addToast = (message: string, type: 'success' | 'alert' = 'success') => {
+    const id = Math.random().toString(36).substring(2, 9);
+    setToasts(prev => [...prev, { id, message, type }]);
+    setTimeout(() => {
+      setToasts(prev => prev.filter(t => t.id !== id));
+    }, 6000);
+  };
   
   // AI Insights State
   const [insight, setInsight] = useState<any>(null);
@@ -224,9 +239,18 @@ export default function App() {
           } else {
             timeLabel = dateObj.toLocaleDateString([], { month: 'short', day: 'numeric' });
           }
+          const closeVal = parseFloat(h.close.toFixed(2));
+          const openVal = parseFloat((h.open !== null && h.open !== undefined ? h.open : h.close).toFixed(2));
+          const highVal = parseFloat((h.high !== null && h.high !== undefined ? h.high : h.close).toFixed(2));
+          const lowVal = parseFloat((h.low !== null && h.low !== undefined ? h.low : h.close).toFixed(2));
           return {
             time: timeLabel,
-            price: parseFloat(h.close.toFixed(2)),
+            price: closeVal,
+            open: openVal,
+            high: highVal,
+            low: lowVal,
+            close: closeVal,
+            range: [openVal, closeVal],
           };
         });
         setChartData(formatted);
@@ -287,20 +311,60 @@ export default function App() {
       if (msg.type === 'next' && msg.id === 'stock-tick-sub') {
         const tick = msg.payload.data?.streamStockTicks;
         if (!tick) return;
+
+        // Evaluate active alerts for this ticker
+        const currentPrice = tick.price;
+        alertsRef.current.forEach((alert) => {
+          if (alert.ticker === tick.ticker && alert.isActive) {
+            const isAboveTriggered = alert.condition === 'above' && currentPrice >= alert.targetPrice;
+            const isBelowTriggered = alert.condition === 'below' && currentPrice <= alert.targetPrice;
+
+            if (isAboveTriggered || isBelowTriggered) {
+              addToast(
+                `🔔 Alert Triggered: ${tick.ticker} crossed ${alert.condition.toUpperCase()} $${alert.targetPrice.toFixed(2)} (Current: $${currentPrice.toFixed(2)})`,
+                'alert'
+              );
+              // Call API to deactivate
+              handleDeactivateAlert(alert.id);
+            }
+          }
+        });
         
         const tickTime = new Date(tick.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         
         setChartData((prevData) => {
-          // If we already have the timestamp, update price. Else append.
           const updated = [...prevData];
           const last = updated[updated.length - 1];
           const newPrice = parseFloat(tick.price.toFixed(2));
           
           if (last && last.time === tickTime) {
-            updated[updated.length - 1] = { time: tickTime, price: newPrice };
+            const openVal = last.open !== undefined ? last.open : newPrice;
+            const highVal = Math.max(last.high !== undefined ? last.high : newPrice, newPrice);
+            const lowVal = Math.min(last.low !== undefined ? last.low : newPrice, newPrice);
+            
+            updated[updated.length - 1] = { 
+              time: tickTime, 
+              price: newPrice,
+              open: openVal,
+              high: highVal,
+              low: lowVal,
+              close: newPrice,
+              range: [openVal, newPrice]
+            };
             return updated;
           } else {
-            const nextList = [...updated, { time: tickTime, price: newPrice }];
+            const nextList = [
+              ...updated, 
+              { 
+                time: tickTime, 
+                price: newPrice,
+                open: newPrice,
+                high: newPrice,
+                low: newPrice,
+                close: newPrice,
+                range: [newPrice, newPrice]
+              }
+            ];
             // Cap chart view to last 35 data points
             if (nextList.length > 35) nextList.shift();
             return nextList;
@@ -551,31 +615,51 @@ export default function App() {
   }
 
   return (
-    <Dashboard
-      user={user}
-      watchlist={watchlist}
-      watchlistQuotes={watchlistQuotes}
-      activeTicker={activeTicker}
-      chartData={chartData}
-      activeStats={activeStats}
-      alerts={alerts}
-      insight={insight}
-      savedStrategies={savedStrategies}
-      loadingInsight={loadingInsight}
-      insightError={insightError}
-      chartRange={chartRange}
-      onRangeChange={setChartRange}
-      onSelectTicker={setActiveTicker}
-      onAddTicker={handleAddWatchlist}
-      onRemoveTicker={handleRemoveWatchlist}
-      onCreateAlert={handleCreateAlert}
-      onDeactivateAlert={handleDeactivateAlert}
-      onTriggerInsight={triggerAIInsight}
-      onOpenRecharge={() => setCurrentView('upgrade')}
-      onLogout={handleLogout}
-      onLogoClick={() => setCurrentView('landing')}
-      onAvatarUpload={(newUrl) => setUser((prev: any) => prev ? { ...prev, pictureUrl: newUrl } : null)}
-      indices={indices}
-    />
+    <>
+      <Dashboard
+        user={user}
+        watchlist={watchlist}
+        watchlistQuotes={watchlistQuotes}
+        activeTicker={activeTicker}
+        chartData={chartData}
+        activeStats={activeStats}
+        alerts={alerts}
+        insight={insight}
+        savedStrategies={savedStrategies}
+        loadingInsight={loadingInsight}
+        insightError={insightError}
+        chartRange={chartRange}
+        onRangeChange={setChartRange}
+        onSelectTicker={setActiveTicker}
+        onAddTicker={handleAddWatchlist}
+        onRemoveTicker={handleRemoveWatchlist}
+        onCreateAlert={handleCreateAlert}
+        onDeactivateAlert={handleDeactivateAlert}
+        onTriggerInsight={triggerAIInsight}
+        onOpenRecharge={() => setCurrentView('upgrade')}
+        onLogout={handleLogout}
+        onLogoClick={() => setCurrentView('landing')}
+        onAvatarUpload={(newUrl) => setUser((prev: any) => prev ? { ...prev, pictureUrl: newUrl } : null)}
+        indices={indices}
+      />
+
+      {/* Toast Notification Stack */}
+      <div className="toast-container">
+        {toasts.map((toast) => (
+          <div 
+            key={toast.id} 
+            className={`toast-notification ${toast.type === 'alert' ? 'toast-alert' : 'toast-success'}`}
+          >
+            <span style={{ fontSize: '13px', fontWeight: 600, flex: 1, textAlign: 'left' }}>{toast.message}</span>
+            <button 
+              onClick={() => setToasts(prev => prev.filter(t => t.id !== toast.id))}
+              style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.6)', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: '2px', outline: 'none' }}
+            >
+              <X size={14} />
+            </button>
+          </div>
+        ))}
+      </div>
+    </>
   );
 }

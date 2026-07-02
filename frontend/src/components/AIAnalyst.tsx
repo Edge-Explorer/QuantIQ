@@ -14,7 +14,7 @@ interface AIAnalystProps {
   savedStrategies: any[];
   loadingInsight: boolean;
   insightError: string | null;
-  onTriggerInsight: () => void;
+  onTriggerInsight: (tradingStyle: string, riskTolerance: string) => void;
 }
 
 export default function AIAnalyst({
@@ -27,6 +27,8 @@ export default function AIAnalyst({
 }: AIAnalystProps) {
   const [activeTab, setActiveTab] = useState<'analysis' | 'history'>('analysis');
   const [selectedHistoryItem, setSelectedHistoryItem] = useState<any | null>(null);
+  const [tradingStyle, setTradingStyle] = useState('swing_trading');
+  const [riskTolerance, setRiskTolerance] = useState('moderate');
 
   // Custom parser to format **bold** words in neon-cyan and support paragraph newlines
   const formatReason = (text: string) => {
@@ -129,11 +131,40 @@ export default function AIAnalyst({
         {activeTab === 'analysis' ? (
           <>
             {!insight && !loadingInsight && (
-              <div className="insight-cta">
-                <p className="insight-cta-description">
+              <div className="insight-cta" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px' }}>
+                <p className="insight-cta-description" style={{ margin: 0 }}>
                   Analyze indicators, watchlists, alerts, and model prediction in a single ReAct workflow.
                 </p>
-                <button className="insight-btn" onClick={onTriggerInsight}>
+                
+                {/* Style & Risk selectors */}
+                <div className="ai-param-selectors" style={{ display: 'flex', gap: '16px', justifyContent: 'center', width: '100%', maxWidth: '400px' }}>
+                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px', textAlign: 'left' }}>
+                    <label style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Trading Style</label>
+                    <select 
+                      value={tradingStyle}
+                      onChange={(e) => setTradingStyle(e.target.value)}
+                      style={{ width: '100%', padding: '10px 14px', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-glass)', borderRadius: '10px', color: 'var(--text-primary)', outline: 'none', cursor: 'pointer', fontSize: '12px', transition: 'all 0.2s ease' }}
+                    >
+                      <option value="day_trading">Day Trading</option>
+                      <option value="swing_trading">Swing Trading</option>
+                      <option value="investing">Long-term Investing</option>
+                    </select>
+                  </div>
+                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px', textAlign: 'left' }}>
+                    <label style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Risk Profile</label>
+                    <select 
+                      value={riskTolerance}
+                      onChange={(e) => setRiskTolerance(e.target.value)}
+                      style={{ width: '100%', padding: '10px 14px', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-glass)', borderRadius: '10px', color: 'var(--text-primary)', outline: 'none', cursor: 'pointer', fontSize: '12px', transition: 'all 0.2s ease' }}
+                    >
+                      <option value="conservative">Conservative</option>
+                      <option value="moderate">Moderate</option>
+                      <option value="aggressive">Aggressive</option>
+                    </select>
+                  </div>
+                </div>
+
+                <button className="insight-btn" onClick={() => onTriggerInsight(tradingStyle, riskTolerance)} style={{ marginTop: '4px' }}>
                   Generate strategy for {activeTicker}
                 </button>
               </div>
