@@ -457,3 +457,55 @@ async def get_global_indices():
         "timestamp": now
     }
     return results
+
+@router.get("/stocks/news")
+async def get_market_news():
+    """
+    Fetches live financial news from Yahoo Finance API.
+    """
+    url = "https://query1.finance.yahoo.com/v1/finance/search?q=market&quotesCount=0&newsCount=8"
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+    }
+    
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.get(url, headers=headers, timeout=5.0)
+            if response.status_code != 200:
+                return []
+            
+            data = response.json()
+            news_items = data.get("news", [])
+            
+            results = []
+            for item in news_items:
+                title = item.get("title")
+                link = item.get("link")
+                publisher = item.get("publisher") or "Yahoo Finance"
+                publish_time = item.get("providerPublishTime")
+                
+                time_str = "Recent"
+                if publish_time:
+                    import time
+                    diff = int(time.time()) - publish_time
+                    if diff < 3600:
+                        time_str = f"{max(1, diff // 60)}m ago"
+                    elif diff < 86400:
+                        time_str = f"{diff // 3600}h ago"
+                    else:
+                        time_str = f"{diff // 86400}d ago"
+                
+                import uuid
+                results.append({
+                    "id": item.get("uuid") or str(uuid.uuid4()),
+                    "title": title,
+                    "summary": f"Latest updates, corporate developments, and global analyst reporting.",
+                    "source": publisher,
+                    "time": time_str,
+                    "category": "Markets",
+                    "link": link
+                })
+            return results
+        except Exception as e:
+            print("Failed to fetch market news:", e)
+            return []

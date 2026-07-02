@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { TrendingUp, Newspaper, Plus } from 'lucide-react';
 
 interface TrendingHubProps {
@@ -5,6 +6,10 @@ interface TrendingHubProps {
 }
 
 export default function TrendingHub({ onAddTicker }: TrendingHubProps) {
+  const [news, setNews] = useState<any[]>([]);
+
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+
   const trendingAssets = [
     { symbol: 'BTC-USD', name: 'Bitcoin', price: 60534.05, change: 1.82, volume: '28.4B', category: 'Crypto' },
     { symbol: 'ETH-USD', name: 'Ethereum', price: 3421.10, change: 0.54, volume: '14.1B', category: 'Crypto' },
@@ -48,6 +53,40 @@ export default function TrendingHub({ onAddTicker }: TrendingHubProps) {
       category: 'Markets'
     }
   ];
+
+  useEffect(() => {
+    let active = true;
+    const fetchLiveNews = async () => {
+      try {
+        const res = await fetch(`${API_URL}/api/v1/stocks/news`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.length > 0 && active) {
+            const parsed = data.map((item: any) => ({
+              id: item.id || Math.random().toString(),
+              title: item.title,
+              summary: item.summary || 'Market updates, corporate developments, and global analyst reporting.',
+              source: item.source || 'Yahoo Finance',
+              time: item.time || 'Recent',
+              category: item.category || 'Markets'
+            }));
+            setNews(parsed);
+            return;
+          }
+        }
+      } catch (err) {
+        console.error('Failed to fetch live market news:', err);
+      }
+      if (active) {
+        setNews(trendingNews);
+      }
+    };
+
+    fetchLiveNews();
+    return () => {
+      active = false;
+    };
+  }, []);
 
   return (
     <div 
@@ -269,10 +308,11 @@ export default function TrendingHub({ onAddTicker }: TrendingHubProps) {
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            {trendingNews.map((news) => (
+            {news.map((item) => (
               <div 
-                key={news.id} 
+                key={item.id} 
                 className="glass-panel genz-news-card"
+                onClick={() => item.link && window.open(item.link, '_blank')}
                 style={{ 
                   padding: '16px', 
                   borderRadius: '12px', 
@@ -284,8 +324,9 @@ export default function TrendingHub({ onAddTicker }: TrendingHubProps) {
                   transition: 'all 0.2s ease',
                   background: 'rgba(13, 16, 27, 0.5)',
                   backdropFilter: 'blur(10px)',
-                  cursor: 'pointer'
+                  cursor: item.link ? 'pointer' : 'default'
                 }}
+                title={item.link ? "Click to read full article" : ""}
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ 
@@ -299,21 +340,22 @@ export default function TrendingHub({ onAddTicker }: TrendingHubProps) {
                     textTransform: 'uppercase',
                     letterSpacing: '0.03em'
                   }}>
-                    {news.category}
+                    {item.category}
                   </span>
-                  <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{news.time}</span>
+                  <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{item.time}</span>
                 </div>
                 
                 <h4 style={{ margin: 0, fontSize: '14px', fontWeight: 700, color: '#fff', lineHeight: 1.45 }}>
-                  {news.title}
+                  {item.title}
                 </h4>
                 
                 <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.55 }}>
-                  {news.summary}
+                  {item.summary}
                 </p>
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '8px', fontSize: '11px', color: 'var(--text-muted)' }}>
-                  <span>Source: <strong style={{ color: 'var(--text-secondary)' }}>{news.source}</strong></span>
+                  <span>Source: <strong style={{ color: 'var(--text-secondary)' }}>{item.source}</strong></span>
+                  {item.link && <span style={{ color: 'var(--neon-cyan)', fontSize: '10px', fontWeight: 600 }}>Read More →</span>}
                 </div>
               </div>
             ))}
