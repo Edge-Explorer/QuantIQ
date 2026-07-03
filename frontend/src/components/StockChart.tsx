@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ResponsiveContainer, ComposedChart, Area, Bar, Line, XAxis, YAxis, Tooltip, ReferenceLine, LineChart, ReferenceArea } from 'recharts';
+import { ResponsiveContainer, ComposedChart, Area, Bar, Line, XAxis, YAxis, Tooltip, ReferenceLine, LineChart } from 'recharts';
 import { AreaChart as AreaIcon, BarChart2 as CandleIcon, Activity, Eye, EyeOff, Maximize2, Minimize2 } from 'lucide-react';
 import ChartChatbot from './ChartChatbot';
 
@@ -177,46 +177,14 @@ export default function StockChart({ activeTicker, chartData, activeStats, chart
     }
   }, []);
 
-  // Zoom States (only active in maximized view)
-  const [zoomStartIndex, setZoomStartIndex] = useState<number | null>(null);
-  const [zoomEndIndex, setZoomEndIndex] = useState<number | null>(null);
-  const [refAreaLeft, setRefAreaLeft] = useState<string | null>(null);
-  const [refAreaRight, setRefAreaRight] = useState<string | null>(null);
+  // Zoom Factor state (only active in maximized view)
+  // 1.0 = full data, 0.8 = 80% data, 0.6 = 60%, 0.4 = 40%, 0.2 = 20%
+  const [zoomFactor, setZoomFactor] = useState<number>(1.0);
 
   // Reset zoom when ticker or range changes
   useEffect(() => {
-    setZoomStartIndex(null);
-    setZoomEndIndex(null);
+    setZoomFactor(1.0);
   }, [activeTicker, chartRange]);
-
-  const handleZoom = () => {
-    if (!refAreaLeft || !refAreaRight) {
-      setRefAreaLeft(null);
-      setRefAreaRight(null);
-      return;
-    }
-
-    let left = refAreaLeft;
-    let right = refAreaRight;
-
-    // Find indices of selected labels in processedData
-    const leftIndex = processedData.findIndex(d => d.time === left);
-    const rightIndex = processedData.findIndex(d => d.time === right);
-
-    if (leftIndex !== -1 && rightIndex !== -1) {
-      const start = Math.min(leftIndex, rightIndex);
-      const end = Math.max(leftIndex, rightIndex);
-      
-      // Only zoom if selecting at least 3 points to avoid empty chart crashes
-      if (end - start >= 2) {
-        setZoomStartIndex(start);
-        setZoomEndIndex(end);
-      }
-    }
-
-    setRefAreaLeft(null);
-    setRefAreaRight(null);
-  };
 
   // Markers state for drawing entry/exit lines
   interface ChartMarker {
@@ -339,14 +307,15 @@ export default function StockChart({ activeTicker, chartData, activeStats, chart
   if (showEMA) processedData = computeEMA(processedData, 20);
   
   // Slice data if zoomed in maximized view
-  const isZoomed = isMaximized && zoomStartIndex !== null && zoomEndIndex !== null;
+  const isZoomed = isMaximized && zoomFactor < 1.0;
+  const visibleCount = Math.max(5, Math.round(processedData.length * zoomFactor));
   const visibleData = isZoomed
-    ? processedData.slice(zoomStartIndex!, zoomEndIndex! + 1)
+    ? processedData.slice(processedData.length - visibleCount)
     : processedData;
   
   const rsiData = showRSI ? computeRSI(chartData, 14) : [];
   const visibleRsiData = isZoomed
-    ? rsiData.slice(zoomStartIndex!, zoomEndIndex! + 1)
+    ? rsiData.slice(rsiData.length - visibleCount)
     : rsiData;
 
   // Calculate global Y-axis domain bounds dynamically to prevent clipping
@@ -719,54 +688,85 @@ export default function StockChart({ activeTicker, chartData, activeStats, chart
             width: '100%',
             position: 'relative'
           }}>
-            {isZoomed && (
-              <button
-                onClick={() => {
-                  setZoomStartIndex(null);
-                  setZoomEndIndex(null);
-                }}
+            {isMaximized && (
+              <div 
                 style={{
                   position: 'absolute',
                   top: '10px',
                   right: '10px',
                   zIndex: 999,
-                  background: 'rgba(0, 242, 254, 0.15)',
-                  border: '1px solid rgba(0, 242, 254, 0.3)',
-                  borderRadius: '6px',
-                  color: '#fff',
-                  padding: '4px 10px',
-                  fontSize: '11px',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  backdropFilter: 'blur(8px)',
-                  boxShadow: '0 0 10px rgba(0, 242, 254, 0.2)',
-                  transition: 'all 0.2s'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = 'rgba(0, 242, 254, 0.25)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = 'rgba(0, 242, 254, 0.15)';
+                  display: 'flex',
+                  gap: '8px',
+                  alignItems: 'center'
                 }}
               >
-                Reset Zoom
-              </button>
+                {isZoomed && (
+                  <button
+                    onClick={() => setZoomFactor(1.0)}
+                    style={{
+                      background: 'rgba(255, 255, 255, 0.05)',
+                      border: '1px solid rgba(255, 255, 255, 0.1)',
+                      borderRadius: '6px',
+                      color: '#fff',
+                      padding: '4px 10px',
+                      fontSize: '11px',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      backdropFilter: 'blur(8px)',
+                      transition: 'all 0.2s'
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'}
+                    onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)'}
+                  >
+                    Reset Zoom
+                  </button>
+                )}
+                <button
+                  onClick={() => setZoomFactor(f => Math.max(0.2, f - 0.2))}
+                  style={{
+                    background: 'rgba(0, 242, 254, 0.15)',
+                    border: '1px solid rgba(0, 242, 254, 0.3)',
+                    borderRadius: '6px',
+                    color: '#fff',
+                    padding: '4px 12px',
+                    fontSize: '12px',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    backdropFilter: 'blur(8px)',
+                    boxShadow: '0 0 10px rgba(0, 242, 254, 0.2)',
+                    transition: 'all 0.2s'
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(0, 242, 254, 0.25)'}
+                  onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(0, 242, 254, 0.15)'}
+                >
+                  Zoom In (+)
+                </button>
+                <button
+                  onClick={() => setZoomFactor(f => Math.min(1.0, f + 0.2))}
+                  style={{
+                    background: 'rgba(161, 84, 255, 0.15)',
+                    border: '1px solid rgba(161, 84, 255, 0.3)',
+                    borderRadius: '6px',
+                    color: '#fff',
+                    padding: '4px 12px',
+                    fontSize: '12px',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    backdropFilter: 'blur(8px)',
+                    boxShadow: '0 0 10px rgba(161, 84, 255, 0.2)',
+                    transition: 'all 0.2s'
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(161, 84, 255, 0.25)'}
+                  onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(161, 84, 255, 0.15)'}
+                >
+                  Zoom Out (-)
+                </button>
+              </div>
             )}
             <ResponsiveContainer width="100%" height="100%">
               <ComposedChart 
                 data={visibleData} 
                 margin={{ top: 10, right: 5, left: 20, bottom: 25 }}
-                onMouseDown={(e: any) => {
-                  if (isMaximized && e && typeof e.activeLabel === 'string') {
-                    setRefAreaLeft(e.activeLabel);
-                  }
-                }}
-                onMouseMove={(e: any) => {
-                  if (isMaximized && refAreaLeft && e && typeof e.activeLabel === 'string') {
-                    setRefAreaRight(e.activeLabel);
-                  }
-                }}
-                onMouseUp={handleZoom}
               >
                 <defs>
                   <linearGradient id="chartGlow" x1="0" y1="0" x2="0" y2="1">
@@ -850,9 +850,6 @@ export default function StockChart({ activeTicker, chartData, activeStats, chart
                   />
                 )}
 
-                {isMaximized && refAreaLeft && refAreaRight && (
-                  <ReferenceArea x1={refAreaLeft} x2={refAreaRight} fill="rgba(0, 242, 254, 0.15)" strokeOpacity={0.3} />
-                )}
               </ComposedChart>
             </ResponsiveContainer>
           </div>
