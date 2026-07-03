@@ -861,49 +861,11 @@ export default function StockChart({ activeTicker, chartData, activeStats, chart
                     name="EMA 20"
                   />
                 )}
-
               </ComposedChart>
             </ResponsiveContainer>
-
-            {/* Horizontal Scroll/Pan Bar when Zoomed */}
-            {isZoomed && (
-              <div 
-                style={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  gap: '12px', 
-                  padding: '10px 24px', 
-                  background: 'rgba(255,255,255,0.02)',
-                  border: '1px solid rgba(255,255,255,0.05)',
-                  borderRadius: '10px',
-                  margin: '8px 0 12px 0'
-                }}
-              >
-                <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 700, letterSpacing: '0.05em' }}>PAN CHART:</span>
-                <input 
-                  type="range"
-                  min={0}
-                  max={maxScrollIndex}
-                  value={currentScrollIndex}
-                  onChange={(e) => setScrollIndex(parseInt(e.target.value))}
-                  style={{
-                    flex: 1,
-                    height: '6px',
-                    borderRadius: '3px',
-                    background: 'rgba(255, 255, 255, 0.1)',
-                    outline: 'none',
-                    cursor: 'ew-resize',
-                    accentColor: 'var(--neon-cyan)'
-                  }}
-                />
-                <span style={{ fontSize: '10px', color: 'var(--neon-cyan)', fontFamily: 'monospace', fontWeight: 600 }}>
-                  {visibleData[0]?.time} — {visibleData[visibleData.length - 1]?.time}
-                </span>
-              </div>
-            )}
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: '8px', padding: '20px', textAlign: 'center' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', height: '100%', gap: '8px', padding: '20px', textAlign: 'center' }}>
             <span style={{ color: 'var(--text-secondary)', fontSize: '13px', fontWeight: 600 }}>
               {chartRange === '1d' 
                 ? `Waiting for live ${activeTicker} ticks from Redpanda...`
@@ -912,6 +874,43 @@ export default function StockChart({ activeTicker, chartData, activeStats, chart
             </span>
             <span style={{ color: 'var(--text-muted)', fontSize: '11px', maxWidth: '340px', lineHeight: '140%' }}>
               Please verify if the ticker exists on Yahoo Finance (e.g., ADANIENT.NS for Adani Enterprises, GOOGL for Google).
+            </span>
+          </div>
+        )}
+
+        {/* Horizontal Scroll/Pan Bar when Zoomed */}
+        {processedData.length > 0 && isZoomed && (
+          <div 
+            style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '12px', 
+              padding: '10px 24px', 
+              background: 'rgba(255,255,255,0.02)',
+              border: '1px solid rgba(255,255,255,0.05)',
+              borderRadius: '10px',
+              margin: '8px 0 12px 0'
+            }}
+          >
+            <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 700, letterSpacing: '0.05em' }}>PAN CHART:</span>
+            <input 
+              type="range"
+              min={0}
+              max={maxScrollIndex}
+              value={currentScrollIndex}
+              onChange={(e) => setScrollIndex(parseInt(e.target.value))}
+              style={{
+                flex: 1,
+                height: '6px',
+                borderRadius: '3px',
+                background: 'rgba(255, 255, 255, 0.1)',
+                outline: 'none',
+                cursor: 'ew-resize',
+                accentColor: 'var(--neon-cyan)'
+              }}
+            />
+            <span style={{ fontSize: '10px', color: 'var(--neon-cyan)', fontFamily: 'monospace', fontWeight: 600 }}>
+              {visibleData[0]?.time} — {visibleData[visibleData.length - 1]?.time}
             </span>
           </div>
         )}
