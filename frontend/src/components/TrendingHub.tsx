@@ -177,11 +177,12 @@ export default function TrendingHub({ onAddTicker }: TrendingHubProps) {
 
       {/* Welcome Banner with neon gradient border */}
       <div 
-        className="glass-panel welcome-gradient-border" 
+        className="welcome-gradient-border" 
         style={{ 
-          padding: '28px 24px', 
-          background: 'linear-gradient(#0d101b, #0d101b) padding-box, linear-gradient(135deg, rgba(0, 242, 254, 0.3) 0%, rgba(161, 84, 255, 0.3) 100%) border-box',
-          border: '1px solid transparent',
+          padding: '24px', 
+          background: 'rgba(13, 16, 27, 0.45)',
+          backdropFilter: 'blur(20px)',
+          border: '1px solid rgba(0, 242, 254, 0.2)',
           borderRadius: '16px',
           display: 'flex',
           flexDirection: 'column',
@@ -322,7 +323,18 @@ export default function TrendingHub({ onAddTicker }: TrendingHubProps) {
             <h3 style={{ margin: 0, fontSize: '13px', fontWeight: 700, color: '#fff', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Financial Feed</h3>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <div 
+            style={{ 
+              display: 'flex', 
+              flexDirection: 'column', 
+              gap: '12px',
+              maxHeight: '520px',
+              overflowY: 'auto',
+              paddingRight: '6px',
+              scrollbarWidth: 'thin',
+              scrollbarColor: 'rgba(255,255,255,0.06) transparent'
+            }}
+          >
             {news.map((item) => (
               <div 
                 key={item.id} 
