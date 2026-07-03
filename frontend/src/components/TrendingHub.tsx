@@ -27,7 +27,8 @@ export default function TrendingHub({ onAddTicker }: TrendingHubProps) {
       summary: 'Fed Chair Jerome Powell indicated inflation is returning to the 2% target path, hinting at upcoming rate adjustments that could fuel market momentum.',
       source: 'Bloomberg',
       time: '12m ago',
-      category: 'Macroeconomics'
+      category: 'Macroeconomics',
+      link: 'https://www.bloomberg.com/markets'
     },
     {
       id: 2,
@@ -35,7 +36,8 @@ export default function TrendingHub({ onAddTicker }: TrendingHubProps) {
       summary: 'Top cloud providers continue to place record-breaking chip orders. Financial firms hike price targets as AI hardware revenues reach unprecedented highs.',
       source: 'Reuters',
       time: '35m ago',
-      category: 'Technology'
+      category: 'Technology',
+      link: 'https://www.reuters.com/technology'
     },
     {
       id: 3,
@@ -43,7 +45,8 @@ export default function TrendingHub({ onAddTicker }: TrendingHubProps) {
       summary: 'Market intelligence data shows heavy whale wallet accumulation at current support levels, indicating solid long-term investor conviction.',
       source: 'CoinDesk',
       time: '1h ago',
-      category: 'Crypto'
+      category: 'Crypto',
+      link: 'https://www.coindesk.com'
     },
     {
       id: 4,
@@ -51,7 +54,26 @@ export default function TrendingHub({ onAddTicker }: TrendingHubProps) {
       summary: 'Defensive sector gains support stock index benchmarks as fund managers rebalance portfolios ahead of upcoming consumer price index (CPI) updates.',
       source: 'CNBC',
       time: '2h ago',
-      category: 'Markets'
+      category: 'Markets',
+      link: 'https://www.cnbc.com/markets'
+    },
+    {
+      id: 5,
+      title: 'Apple Vision Pro Drives New Wave of Spatial Computing Investments',
+      summary: 'Institutional investors are increasing exposure to companies developing spatial computing platforms following Apple\'s growing developer ecosystem.',
+      source: 'Wall Street Journal',
+      time: '3h ago',
+      category: 'Technology',
+      link: 'https://www.wsj.com/tech'
+    },
+    {
+      id: 6,
+      title: 'Tesla Q3 Deliveries Beat Expectations; Stock Surges Pre-Market',
+      summary: 'Tesla reported record deliveries surpassing analyst forecasts, signaling strong demand recovery and boosting confidence in the EV market outlook.',
+      source: 'MarketWatch',
+      time: '5h ago',
+      category: 'Stocks',
+      link: 'https://www.marketwatch.com'
     }
   ];
 
@@ -69,7 +91,8 @@ export default function TrendingHub({ onAddTicker }: TrendingHubProps) {
               summary: item.summary || 'Market updates, corporate developments, and global analyst reporting.',
               source: item.source || 'Yahoo Finance',
               time: item.time || 'Recent',
-              category: item.category || 'Markets'
+              category: item.category || 'Markets',
+              link: item.link || item.url || item.article_url || null
             }));
             setNews(parsed);
             return;
@@ -338,8 +361,12 @@ export default function TrendingHub({ onAddTicker }: TrendingHubProps) {
             {news.map((item) => (
               <div 
                 key={item.id} 
-                className="glass-panel genz-news-card"
-                onClick={() => item.link && window.open(item.link, '_blank')}
+                className="genz-news-card"
+                onClick={() => {
+                  if (item.link) {
+                    window.open(item.link, '_blank', 'noopener,noreferrer');
+                  }
+                }}
                 style={{ 
                   padding: '16px', 
                   borderRadius: '12px', 
@@ -347,11 +374,12 @@ export default function TrendingHub({ onAddTicker }: TrendingHubProps) {
                   flexDirection: 'column', 
                   gap: '8px',
                   textAlign: 'left',
-                  border: '1px solid var(--border-glass)',
+                  border: '1px solid rgba(255,255,255,0.07)',
                   transition: 'all 0.2s ease',
                   background: 'rgba(13, 16, 27, 0.5)',
                   backdropFilter: 'blur(10px)',
-                  cursor: item.link ? 'pointer' : 'default'
+                  cursor: item.link ? 'pointer' : 'default',
+                  flexShrink: 0
                 }}
                 title={item.link ? "Click to read full article" : ""}
               >
