@@ -578,6 +578,77 @@ export default function StockChart({ activeTicker, chartData, activeStats, chart
               ))}
             </div>
           )}
+
+          {/* Zoom controls inside the marker control row */}
+          <div style={{ marginLeft: 'auto', display: 'flex', gap: '8px', alignItems: 'center' }}>
+            {isZoomed && (
+              <button
+                onClick={() => setZoomFactor(1.0)}
+                style={{
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  borderRadius: '6px',
+                  color: '#fff',
+                  padding: '4px 10px',
+                  fontSize: '11px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  backdropFilter: 'blur(8px)',
+                  transition: 'all 0.2s'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'}
+                onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)'}
+              >
+                Reset Zoom
+              </button>
+            )}
+            <button
+              onClick={() => setZoomFactor(f => Math.max(0.2, f - 0.2))}
+              style={{
+                background: 'rgba(0, 242, 254, 0.15)',
+                border: '1px solid rgba(0, 242, 254, 0.3)',
+                borderRadius: '50%',
+                width: '32px',
+                height: '32px',
+                color: '#fff',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                backdropFilter: 'blur(8px)',
+                boxShadow: '0 0 10px rgba(0, 242, 254, 0.2)',
+                transition: 'all 0.2s'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(0, 242, 254, 0.25)'}
+              onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(0, 242, 254, 0.15)'}
+              title="Zoom In"
+            >
+              <ZoomIn size={16} />
+            </button>
+            <button
+              onClick={() => setZoomFactor(f => Math.min(1.0, f + 0.2))}
+              style={{
+                background: 'rgba(161, 84, 255, 0.15)',
+                border: '1px solid rgba(161, 84, 255, 0.3)',
+                borderRadius: '50%',
+                width: '32px',
+                height: '32px',
+                color: '#fff',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                backdropFilter: 'blur(8px)',
+                boxShadow: '0 0 10px rgba(161, 84, 255, 0.2)',
+                transition: 'all 0.2s'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(161, 84, 255, 0.25)'}
+              onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(161, 84, 255, 0.15)'}
+              title="Zoom Out"
+            >
+              <ZoomOut size={16} />
+            </button>
+          </div>
         </div>
       )}
 
@@ -703,87 +774,7 @@ export default function StockChart({ activeTicker, chartData, activeStats, chart
             width: '100%',
             position: 'relative'
           }}>
-            {isMaximized && (
-              <div 
-                style={{
-                  position: 'absolute',
-                  top: '10px',
-                  right: '10px',
-                  zIndex: 999,
-                  display: 'flex',
-                  gap: '8px',
-                  alignItems: 'center'
-                }}
-              >
-                {isZoomed && (
-                  <button
-                    onClick={() => setZoomFactor(1.0)}
-                    style={{
-                      background: 'rgba(255, 255, 255, 0.05)',
-                      border: '1px solid rgba(255, 255, 255, 0.1)',
-                      borderRadius: '6px',
-                      color: '#fff',
-                      padding: '4px 10px',
-                      fontSize: '11px',
-                      fontWeight: 600,
-                      cursor: 'pointer',
-                      backdropFilter: 'blur(8px)',
-                      transition: 'all 0.2s'
-                    }}
-                    onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'}
-                    onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)'}
-                  >
-                    Reset Zoom
-                  </button>
-                )}
-                <button
-                  onClick={() => setZoomFactor(f => Math.max(0.2, f - 0.2))}
-                  style={{
-                    background: 'rgba(0, 242, 254, 0.15)',
-                    border: '1px solid rgba(0, 242, 254, 0.3)',
-                    borderRadius: '50%',
-                    width: '32px',
-                    height: '32px',
-                    color: '#fff',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    cursor: 'pointer',
-                    backdropFilter: 'blur(8px)',
-                    boxShadow: '0 0 10px rgba(0, 242, 254, 0.2)',
-                    transition: 'all 0.2s'
-                  }}
-                  onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(0, 242, 254, 0.25)'}
-                  onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(0, 242, 254, 0.15)'}
-                  title="Zoom In"
-                >
-                  <ZoomIn size={16} />
-                </button>
-                <button
-                  onClick={() => setZoomFactor(f => Math.min(1.0, f + 0.2))}
-                  style={{
-                    background: 'rgba(161, 84, 255, 0.15)',
-                    border: '1px solid rgba(161, 84, 255, 0.3)',
-                    borderRadius: '50%',
-                    width: '32px',
-                    height: '32px',
-                    color: '#fff',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    cursor: 'pointer',
-                    backdropFilter: 'blur(8px)',
-                    boxShadow: '0 0 10px rgba(161, 84, 255, 0.2)',
-                    transition: 'all 0.2s'
-                  }}
-                  onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(161, 84, 255, 0.25)'}
-                  onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(161, 84, 255, 0.15)'}
-                  title="Zoom Out"
-                >
-                  <ZoomOut size={16} />
-                </button>
-              </div>
-            )}
+
             <ResponsiveContainer width="100%" height="100%">
               <ComposedChart 
                 data={visibleData} 
