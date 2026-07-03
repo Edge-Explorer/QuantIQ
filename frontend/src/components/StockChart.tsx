@@ -660,7 +660,7 @@ export default function StockChart({ activeTicker, chartData, activeStats, chart
         gap: isMaximized ? '14px' : '16px', 
         padding: '16px 16px 0', 
         flex: isMaximized ? 1 : 'unset',
-        height: isMaximized ? 'auto' : '340px'
+        height: isMaximized ? 'auto' : (showRSI ? '420px' : '340px')
       }}>
         {/* Floating Add Marker Form */}
         {showAddMarkerForm && (
