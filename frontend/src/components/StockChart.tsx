@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { ResponsiveContainer, ComposedChart, Area, Bar, Line, XAxis, YAxis, Tooltip, ReferenceLine, LineChart } from 'recharts';
-import { AreaChart as AreaIcon, BarChart2 as CandleIcon, Activity, Eye, EyeOff, Maximize2, Minimize2 } from 'lucide-react';
+import { AreaChart as AreaIcon, BarChart2 as CandleIcon, Activity, Eye, EyeOff, Maximize2, Minimize2, ZoomIn, ZoomOut } from 'lucide-react';
 import ChartChatbot from './ChartChatbot';
 
 
@@ -177,14 +177,26 @@ export default function StockChart({ activeTicker, chartData, activeStats, chart
     }
   }, []);
 
-  // Zoom Factor state (only active in maximized view)
-  // 1.0 = full data, 0.8 = 80% data, 0.6 = 60%, 0.4 = 40%, 0.2 = 20%
+  // Zoom Factor and Scroll/Pan states (only active in maximized view)
   const [zoomFactor, setZoomFactor] = useState<number>(1.0);
+  const [scrollIndex, setScrollIndex] = useState<number>(0);
 
-  // Reset zoom when ticker or range changes
+  // Reset zoom and scroll when ticker or range changes
   useEffect(() => {
     setZoomFactor(1.0);
+    setScrollIndex(0);
   }, [activeTicker, chartRange]);
+
+  // Adjust scroll position to latest candles whenever zoom changes
+  useEffect(() => {
+    if (zoomFactor === 1.0) {
+      setScrollIndex(0);
+    } else {
+      const visibleCount = Math.max(5, Math.round(chartData.length * zoomFactor));
+      const maxScroll = Math.max(0, chartData.length - visibleCount);
+      setScrollIndex(maxScroll);
+    }
+  }, [zoomFactor, chartData.length]);
 
   // Markers state for drawing entry/exit lines
   interface ChartMarker {
@@ -309,13 +321,16 @@ export default function StockChart({ activeTicker, chartData, activeStats, chart
   // Slice data if zoomed in maximized view
   const isZoomed = isMaximized && zoomFactor < 1.0;
   const visibleCount = Math.max(5, Math.round(processedData.length * zoomFactor));
+  const maxScrollIndex = Math.max(0, processedData.length - visibleCount);
+  const currentScrollIndex = isZoomed ? Math.min(scrollIndex, maxScrollIndex) : 0;
+
   const visibleData = isZoomed
-    ? processedData.slice(processedData.length - visibleCount)
+    ? processedData.slice(currentScrollIndex, currentScrollIndex + visibleCount)
     : processedData;
   
   const rsiData = showRSI ? computeRSI(chartData, 14) : [];
   const visibleRsiData = isZoomed
-    ? rsiData.slice(rsiData.length - visibleCount)
+    ? rsiData.slice(currentScrollIndex, currentScrollIndex + visibleCount)
     : rsiData;
 
   // Calculate global Y-axis domain bounds dynamically to prevent clipping
@@ -726,11 +741,13 @@ export default function StockChart({ activeTicker, chartData, activeStats, chart
                   style={{
                     background: 'rgba(0, 242, 254, 0.15)',
                     border: '1px solid rgba(0, 242, 254, 0.3)',
-                    borderRadius: '6px',
+                    borderRadius: '50%',
+                    width: '32px',
+                    height: '32px',
                     color: '#fff',
-                    padding: '4px 12px',
-                    fontSize: '12px',
-                    fontWeight: 700,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
                     cursor: 'pointer',
                     backdropFilter: 'blur(8px)',
                     boxShadow: '0 0 10px rgba(0, 242, 254, 0.2)',
@@ -738,19 +755,22 @@ export default function StockChart({ activeTicker, chartData, activeStats, chart
                   }}
                   onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(0, 242, 254, 0.25)'}
                   onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(0, 242, 254, 0.15)'}
+                  title="Zoom In"
                 >
-                  Zoom In (+)
+                  <ZoomIn size={16} />
                 </button>
                 <button
                   onClick={() => setZoomFactor(f => Math.min(1.0, f + 0.2))}
                   style={{
                     background: 'rgba(161, 84, 255, 0.15)',
                     border: '1px solid rgba(161, 84, 255, 0.3)',
-                    borderRadius: '6px',
+                    borderRadius: '50%',
+                    width: '32px',
+                    height: '32px',
                     color: '#fff',
-                    padding: '4px 12px',
-                    fontSize: '12px',
-                    fontWeight: 700,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
                     cursor: 'pointer',
                     backdropFilter: 'blur(8px)',
                     boxShadow: '0 0 10px rgba(161, 84, 255, 0.2)',
@@ -758,8 +778,9 @@ export default function StockChart({ activeTicker, chartData, activeStats, chart
                   }}
                   onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(161, 84, 255, 0.25)'}
                   onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(161, 84, 255, 0.15)'}
+                  title="Zoom Out"
                 >
-                  Zoom Out (-)
+                  <ZoomOut size={16} />
                 </button>
               </div>
             )}
@@ -852,6 +873,43 @@ export default function StockChart({ activeTicker, chartData, activeStats, chart
 
               </ComposedChart>
             </ResponsiveContainer>
+
+            {/* Horizontal Scroll/Pan Bar when Zoomed */}
+            {isZoomed && (
+              <div 
+                style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '12px', 
+                  padding: '10px 24px', 
+                  background: 'rgba(255,255,255,0.02)',
+                  border: '1px solid rgba(255,255,255,0.05)',
+                  borderRadius: '10px',
+                  margin: '8px 0 12px 0'
+                }}
+              >
+                <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 700, letterSpacing: '0.05em' }}>PAN CHART:</span>
+                <input 
+                  type="range"
+                  min={0}
+                  max={maxScrollIndex}
+                  value={currentScrollIndex}
+                  onChange={(e) => setScrollIndex(parseInt(e.target.value))}
+                  style={{
+                    flex: 1,
+                    height: '6px',
+                    borderRadius: '3px',
+                    background: 'rgba(255, 255, 255, 0.1)',
+                    outline: 'none',
+                    cursor: 'ew-resize',
+                    accentColor: 'var(--neon-cyan)'
+                  }}
+                />
+                <span style={{ fontSize: '10px', color: 'var(--neon-cyan)', fontFamily: 'monospace', fontWeight: 600 }}>
+                  {visibleData[0]?.time} — {visibleData[visibleData.length - 1]?.time}
+                </span>
+              </div>
+            )}
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: '8px', padding: '20px', textAlign: 'center' }}>
