@@ -158,6 +158,24 @@ async def deactivate_alert(db: AsyncSession, alert_id: uuid.UUID) -> bool:
     await db.commit()
     return result.rowcount > 0
 
+async def trigger_alert(db: AsyncSession, alert_id: uuid.UUID) -> bool:
+    result = await db.execute(
+        update(models.Alert)
+        .where(models.Alert.id == alert_id)
+        .values(is_triggered=True, last_notified_at=func.now())
+    )
+    await db.commit()
+    return result.rowcount > 0
+
+async def update_alert_notification_time(db: AsyncSession, alert_id: uuid.UUID) -> bool:
+    result = await db.execute(
+        update(models.Alert)
+        .where(models.Alert.id == alert_id)
+        .values(last_notified_at=func.now())
+    )
+    await db.commit()
+    return result.rowcount > 0
+
 
 # ==========================================
 # STOCK HISTORY OPERATIONS
@@ -192,6 +210,41 @@ async def insert_stock_candle(db: AsyncSession, candle: schemas.StockHistoryBase
     stmt = stmt.on_conflict_do_nothing(index_elements=["ticker", "timestamp"])
     await db.execute(stmt)
     await db.commit()
+
+    # Check and trigger alerts for this ticker
+    alert_stmt = (
+        select(models.Alert)
+        .where(models.Alert.ticker == candle.ticker.upper())
+        .where(models.Alert.is_active == True)
+        .where(models.Alert.is_triggered == False)
+    )
+    alert_result = await db.execute(alert_stmt)
+    active_alerts = list(alert_result.scalars().all())
+
+    from backend.app.services.email_service import send_price_alert_email
+    for alert in active_alerts:
+        triggered = False
+        if alert.condition == "above" and candle.close >= alert.target_price:
+            triggered = True
+        elif alert.condition == "below" and candle.close <= alert.target_price:
+            triggered = True
+
+        if triggered:
+            alert.is_triggered = True
+            alert.last_notified_at = func.now()
+            db.add(alert)
+            await db.commit()
+
+            # Retrieve user to get their email address
+            user = await get_user(db, alert.user_id)
+            if user:
+                send_price_alert_email(
+                    to_email=user.email,
+                    ticker=alert.ticker,
+                    condition=alert.condition,
+                    target_price=alert.target_price,
+                    current_price=candle.close
+                )
 
 
 # ==========================================

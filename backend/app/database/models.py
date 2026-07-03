@@ -83,6 +83,8 @@ class Alert(Base):
     target_price: Mapped[float] = mapped_column(Float, nullable=False)
     condition: Mapped[str] = mapped_column(String(20), nullable=False)  # "above" or "below"
     is_active: Mapped[bool] = mapped_column(default=True, nullable=False)
+    is_triggered: Mapped[bool] = mapped_column(default=False, nullable=False)
+    last_notified_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime.datetime] = mapped_column(
         DateTime(timezone=True), 
         server_default=func.now(), 

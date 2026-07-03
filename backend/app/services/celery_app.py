@@ -99,3 +99,72 @@ def cleanup_old_history(days_to_keep: int= 7) -> str:
     Celery task that clears old stock history to save NeonDB storage space.
     """
     return asyncio.run(_async_cleanup_old_history(days_to_keep))
+
+# Periodic triggered alerts processor
+async def _async_process_triggered_alerts() -> str:
+    """
+    Checks all active alerts that have been triggered and emails reminders
+    every 2 minutes until deactivated.
+    """
+    from sqlalchemy import select
+    from backend.app.services.email_service import send_price_alert_email
+    
+    async with SessionLocal() as db:
+        stmt = (
+            select(models.Alert)
+            .where(models.Alert.is_active == True)
+            .where(models.Alert.is_triggered == True)
+        )
+        result = await db.execute(stmt)
+        triggered_alerts = list(result.scalars().all())
+        
+        sent_count = 0
+        now = datetime.datetime.now(datetime.timezone.utc)
+        
+        for alert in triggered_alerts:
+            # Check throttle: notify if last_notified_at is null or older than 2 minutes
+            should_notify = False
+            if not alert.last_notified_at:
+                should_notify = True
+            else:
+                delta = now - alert.last_notified_at
+                if delta >= datetime.timedelta(minutes=2):
+                    should_notify = True
+            
+            if should_notify:
+                user = await crud.get_user(db, alert.user_id)
+                if not user:
+                    continue
+                
+                # Fetch latest price
+                history = await crud.get_stock_history(db, alert.ticker, limit=1)
+                current_price = history[0].close if history else alert.target_price
+                
+                success = send_price_alert_email(
+                    to_email=user.email,
+                    ticker=alert.ticker,
+                    condition=alert.condition,
+                    target_price=alert.target_price,
+                    current_price=current_price
+                )
+                
+                if success:
+                    await crud.update_alert_notification_time(db, alert.id)
+                    sent_count += 1
+        
+        return f"Processed triggered alerts. Sent {sent_count} email notifications."
+
+@celery_app.task(name="tasks.process_triggered_alerts")
+def process_triggered_alerts() -> str:
+    """
+    Celery task run periodically (every 2 minutes) to process triggered alerts.
+    """
+    return asyncio.run(_async_process_triggered_alerts())
+
+# Configure Celery Beat Schedule
+celery_app.conf.beat_schedule = {
+    "process-triggered-alerts-every-2-min": {
+        "task": "tasks.process_triggered_alerts",
+        "schedule": 120.0,  # 120 seconds = 2 minutes
+    }
+}
