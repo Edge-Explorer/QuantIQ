@@ -184,7 +184,42 @@ export default function StockChart({ activeTicker, chartData, activeStats, chart
     label: string;
     color: string;
   }
-  const [markers, setMarkers] = useState<ChartMarker[]>([]);
+  const [markers, setMarkers] = useState<ChartMarker[]>(() => {
+    if (user?.email && activeTicker) {
+      const saved = localStorage.getItem(`quantiq_markers_${user.email}_${activeTicker}`);
+      if (saved) {
+        try {
+          return JSON.parse(saved);
+        } catch (e) {
+          console.error('Failed to parse saved markers:', e);
+        }
+      }
+    }
+    return [];
+  });
+
+  // Reload markers on ticker/user change
+  useEffect(() => {
+    if (user?.email && activeTicker) {
+      const saved = localStorage.getItem(`quantiq_markers_${user.email}_${activeTicker}`);
+      if (saved) {
+        try {
+          setMarkers(JSON.parse(saved));
+          return;
+        } catch (e) {
+          console.error('Failed to parse saved markers:', e);
+        }
+      }
+    }
+    setMarkers([]);
+  }, [activeTicker, user?.email]);
+
+  // Save markers to localStorage when updated
+  useEffect(() => {
+    if (user?.email && activeTicker) {
+      localStorage.setItem(`quantiq_markers_${user.email}_${activeTicker}`, JSON.stringify(markers));
+    }
+  }, [markers, activeTicker, user?.email]);
   const [showAddMarkerForm, setShowAddMarkerForm] = useState<boolean>(false);
   const [newMarkerLabel, setNewMarkerLabel] = useState<string>('Entry');
   const [newMarkerPrice, setNewMarkerPrice] = useState<string>('');
