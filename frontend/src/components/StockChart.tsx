@@ -432,8 +432,12 @@ export default function StockChart({ activeTicker, chartData, activeStats, chart
             display: 'flex', 
             flexDirection: 'column', 
             height: '100%', 
-            overflow: isMaximized ? 'hidden' : 'visible',
-            gap: isMaximized ? '14px' : '0'
+            overflowY: isMaximized ? 'auto' : 'visible',
+            overflowX: 'hidden',
+            scrollbarWidth: 'thin',
+            scrollbarColor: 'rgba(255,255,255,0.06) transparent',
+            gap: isMaximized ? '14px' : '0',
+            paddingRight: isMaximized ? '8px' : '0'
           }}
         >
           {activeStats && (
@@ -659,8 +663,8 @@ export default function StockChart({ activeTicker, chartData, activeStats, chart
         flexDirection: 'column', 
         gap: isMaximized ? '14px' : '16px', 
         padding: isMaximized ? '16px 24px 24px' : '16px 16px 32px', 
-        flex: isMaximized ? 1 : 'unset',
-        height: isMaximized ? 'auto' : (showRSI ? '450px' : '340px')
+        flex: 'unset',
+        height: isMaximized ? (showRSI ? '850px' : '650px') : (showRSI ? '450px' : '340px')
       }}>
         {/* Floating Add Marker Form */}
         {showAddMarkerForm && (
