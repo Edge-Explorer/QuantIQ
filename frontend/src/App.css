@@ -459,6 +459,10 @@
   display: flex;
   flex-direction: column;
   gap: 14px;
+  overflow-y: auto;
+  max-height: calc(100vh - 130px);
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.06) transparent;
 }
 
 /* Chart Styles */
@@ -468,6 +472,7 @@
   height: auto;
   display: flex;
   flex-direction: column;
+  flex-shrink: 0;
 }
 
 .chart-header {
