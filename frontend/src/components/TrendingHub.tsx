@@ -361,10 +361,11 @@ export default function TrendingHub({ onAddTicker }: TrendingHubProps) {
             {news.map((item) => (
               <a 
                 key={item.id} 
-                href={item.link || '#'}
-                target="_blank"
+                href={item.link || undefined}
+                target={item.link ? '_blank' : undefined}
                 rel="noopener noreferrer"
                 className="genz-news-card"
+                onClick={(e) => { if (!item.link) e.preventDefault(); }}
                 style={{ 
                   padding: '16px', 
                   borderRadius: '12px', 
@@ -376,7 +377,7 @@ export default function TrendingHub({ onAddTicker }: TrendingHubProps) {
                   transition: 'all 0.2s ease',
                   background: 'rgba(13, 16, 27, 0.5)',
                   backdropFilter: 'blur(10px)',
-                  cursor: 'pointer',
+                  cursor: item.link ? 'pointer' : 'default',
                   flexShrink: 0,
                   textDecoration: 'none',
                   color: 'inherit'
