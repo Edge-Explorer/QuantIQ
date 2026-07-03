@@ -359,14 +359,12 @@ export default function TrendingHub({ onAddTicker }: TrendingHubProps) {
             }}
           >
             {news.map((item) => (
-              <div 
+              <a 
                 key={item.id} 
+                href={item.link || '#'}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="genz-news-card"
-                onClick={() => {
-                  if (item.link) {
-                    window.open(item.link, '_blank', 'noopener,noreferrer');
-                  }
-                }}
                 style={{ 
                   padding: '16px', 
                   borderRadius: '12px', 
@@ -378,8 +376,10 @@ export default function TrendingHub({ onAddTicker }: TrendingHubProps) {
                   transition: 'all 0.2s ease',
                   background: 'rgba(13, 16, 27, 0.5)',
                   backdropFilter: 'blur(10px)',
-                  cursor: item.link ? 'pointer' : 'default',
-                  flexShrink: 0
+                  cursor: 'pointer',
+                  flexShrink: 0,
+                  textDecoration: 'none',
+                  color: 'inherit'
                 }}
                 title={item.link ? "Click to read full article" : ""}
               >
@@ -412,7 +412,7 @@ export default function TrendingHub({ onAddTicker }: TrendingHubProps) {
                   <span>Source: <strong style={{ color: 'var(--text-secondary)' }}>{item.source}</strong></span>
                   {item.link && <span style={{ color: 'var(--neon-cyan)', fontSize: '10px', fontWeight: 600 }}>Read More →</span>}
                 </div>
-              </div>
+              </a>
             ))}
           </div>
         </div>
