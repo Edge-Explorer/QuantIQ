@@ -658,7 +658,7 @@ export default function StockChart({ activeTicker, chartData, activeStats, chart
         display: 'flex', 
         flexDirection: 'column', 
         gap: isMaximized ? '14px' : '16px', 
-        padding: '16px 16px 0', 
+        padding: isMaximized ? '16px 24px 24px' : '16px 16px 32px', 
         flex: isMaximized ? 1 : 'unset',
         height: isMaximized ? 'auto' : (showRSI ? '420px' : '340px')
       }}>
