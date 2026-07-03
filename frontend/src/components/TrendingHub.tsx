@@ -97,10 +97,13 @@ export default function TrendingHub({ onAddTicker }: TrendingHubProps) {
         flexDirection: 'column', 
         gap: '24px', 
         width: '100%', 
+        maxHeight: 'calc(100vh - 140px)',
         boxSizing: 'border-box',
         position: 'relative',
-        overflow: 'hidden',
-        padding: '8px'
+        overflowY: 'auto',
+        padding: '8px 16px 24px 8px',
+        scrollbarWidth: 'thin',
+        scrollbarColor: 'rgba(255,255,255,0.06) transparent'
       }}
     >
       
