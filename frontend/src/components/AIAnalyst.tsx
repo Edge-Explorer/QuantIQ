@@ -83,7 +83,7 @@ export default function AIAnalyst({
   );
 
   return (
-    <div className="glass-panel insight-panel" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+    <div className="glass-panel insight-panel" style={{ display: 'flex', flexDirection: 'column', minHeight: '340px', height: 'auto' }}>
       <div className="panel-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', borderBottom: '1px solid var(--border-glass)', paddingBottom: '12px', marginBottom: '16px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <Logo size={18} className="glow-cyan" />
