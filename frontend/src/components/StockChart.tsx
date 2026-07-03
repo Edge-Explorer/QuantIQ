@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ResponsiveContainer, ComposedChart, Area, Bar, Line, XAxis, YAxis, Tooltip, ReferenceLine, LineChart } from 'recharts';
+import { ResponsiveContainer, ComposedChart, Area, Bar, Line, XAxis, YAxis, Tooltip, ReferenceLine, LineChart, ReferenceArea } from 'recharts';
 import { AreaChart as AreaIcon, BarChart2 as CandleIcon, Activity, Eye, EyeOff, Maximize2, Minimize2 } from 'lucide-react';
 import ChartChatbot from './ChartChatbot';
 
@@ -177,6 +177,47 @@ export default function StockChart({ activeTicker, chartData, activeStats, chart
     }
   }, []);
 
+  // Zoom States (only active in maximized view)
+  const [zoomStartIndex, setZoomStartIndex] = useState<number | null>(null);
+  const [zoomEndIndex, setZoomEndIndex] = useState<number | null>(null);
+  const [refAreaLeft, setRefAreaLeft] = useState<string | null>(null);
+  const [refAreaRight, setRefAreaRight] = useState<string | null>(null);
+
+  // Reset zoom when ticker or range changes
+  useEffect(() => {
+    setZoomStartIndex(null);
+    setZoomEndIndex(null);
+  }, [activeTicker, chartRange]);
+
+  const handleZoom = () => {
+    if (!refAreaLeft || !refAreaRight) {
+      setRefAreaLeft(null);
+      setRefAreaRight(null);
+      return;
+    }
+
+    let left = refAreaLeft;
+    let right = refAreaRight;
+
+    // Find indices of selected labels in processedData
+    const leftIndex = processedData.findIndex(d => d.time === left);
+    const rightIndex = processedData.findIndex(d => d.time === right);
+
+    if (leftIndex !== -1 && rightIndex !== -1) {
+      const start = Math.min(leftIndex, rightIndex);
+      const end = Math.max(leftIndex, rightIndex);
+      
+      // Only zoom if selecting at least 3 points to avoid empty chart crashes
+      if (end - start >= 2) {
+        setZoomStartIndex(start);
+        setZoomEndIndex(end);
+      }
+    }
+
+    setRefAreaLeft(null);
+    setRefAreaRight(null);
+  };
+
   // Markers state for drawing entry/exit lines
   interface ChartMarker {
     id: string;
@@ -297,15 +338,24 @@ export default function StockChart({ activeTicker, chartData, activeStats, chart
   if (showSMA) processedData = computeSMA(processedData, 20);
   if (showEMA) processedData = computeEMA(processedData, 20);
   
+  // Slice data if zoomed in maximized view
+  const isZoomed = isMaximized && zoomStartIndex !== null && zoomEndIndex !== null;
+  const visibleData = isZoomed
+    ? processedData.slice(zoomStartIndex!, zoomEndIndex! + 1)
+    : processedData;
+  
   const rsiData = showRSI ? computeRSI(chartData, 14) : [];
+  const visibleRsiData = isZoomed
+    ? rsiData.slice(zoomStartIndex!, zoomEndIndex! + 1)
+    : rsiData;
 
   // Calculate global Y-axis domain bounds dynamically to prevent clipping
-  const prices = processedData.map(d => d.price);
-  const highs = processedData.map(d => d.high ?? d.price);
-  const lows = processedData.map(d => d.low ?? d.price);
+  const prices = visibleData.map(d => d.price);
+  const highs = visibleData.map(d => d.high ?? d.price);
+  const lows = visibleData.map(d => d.low ?? d.price);
 
-  const rawMinPrice = Math.min(...lows, ...prices);
-  const rawMaxPrice = Math.max(...highs, ...prices);
+  const rawMinPrice = prices.length > 0 ? Math.min(...lows, ...prices) : 0;
+  const rawMaxPrice = prices.length > 0 ? Math.max(...highs, ...prices) : 100;
 
   // Add 5% padding to top/bottom to prevent lines touching borders
   const yMin = rawMinPrice === rawMaxPrice ? rawMinPrice * 0.95 : (rawMinPrice > 0 ? rawMinPrice * 0.95 : rawMinPrice);
@@ -666,10 +716,58 @@ export default function StockChart({ activeTicker, chartData, activeStats, chart
             height: showRSI 
               ? (isMaximized ? '74%' : 'calc(100% - 110px)') 
               : '100%', 
-            width: '100%' 
+            width: '100%',
+            position: 'relative'
           }}>
+            {isZoomed && (
+              <button
+                onClick={() => {
+                  setZoomStartIndex(null);
+                  setZoomEndIndex(null);
+                }}
+                style={{
+                  position: 'absolute',
+                  top: '10px',
+                  right: '10px',
+                  zIndex: 999,
+                  background: 'rgba(0, 242, 254, 0.15)',
+                  border: '1px solid rgba(0, 242, 254, 0.3)',
+                  borderRadius: '6px',
+                  color: '#fff',
+                  padding: '4px 10px',
+                  fontSize: '11px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  backdropFilter: 'blur(8px)',
+                  boxShadow: '0 0 10px rgba(0, 242, 254, 0.2)',
+                  transition: 'all 0.2s'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'rgba(0, 242, 254, 0.25)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'rgba(0, 242, 254, 0.15)';
+                }}
+              >
+                Reset Zoom
+              </button>
+            )}
             <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart data={processedData} margin={{ top: 10, right: 5, left: 20, bottom: 25 }}>
+              <ComposedChart 
+                data={visibleData} 
+                margin={{ top: 10, right: 5, left: 20, bottom: 25 }}
+                onMouseDown={(e: any) => {
+                  if (isMaximized && e && typeof e.activeLabel === 'string') {
+                    setRefAreaLeft(e.activeLabel);
+                  }
+                }}
+                onMouseMove={(e: any) => {
+                  if (isMaximized && refAreaLeft && e && typeof e.activeLabel === 'string') {
+                    setRefAreaRight(e.activeLabel);
+                  }
+                }}
+                onMouseUp={handleZoom}
+              >
                 <defs>
                   <linearGradient id="chartGlow" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#00f2fe" stopOpacity={0.2}/>
@@ -751,6 +849,10 @@ export default function StockChart({ activeTicker, chartData, activeStats, chart
                     name="EMA 20"
                   />
                 )}
+
+                {isMaximized && refAreaLeft && refAreaRight && (
+                  <ReferenceArea x1={refAreaLeft} x2={refAreaRight} fill="rgba(0, 242, 254, 0.15)" strokeOpacity={0.3} />
+                )}
               </ComposedChart>
             </ResponsiveContainer>
           </div>
@@ -769,14 +871,14 @@ export default function StockChart({ activeTicker, chartData, activeStats, chart
         )}
 
         {/* Technical Indicator panel: RSI 14 (Auxiliary Chart below main price chart) */}
-        {showRSI && rsiData.length > 0 && (
+        {showRSI && visibleRsiData.length > 0 && (
           <div style={{ height: isMaximized ? '22%' : '100px', width: '100%', borderTop: '1px dashed var(--border-glass)', paddingTop: '10px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--text-secondary)', marginBottom: '4px', paddingLeft: '10px' }}>
               <span style={{ fontWeight: 700, color: 'var(--neon-cyan)' }}>RSI (14)</span>
               <span style={{ color: 'var(--text-muted)' }}>Overbought &gt;70 | Oversold &lt;30</span>
             </div>
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={rsiData} margin={{ top: 5, right: 5, left: 20, bottom: 5 }}>
+              <LineChart data={visibleRsiData} margin={{ top: 5, right: 5, left: 20, bottom: 5 }}>
                 <XAxis dataKey="time" hide />
                 <YAxis stroke="#475569" fontSize={9} domain={[0, 100]} tickLine={false} ticks={[30, 50, 70]} />
                 <Tooltip 

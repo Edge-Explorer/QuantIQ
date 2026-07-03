@@ -587,7 +587,7 @@ async def chat_with_analyst(payload: ChatRequest):
 
     # Format chat history
     formatted_history = ""
-    for turn in history[-6:]: # Keep last 6 turns for context
+    for turn in history[-30:]: # Keep last 30 turns for long-term memory context
         role = "Trader" if turn.get("role") == "user" else "Advisor"
         formatted_history += f"\n{role}: {turn.get('content')}"
 
