@@ -577,7 +577,11 @@ async def chat_with_analyst(payload: ChatRequest):
         "4. Provide realistic risk-to-reward ratios and volatility warnings based on the asset.\n"
         f"5. At the very end of your response, you MUST provide a final section called '**Probability Prediction Score:**'. "
         f"Output the score as exactly: '**Probability Prediction Score:** {probability_score}% Bullish (Coordinated with QuantIQ ML Model)'. "
-        "Add a 1-sentence simplified explanation of why the ML model outputs this probability based on current indicator alignment.\n\n"
+        "Add a 1-sentence simplified explanation of why the ML model outputs this probability based on current indicator alignment.\n"
+        "6. Strictly refuse to answer any questions that are not directly related to financial markets, trading, stock exchanges, "
+        "crypto, technical indicators, or custom price levels. If the user asks about anything else (e.g. general history, unrelated coding, "
+        "cooking, sports, life advice, general science), you must politely reject the query, state that you are optimized solely for "
+        "trading strategy and market analysis, and divert the conversation back to the active chart analysis or custom markers. Be friendly but firm.\n\n"
         "Below is the conversation history and the user's latest question. Respond to their latest question directly."
     )
 
