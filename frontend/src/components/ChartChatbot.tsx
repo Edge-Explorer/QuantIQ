@@ -244,54 +244,22 @@ export default function ChartChatbot({ ticker, markers, activeIndicators, user, 
     >
       {/* Clear Chat Confirmation Overlay */}
       {showConfirm && (
-        <div style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          width: '100%',
-          height: '100%',
-          background: 'rgba(7, 9, 14, 0.85)',
-          backdropFilter: 'blur(10px)',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '24px',
-          zIndex: 100,
-          textAlign: 'center'
-        }}>
-          <div style={{
-            background: 'rgba(255, 255, 255, 0.02)',
-            border: '1px solid rgba(255, 255, 255, 0.05)',
-            borderRadius: '16px',
-            padding: '20px',
-            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4)',
-            maxWidth: '280px'
-          }}>
-            <Trash2 size={24} color="#ef4444" style={{ marginBottom: '12px', margin: '0 auto' }} />
-            <h4 style={{ margin: '8px 0 8px', color: '#fff', fontSize: '14px', fontWeight: 700 }}>Clear Chat from UI?</h4>
-            <p style={{ margin: '0 0 20px', color: 'var(--text-secondary)', fontSize: '11px', lineHeight: 1.5 }}>
-              This will clear the conversation from your screen. The backup will remain securely stored in our database.
+        <div className="custom-modal-overlay">
+          <div className="custom-modal-content glass-panel liquid-glass animate-fade-rise" style={{ border: '1px solid rgba(255, 23, 68, 0.3)', maxWidth: '280px', padding: '24px' }}>
+            <h3 style={{ fontSize: '18px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '12px', textAlign: 'left' }}>
+              Confirm Deletion
+            </h3>
+            <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '24px', lineHeight: '150%', textAlign: 'left' }}>
+              Are you sure you want to clear the chat history for <strong style={{ color: 'var(--neon-cyan)' }}>{ticker}</strong> from your screen?
             </p>
-            <div style={{ display: 'flex', gap: '10px' }}>
-              <button
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+              <button 
                 onClick={() => setShowConfirm(false)}
-                style={{
-                  flex: 1,
-                  padding: '8px',
-                  borderRadius: '8px',
-                  border: '1px solid rgba(255, 255, 255, 0.08)',
-                  background: 'none',
-                  color: '#fff',
-                  fontSize: '11px',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  outline: 'none'
-                }}
+                className="modal-cancel-btn"
               >
                 Cancel
               </button>
-              <button
+              <button 
                 onClick={() => {
                   localStorage.removeItem(`quantiq_chat_history_${ticker}`);
                   setMessages([
@@ -302,21 +270,9 @@ export default function ChartChatbot({ ticker, markers, activeIndicators, user, 
                   ]);
                   setShowConfirm(false);
                 }}
-                style={{
-                  flex: 1,
-                  padding: '8px',
-                  borderRadius: '8px',
-                  border: 'none',
-                  background: '#ef4444',
-                  color: '#fff',
-                  fontSize: '11px',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  outline: 'none',
-                  boxShadow: '0 4px 12px rgba(239, 68, 68, 0.2)'
-                }}
+                className="modal-confirm-btn"
               >
-                Clear
+                Remove
               </button>
             </div>
           </div>
