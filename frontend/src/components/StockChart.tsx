@@ -162,20 +162,60 @@ export default function StockChart({ activeTicker, chartData, activeStats, chart
   const currentPrice = chartData.length > 0 ? chartData[chartData.length - 1].price : null;
 
   // Chart States
-  const [chartType, setChartType] = useState<'line' | 'candle'>('line');
-  const [showSMA, setShowSMA] = useState<boolean>(false);
-  const [showEMA, setShowEMA] = useState<boolean>(false);
-  const [showRSI, setShowRSI] = useState<boolean>(false);
+  const [chartType, setChartType] = useState<'line' | 'candle'>(() => {
+    const email = localStorage.getItem('quantiq_last_logged_in_email') || 'generic';
+    const saved = localStorage.getItem(`quantiq_chart_type_${email}_${activeTicker}`);
+    return (saved as 'line' | 'candle') || 'line';
+  });
+  const [showSMA, setShowSMA] = useState<boolean>(() => {
+    const email = localStorage.getItem('quantiq_last_logged_in_email') || 'generic';
+    const saved = localStorage.getItem(`quantiq_show_sma_${email}_${activeTicker}`);
+    return saved === 'true';
+  });
+  const [showEMA, setShowEMA] = useState<boolean>(() => {
+    const email = localStorage.getItem('quantiq_last_logged_in_email') || 'generic';
+    const saved = localStorage.getItem(`quantiq_show_ema_${email}_${activeTicker}`);
+    return saved === 'true';
+  });
+  const [showRSI, setShowRSI] = useState<boolean>(() => {
+    const email = localStorage.getItem('quantiq_last_logged_in_email') || 'generic';
+    const saved = localStorage.getItem(`quantiq_show_rsi_${email}_${activeTicker}`);
+    return saved === 'true';
+  });
   const [isMaximized, setIsMaximized] = useState<boolean>(() => {
     return sessionStorage.getItem('quantiq_restore_maximized_chart') === 'true';
   });
 
-  // Clear restoration flag on mount
+  // Track email & clear restoration flag on mount
   useEffect(() => {
+    if (user?.email) {
+      localStorage.setItem('quantiq_last_logged_in_email', user.email);
+    }
     if (sessionStorage.getItem('quantiq_restore_maximized_chart') === 'true') {
       sessionStorage.removeItem('quantiq_restore_maximized_chart');
     }
-  }, []);
+  }, [user]);
+
+  // Persist chartType, SMA, EMA, and RSI states on change
+  useEffect(() => {
+    const email = user?.email || localStorage.getItem('quantiq_last_logged_in_email') || 'generic';
+    localStorage.setItem(`quantiq_chart_type_${email}_${activeTicker}`, chartType);
+  }, [chartType, activeTicker, user]);
+
+  useEffect(() => {
+    const email = user?.email || localStorage.getItem('quantiq_last_logged_in_email') || 'generic';
+    localStorage.setItem(`quantiq_show_sma_${email}_${activeTicker}`, String(showSMA));
+  }, [showSMA, activeTicker, user]);
+
+  useEffect(() => {
+    const email = user?.email || localStorage.getItem('quantiq_last_logged_in_email') || 'generic';
+    localStorage.setItem(`quantiq_show_ema_${email}_${activeTicker}`, String(showEMA));
+  }, [showEMA, activeTicker, user]);
+
+  useEffect(() => {
+    const email = user?.email || localStorage.getItem('quantiq_last_logged_in_email') || 'generic';
+    localStorage.setItem(`quantiq_show_rsi_${email}_${activeTicker}`, String(showRSI));
+  }, [showRSI, activeTicker, user]);
 
   // Zoom Factor and Scroll/Pan states (only active in maximized view)
   const [zoomFactor, setZoomFactor] = useState<number>(1.0);
@@ -206,8 +246,9 @@ export default function StockChart({ activeTicker, chartData, activeStats, chart
     color: string;
   }
   const [markers, setMarkers] = useState<ChartMarker[]>(() => {
-    if (user?.email && activeTicker) {
-      const saved = localStorage.getItem(`quantiq_markers_${user.email}_${activeTicker}`);
+    const email = localStorage.getItem('quantiq_last_logged_in_email') || 'generic';
+    if (activeTicker) {
+      const saved = localStorage.getItem(`quantiq_markers_${email}_${activeTicker}`);
       if (saved) {
         try {
           return JSON.parse(saved);
@@ -221,8 +262,9 @@ export default function StockChart({ activeTicker, chartData, activeStats, chart
 
   // Reload markers on ticker/user change
   useEffect(() => {
-    if (user?.email && activeTicker) {
-      const saved = localStorage.getItem(`quantiq_markers_${user.email}_${activeTicker}`);
+    const email = user?.email || localStorage.getItem('quantiq_last_logged_in_email') || 'generic';
+    if (activeTicker) {
+      const saved = localStorage.getItem(`quantiq_markers_${email}_${activeTicker}`);
       if (saved) {
         try {
           setMarkers(JSON.parse(saved));
@@ -237,8 +279,9 @@ export default function StockChart({ activeTicker, chartData, activeStats, chart
 
   // Save markers to localStorage when updated
   useEffect(() => {
-    if (user?.email && activeTicker) {
-      localStorage.setItem(`quantiq_markers_${user.email}_${activeTicker}`, JSON.stringify(markers));
+    const email = user?.email || localStorage.getItem('quantiq_last_logged_in_email') || 'generic';
+    if (activeTicker) {
+      localStorage.setItem(`quantiq_markers_${email}_${activeTicker}`, JSON.stringify(markers));
     }
   }, [markers, activeTicker, user?.email]);
   const [showAddMarkerForm, setShowAddMarkerForm] = useState<boolean>(false);
