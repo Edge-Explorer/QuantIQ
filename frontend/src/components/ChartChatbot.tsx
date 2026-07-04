@@ -580,6 +580,18 @@ export default function ChartChatbot({ ticker, markers, activeIndicators, user, 
             </button>
           </form>
         )}
+
+        {/* Disclaimer */}
+        <div style={{
+          padding: '6px 14px 10px',
+          textAlign: 'center',
+          fontSize: '9px',
+          color: 'rgba(255, 255, 255, 0.25)',
+          lineHeight: 1.5,
+          borderTop: '1px solid rgba(255, 255, 255, 0.03)'
+        }}>
+          ⚠️ QuantIQ AI may make errors. All strategies are for educational purposes only and do not constitute financial advice. Always do your own research before trading.
+        </div>
       </div>
     </div>
   );
