@@ -82,8 +82,8 @@ export default function ChartChatbot({ ticker, markers, activeIndicators, user, 
         );
       }
 
-      // Check if it is a bullet point before stripping anything
-      const isBullet = cleanedLine.startsWith('-') || cleanedLine.startsWith('*');
+      // Check if it is a bullet point (must have content after the bullet character)
+      const isBullet = (cleanedLine.startsWith('-') || cleanedLine.startsWith('*')) && cleanedLine.replace(/^[\s-*]+/, '').trim() !== '';
       if (isBullet) {
         cleanedLine = cleanedLine.replace(/^[\s-*]+/, '');
       }
