@@ -67,54 +67,57 @@ export default function ChartChatbot({ ticker, markers, activeIndicators, user, 
     if (!text) return '';
     const lines = text.split('\n');
     return lines.map((line, lineIdx) => {
-      let cleanedLine = line;
+      let cleanedLine = line.trim();
       
       // 1. Convert headers (e.g., #### Header or ### Header) to clean bold blocks
       const headerMatch = cleanedLine.match(/^(#{1,6})\s*(.*)$/);
       if (headerMatch) {
+        let headerText = headerMatch[2];
+        headerText = headerText.replace(/\*\*(.*?)\*\*/g, '$1');
+        headerText = headerText.replace(/\*(.*?)\*/g, '$1');
         return (
           <h4 key={lineIdx} style={{ margin: '12px 0 6px', fontSize: '13px', fontWeight: 800, color: '#fff', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '4px' }}>
-            {headerMatch[2]}
+            {headerText}
           </h4>
         );
       }
 
-      // 2. Bold text matching **text**
-      const boldRegex = /\*\*(.*?)\*\*/g;
-      const parts = [];
-      let lastIndex = 0;
-      let match;
-      
-      while ((match = boldRegex.exec(cleanedLine)) !== null) {
-        if (match.index > lastIndex) {
-          parts.push(cleanedLine.substring(lastIndex, match.index));
-        }
-        parts.push(<strong key={match.index} style={{ color: 'var(--neon-cyan)', fontWeight: 800 }}>{match[1]}</strong>);
-        lastIndex = boldRegex.lastIndex;
-      }
-      
-      if (lastIndex < cleanedLine.length) {
-        parts.push(cleanedLine.substring(lastIndex));
+      // Check if it is a bullet point before stripping anything
+      const isBullet = cleanedLine.startsWith('-') || cleanedLine.startsWith('*');
+      if (isBullet) {
+        cleanedLine = cleanedLine.replace(/^[\s-*]+/, '');
       }
 
-      const isBullet = cleanedLine.trim().startsWith('-') || cleanedLine.trim().startsWith('*');
+      // Parse bold (**text**) and italic (*text*) segments into react elements
+      const parts: Array<React.ReactNode> = [];
+      const formattingRegex = /(\*\*.*?\*\*|\*.*?\*)/g;
+      const splitSegments = cleanedLine.split(formattingRegex);
+
+      splitSegments.forEach((seg, segIdx) => {
+        if (seg.startsWith('**') && seg.endsWith('**')) {
+          const inner = seg.slice(2, -2);
+          parts.push(<strong key={segIdx} style={{ color: 'var(--neon-cyan)', fontWeight: 800 }}>{inner}</strong>);
+        } else if (seg.startsWith('*') && seg.endsWith('*')) {
+          const inner = seg.slice(1, -1);
+          parts.push(<em key={segIdx} style={{ fontStyle: 'italic', color: '#fff' }}>{inner}</em>);
+        } else {
+          parts.push(seg);
+        }
+      });
+
       const content = parts.length > 0 ? parts : cleanedLine;
 
       if (isBullet) {
-        // Strip bullet point indicator
-        const bulletText = typeof content === 'string' 
-          ? content.replace(/^[\s-*]+/, '') 
-          : content;
         return (
           <div key={lineIdx} style={{ display: 'flex', gap: '6px', margin: '4px 0 4px 8px', fontSize: '12px', lineHeight: 1.5 }}>
             <span style={{ color: 'var(--neon-cyan)' }}>•</span>
-            <span style={{ flex: 1 }}>{bulletText}</span>
+            <span style={{ flex: 1 }}>{content}</span>
           </div>
         );
       }
 
       return (
-        <p key={lineIdx} style={{ margin: cleanedLine.trim() === '' ? '8px 0' : '4px 0', minHeight: cleanedLine.trim() === '' ? '12px' : 'auto' }}>
+        <p key={lineIdx} style={{ margin: cleanedLine === '' ? '8px 0' : '4px 0', minHeight: cleanedLine === '' ? '12px' : 'auto' }}>
           {content}
         </p>
       );
