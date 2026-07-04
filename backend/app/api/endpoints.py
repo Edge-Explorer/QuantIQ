@@ -521,11 +521,29 @@ class ChatRequest(BaseModel):
     activeIndicators: Dict[str, bool]
 
 @router.post("/analyst/chat")
-async def chat_with_analyst(payload: ChatRequest):
+async def chat_with_analyst(
+    payload: ChatRequest,
+    current_user: models.User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
     """
     Takes the user's message, drawing markers, active indicators, and chat history,
     and returns a cooperative analysis message from Gemini.
+    Enforces subscription message limits.
     """
+    # 1. Refresh user billing cycles / credits
+    user = await crud.refresh_user_credits(db, current_user)
+    is_admin = (user.email == "karanshelar8775@gmail.com")
+
+    # 2. Check limits
+    if not is_admin:
+        if user.subscription_tier in ("free", "analyst", "trader"):
+            if user.messages_remaining <= 0:
+                raise HTTPException(status_code=403, detail="Quota exhausted. Please upgrade your plan.")
+        elif user.subscription_tier == "pro":
+            if user.monthly_messages_used >= 100:
+                raise HTTPException(status_code=403, detail="Monthly message quota of 100 exhausted.")
+
     ticker = payload.ticker
     message = payload.message
     history = payload.history
@@ -595,4 +613,21 @@ async def chat_with_analyst(payload: ChatRequest):
 
     from backend.app.services.gemini import generate_text
     response_text = await generate_text(full_prompt)
-    return {"response": response_text}
+
+    # 3. Deduct/Increment message counts
+    if not is_admin:
+        if user.subscription_tier in ("free", "analyst", "trader"):
+            user.messages_remaining = max(0, user.messages_remaining - 1)
+        elif user.subscription_tier == "pro":
+            user.monthly_messages_used += 1
+        
+        db.add(user)
+        await db.commit()
+        await db.refresh(user)
+
+    return {
+        "response": response_text,
+        "subscription_tier": user.subscription_tier,
+        "messages_remaining": user.messages_remaining,
+        "monthly_messages_used": user.monthly_messages_used
+    }

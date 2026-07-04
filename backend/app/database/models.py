@@ -27,6 +27,16 @@ class User(Base):
         nullable=False
     )
 
+    # Subscription parameters
+    subscription_tier: Mapped[str] = mapped_column(String(50), default="free", nullable=False)
+    messages_remaining: Mapped[int] = mapped_column(Integer, default=3, nullable=False)
+    monthly_messages_used: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    last_billing_date: Mapped[datetime.datetime] = mapped_column(
+        DateTime(timezone=True), 
+        server_default=func.now(), 
+        nullable=False
+    )
+
     # Relationships
     watchlists: Mapped[List["Watchlist"]] = relationship(back_populates="user", cascade="all, delete-orphan")
     alerts: Mapped[List["Alert"]] = relationship(back_populates="user", cascade="all, delete-orphan")

@@ -39,15 +39,28 @@ async def create_user(db: AsyncSession, user_in: schemas.UserBase, google_id: st
 
 async def refresh_user_credits(db: AsyncSession, user: models.User) -> models.User:
     """
-    Checks if 7 days have passed since the last credit refresh.
-    If so, resets credits back to 5.
+    Checks and applies user refreshes:
+    - For Free tier: resets credits to 5 every 7 days.
+    - For Pro tier: resets monthly_messages_used to 0 every 30 days.
     """
     now = datetime.datetime.now(datetime.timezone.utc)
-    time_elapsed = now - user.last_credit_refresh
+    updated = False
     
-    if time_elapsed >= datetime.timedelta(days=7):
-        user.credits = 5
-        user.last_credit_refresh = now
+    if user.subscription_tier == "free":
+        time_elapsed = now - user.last_credit_refresh
+        if time_elapsed >= datetime.timedelta(days=7):
+            user.credits = 5
+            user.last_credit_refresh = now
+            updated = True
+            
+    if user.subscription_tier == "pro":
+        billing_elapsed = now - user.last_billing_date
+        if billing_elapsed >= datetime.timedelta(days=30):
+            user.monthly_messages_used = 0
+            user.last_billing_date = now
+            updated = True
+            
+    if updated:
         db.add(user)
         await db.commit()
         await db.refresh(user)
@@ -287,10 +300,24 @@ async def capture_payment_transaction(
     tx.status = "captured"
     db.add(tx)
     
-    # 3. Credit the user
+    # 3. Credit the user and update subscription tier
     user = await get_user(db, tx.user_id)
     if user:
         user.credits += tx.credits_credited
+        
+        # Determine plan from transaction amount in Rupees
+        amt_rupees = tx.amount // 100
+        if amt_rupees == 500:
+            user.subscription_tier = "analyst"
+            user.messages_remaining += 10
+        elif amt_rupees == 1500:
+            user.subscription_tier = "trader"
+            user.messages_remaining += 25
+        elif amt_rupees in (10000, 15000):
+            user.subscription_tier = "pro"
+            user.monthly_messages_used = 0
+            user.last_billing_date = datetime.datetime.now(datetime.timezone.utc)
+            
         db.add(user)
         
     await db.commit()

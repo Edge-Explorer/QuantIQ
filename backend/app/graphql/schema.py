@@ -29,6 +29,10 @@ class UserType:
     credits: int
     last_credit_refresh: datetime.datetime
     created_at: datetime.datetime
+    subscription_tier: str
+    messages_remaining: int
+    monthly_messages_used: int
+    last_billing_date: datetime.datetime
 
 @strawberry.type
 class WatchlistType:
@@ -438,10 +442,8 @@ class Mutation:
             credits_credited = 10
         elif amount == 1500:
             credits_credited = 50
-        elif amount == 2500:
+        elif amount in (10000, 15000):
             credits_credited = 100
-        elif amount == 10500:
-            credits_credited = 999999  # Code for Unlimited / Lifetime
         else:
             credits_credited = amount // 50
         

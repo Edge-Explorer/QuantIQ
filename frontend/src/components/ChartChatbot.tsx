@@ -30,14 +30,37 @@ export default function ChartChatbot({ ticker, markers, activeIndicators, user, 
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   
-  // Track chatbot trial message count
-  const [trialUsed, setTrialUsed] = useState<boolean>(() => {
-    return localStorage.getItem('quantiq_chatbot_trial_used') === 'true';
-  });
+  // Local quota tracking synchronized with parent user prop
+  const [localRemaining, setLocalRemaining] = useState<number>(() => user?.messagesRemaining ?? 0);
+  const [localUsed, setLocalUsed] = useState<number>(() => user?.monthlyMessagesUsed ?? 0);
+  const [localTier, setLocalTier] = useState<string>(() => user?.subscriptionTier || 'free');
+
+  useEffect(() => {
+    if (user) {
+      setLocalRemaining(user.messagesRemaining ?? 0);
+      setLocalUsed(user.monthlyMessagesUsed ?? 0);
+      setLocalTier(user.subscriptionTier || 'free');
+    }
+  }, [user]);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+
+  const isAdmin = user?.email === 'karanshelar8775@gmail.com';
+  
+  const isLimitReached = !isAdmin && (
+    (localTier !== 'pro' && localRemaining <= 0) ||
+    (localTier === 'pro' && localUsed >= 100)
+  );
+
+  const getQuotaDisplay = () => {
+    if (isAdmin) return 'Unlimited (Admin)';
+    if (localTier === 'pro') {
+      return `${100 - localUsed} left`;
+    }
+    return `${localRemaining} left`;
+  };
 
   // Helper to format text markdown bold/italics, headers, bullets, and clean up stray symbols
   const formatMessageContent = (text: string) => {
@@ -48,59 +71,56 @@ export default function ChartChatbot({ ticker, markers, activeIndicators, user, 
       
       // 1. Convert headers (e.g., #### Header or ### Header) to clean bold blocks
       const headerMatch = cleanedLine.match(/^(#{1,6})\s*(.*)$/);
-      let isHeader = false;
       if (headerMatch) {
-        cleanedLine = headerMatch[2];
-        isHeader = true;
-      }
-      
-      // 2. Convert bullet list points into clean lists
-      const bulletMatch = cleanedLine.match(/^(\*|-)\s+(.*)$/);
-      let isBullet = false;
-      if (bulletMatch) {
-        cleanedLine = bulletMatch[2];
-        isBullet = true;
-      }
-      
-      // 3. Parse inline bold (**text**) and italic (*text*) segments
-      const parts = cleanedLine.split(/(\*\*.*?\*\*|\*.*?\*)/g);
-      const parsedInline = parts.map((part, i) => {
-        if (part.startsWith('**') && part.endsWith('**')) {
-          return <strong key={i} style={{ color: '#fff', fontWeight: 700 }}>{part.slice(2, -2)}</strong>;
-        } else if (part.startsWith('*') && part.endsWith('*')) {
-          return <span key={i} style={{ color: 'var(--neon-cyan)', fontWeight: 500 }}>{part.slice(1, -1)}</span>;
-        }
-        // Remove any leftover stray asterisks in plain text segments
-        return part.replace(/\*/g, '');
-      });
-
-      // Render line structure
-      if (isHeader) {
         return (
-          <h4 key={lineIdx} style={{ margin: '14px 0 6px 0', fontSize: '13px', fontWeight: 700, color: '#fff', lineHeight: 1.4 }}>
-            {parsedInline}
+          <h4 key={lineIdx} style={{ margin: '12px 0 6px', fontSize: '13px', fontWeight: 800, color: '#fff', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '4px' }}>
+            {headerMatch[2]}
           </h4>
         );
       }
+
+      // 2. Bold text matching **text**
+      const boldRegex = /\*\*(.*?)\*\*/g;
+      const parts = [];
+      let lastIndex = 0;
+      let match;
       
+      while ((match = boldRegex.exec(cleanedLine)) !== null) {
+        if (match.index > lastIndex) {
+          parts.push(cleanedLine.substring(lastIndex, match.index));
+        }
+        parts.push(<strong key={match.index} style={{ color: 'var(--neon-cyan)', fontWeight: 800 }}>{match[1]}</strong>);
+        lastIndex = boldRegex.lastIndex;
+      }
+      
+      if (lastIndex < cleanedLine.length) {
+        parts.push(cleanedLine.substring(lastIndex));
+      }
+
+      const isBullet = cleanedLine.trim().startsWith('-') || cleanedLine.trim().startsWith('*');
+      const content = parts.length > 0 ? parts : cleanedLine;
+
       if (isBullet) {
+        // Strip bullet point indicator
+        const bulletText = typeof content === 'string' 
+          ? content.replace(/^[\s-*]+/, '') 
+          : content;
         return (
-          <div key={lineIdx} style={{ display: 'flex', gap: '6px', alignItems: 'flex-start', margin: '4px 0 4px 8px' }}>
-            <span style={{ color: 'var(--neon-cyan)', fontSize: '12px', lineHeight: '18px' }}>•</span>
-            <div style={{ flex: 1 }}>{parsedInline}</div>
+          <div key={lineIdx} style={{ display: 'flex', gap: '6px', margin: '4px 0 4px 8px', fontSize: '12px', lineHeight: 1.5 }}>
+            <span style={{ color: 'var(--neon-cyan)' }}>•</span>
+            <span style={{ flex: 1 }}>{bulletText}</span>
           </div>
         );
       }
-      
+
       return (
-        <p key={lineIdx} style={{ margin: cleanedLine.trim() === '' ? '0' : '0 0 8px 0', minHeight: cleanedLine.trim() === '' ? '8px' : 'auto' }}>
-          {parsedInline}
+        <p key={lineIdx} style={{ margin: cleanedLine.trim() === '' ? '8px 0' : '4px 0', minHeight: cleanedLine.trim() === '' ? '12px' : 'auto' }}>
+          {content}
         </p>
       );
     });
   };
 
-  // Auto adjust textarea height on input change
   const adjustHeight = () => {
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
@@ -111,10 +131,6 @@ export default function ChartChatbot({ ticker, markers, activeIndicators, user, 
   useEffect(() => {
     adjustHeight();
   }, [input]);
-
-  // Check if user is a paid tier (Trader/Pro packs have > 10 credits) or is the test email
-  const isPaidUser = user && (user.credits > 10 || user.email === 'karanshelar8775@gmail.com');
-  const isTrialLocked = !isPaidUser && trialUsed;
 
   // Load chat history on ticker change
   useEffect(() => {
@@ -143,7 +159,7 @@ export default function ChartChatbot({ ticker, markers, activeIndicators, user, 
 
   const handleSendMessage = async (e?: React.FormEvent | React.KeyboardEvent) => {
     if (e) e.preventDefault();
-    if (!input.trim() || loading || isTrialLocked) return;
+    if (!input.trim() || loading || isLimitReached) return;
 
     const userMessage = input.trim();
     setInput('');
@@ -152,7 +168,6 @@ export default function ChartChatbot({ ticker, markers, activeIndicators, user, 
     }
     setLoading(true);
 
-    // Add user message to log
     const updatedMessages = [...messages, { role: 'user' as const, content: userMessage }];
     setMessages(updatedMessages);
 
@@ -161,6 +176,7 @@ export default function ChartChatbot({ ticker, markers, activeIndicators, user, 
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
         body: JSON.stringify({
           ticker,
@@ -175,13 +191,16 @@ export default function ChartChatbot({ ticker, markers, activeIndicators, user, 
         const data = await response.json();
         setMessages(prev => [...prev, { role: 'assistant', content: data.response }]);
         
-        // If they are a free user, trigger the 1-time trial limit
-        if (!isPaidUser) {
-          localStorage.setItem('quantiq_chatbot_trial_used', 'true');
-          setTrialUsed(true);
+        // Update local limits state
+        if (data.subscription_tier !== undefined) {
+          setLocalTier(data.subscription_tier);
+          setLocalRemaining(data.messages_remaining ?? 0);
+          setLocalUsed(data.monthly_messages_used ?? 0);
         }
       } else {
-        setMessages(prev => [...prev, { role: 'assistant', content: "Sorry, I encountered an issue compiling the strategy feedback. Please try again." }]);
+        const errData = await response.json();
+        const errMessage = errData.detail || "Quota exhausted or query error. Check your subscription.";
+        setMessages(prev => [...prev, { role: 'assistant', content: `Sorry, I encountered an issue: ${errMessage}` }]);
       }
     } catch (err) {
       console.error('Failed to chat with AI analyst:', err);
@@ -260,23 +279,21 @@ export default function ChartChatbot({ ticker, markers, activeIndicators, user, 
           <span style={{ fontSize: '10px', color: 'var(--text-secondary)' }}>Real-time AI Copilot & Strategy Engine</span>
         </div>
 
-        {/* Trial Badge */}
-        {!isPaidUser && (
-          <span 
-            style={{
-              marginLeft: 'auto',
-              fontSize: '9px',
-              fontWeight: 700,
-              background: trialUsed ? 'rgba(239, 68, 68, 0.15)' : 'rgba(16, 185, 129, 0.15)',
-              color: trialUsed ? '#ef4444' : '#10b981',
-              padding: '2px 6px',
-              borderRadius: '4px',
-              border: `1px solid ${trialUsed ? 'rgba(239, 68, 68, 0.25)' : 'rgba(16, 185, 129, 0.25)'}`
-            }}
-          >
-            {trialUsed ? '0 Trials Left' : '1 Trial Left'}
-          </span>
-        )}
+        {/* Quota display badge */}
+        <span 
+          style={{
+            marginLeft: 'auto',
+            fontSize: '9px',
+            fontWeight: 700,
+            background: isLimitReached ? 'rgba(239, 68, 68, 0.15)' : 'rgba(16, 185, 129, 0.15)',
+            color: isLimitReached ? '#ef4444' : '#10b981',
+            padding: '2px 6px',
+            borderRadius: '4px',
+            border: `1px solid ${isLimitReached ? 'rgba(239, 68, 68, 0.25)' : 'rgba(16, 185, 129, 0.25)'}`
+          }}
+        >
+          {getQuotaDisplay()}
+        </span>
       </div>
 
       {/* Message Feed */}
@@ -365,7 +382,7 @@ export default function ChartChatbot({ ticker, markers, activeIndicators, user, 
           background: 'rgba(10, 11, 20, 0.5)'
         }}
       >
-        {isTrialLocked ? (
+        {isLimitReached ? (
           <div 
             className="animate-fade"
             style={{
@@ -377,10 +394,10 @@ export default function ChartChatbot({ ticker, markers, activeIndicators, user, 
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', color: '#ef4444', fontSize: '12px', fontWeight: 700 }}>
-              <Lock size={12} /> Trial Expired
+              <Lock size={12} /> Message Limit Reached
             </div>
             <p style={{ margin: 0, fontSize: '10px', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
-              Unlock unlimited interactive chatbot sessions and custom indicator weights.
+              Unlock high-accuracy Wall Street strategies and indicator calculations.
             </p>
             <button 
               onClick={() => {

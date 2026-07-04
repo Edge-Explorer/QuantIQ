@@ -25,6 +25,10 @@ class UserResponse(UserBase):
     credits: int
     last_credit_refresh: datetime.datetime
     created_at: datetime.datetime
+    subscription_tier: str
+    messages_remaining: int
+    monthly_messages_used: int
+    last_billing_date: datetime.datetime
     
     model_config= ConfigDict(from_attributes= True)
 

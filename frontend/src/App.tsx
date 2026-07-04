@@ -129,6 +129,10 @@ export default function App() {
               pictureUrl
               credits
               createdAt
+              subscriptionTier
+              messagesRemaining
+              monthlyMessagesUsed
+              lastBillingDate
             }
           }
         `);
@@ -567,10 +571,21 @@ export default function App() {
                 query {
                   me {
                     credits
+                    subscriptionTier
+                    messagesRemaining
+                    monthlyMessagesUsed
+                    lastBillingDate
                   }
                 }
               `);
-              setUser((prev: any) => prev ? { ...prev, credits: updatedProfile.me.credits } : null);
+              setUser((prev: any) => prev ? { 
+                ...prev, 
+                credits: updatedProfile.me.credits,
+                subscriptionTier: updatedProfile.me.subscriptionTier,
+                messagesRemaining: updatedProfile.me.messagesRemaining,
+                monthlyMessagesUsed: updatedProfile.me.monthlyMessagesUsed,
+                lastBillingDate: updatedProfile.me.lastBillingDate
+              } : null);
             } catch (e) {
               console.error('Refresh credits error:', e);
             }
