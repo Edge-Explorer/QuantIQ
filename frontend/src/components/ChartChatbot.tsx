@@ -257,7 +257,7 @@ export default function ChartChatbot({ ticker, markers, activeIndicators, user, 
           <h3 style={{ margin: 0, fontSize: '13px', fontWeight: 700, color: '#fff', display: 'flex', alignItems: 'center', gap: '4px' }}>
             Quant AI Advisor <Sparkles size={11} color="var(--neon-violet)" />
           </h3>
-          <span style={{ fontSize: '10px', color: 'var(--text-secondary)' }}>Live Canvas Interactive Chat</span>
+          <span style={{ fontSize: '10px', color: 'var(--text-secondary)' }}>Real-time AI Copilot & Strategy Engine</span>
         </div>
 
         {/* Trial Badge */}
