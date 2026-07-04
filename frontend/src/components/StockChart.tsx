@@ -317,6 +317,16 @@ export default function StockChart({ activeTicker, chartData, activeStats, chart
   let processedData = [...chartData];
   if (showSMA) processedData = computeSMA(processedData, 20);
   if (showEMA) processedData = computeEMA(processedData, 20);
+
+  // Compute full set of indicators for chatbot live coordinates context
+  const chatbotData = computeRSI(computeEMA(computeSMA([...chartData], 20), 20), 14);
+  const latestDataPoint = chatbotData[chatbotData.length - 1] || null;
+  const chatbotLiveData = {
+    price: latestDataPoint?.close || latestDataPoint?.price || activeStats?.close || null,
+    sma: latestDataPoint?.sma || null,
+    ema: latestDataPoint?.ema || null,
+    rsi: latestDataPoint?.rsi || null
+  };
   
   // Slice data if zoomed in maximized view
   const isZoomed = isMaximized && zoomFactor < 1.0;
@@ -970,6 +980,7 @@ export default function StockChart({ activeTicker, chartData, activeStats, chart
             activeIndicators={{ sma: showSMA, ema: showEMA, rsi: showRSI }}
             user={user}
             onOpenRecharge={onOpenRecharge}
+            liveData={chatbotLiveData}
           />
         )}
       </div>

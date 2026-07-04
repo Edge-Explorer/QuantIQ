@@ -8,9 +8,15 @@ interface ChartChatbotProps {
   activeIndicators: { sma: boolean; ema: boolean; rsi: boolean };
   user: any;
   onOpenRecharge?: () => void;
+  liveData?: {
+    price: number | null;
+    sma: number | null;
+    ema: number | null;
+    rsi: number | null;
+  };
 }
 
-export default function ChartChatbot({ ticker, markers, activeIndicators, user, onOpenRecharge }: ChartChatbotProps) {
+export default function ChartChatbot({ ticker, markers, activeIndicators, user, onOpenRecharge, liveData }: ChartChatbotProps) {
   const [messages, setMessages] = useState<Array<{ role: 'user' | 'assistant'; content: string }>>(() => {
     const saved = localStorage.getItem(`quantiq_chat_history_${ticker}`);
     if (saved) {
@@ -185,9 +191,13 @@ export default function ChartChatbot({ ticker, markers, activeIndicators, user, 
         body: JSON.stringify({
           ticker,
           message: userMessage,
-          history: updatedMessages.slice(0, -1), // Send previous turns
+          history: updatedMessages.slice(0, -1),
           markers,
-          activeIndicators
+          activeIndicators,
+          currentPrice: liveData?.price || null,
+          smaValue: liveData?.sma || null,
+          emaValue: liveData?.ema || null,
+          rsiValue: liveData?.rsi || null
         })
       });
 

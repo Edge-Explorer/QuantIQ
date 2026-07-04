@@ -510,8 +510,7 @@ async def get_market_news():
             print("Failed to fetch market news:", e)
             return []
 
-from pydantic import BaseModel
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 
 class ChatRequest(BaseModel):
     ticker: str
@@ -519,6 +518,10 @@ class ChatRequest(BaseModel):
     history: List[Dict[str, str]]
     markers: List[Dict[str, Any]]
     activeIndicators: Dict[str, bool]
+    currentPrice: Optional[float] = None
+    smaValue: Optional[float] = None
+    emaValue: Optional[float] = None
+    rsiValue: Optional[float] = None
 
 @router.post("/analyst/chat")
 async def chat_with_analyst(
@@ -549,6 +552,20 @@ async def chat_with_analyst(
     history = payload.history
     markers = payload.markers
     active_indicators = payload.activeIndicators
+    current_price = payload.currentPrice
+    sma_val = payload.smaValue
+    ema_val = payload.emaValue
+    rsi_val = payload.rsiValue
+
+    live_data_text = ""
+    if current_price is not None:
+        live_data_text += f"- Exact Live Stock Price: ${current_price}\n"
+    if sma_val is not None:
+        live_data_text += f"- Live SMA 20 Line Value: ${sma_val}\n"
+    if ema_val is not None:
+        live_data_text += f"- Live EMA 20 Line Value: ${ema_val}\n"
+    if rsi_val is not None:
+        live_data_text += f"- Live RSI 14 Value: {rsi_val}\n"
 
     # Format the markers list into text
     markers_text = ""
@@ -580,8 +597,9 @@ async def chat_with_analyst(
     system_prompt = (
         "You are the QuantIQ Cooperative AI Strategy Advisor. A trader is chatting with you "
         f"while viewing a live chart for {ticker}.\n\n"
-        "Here is the context of their active workspace:\n"
+        "Here is the context of their active workspace (refer to these exact values, DO NOT state that you cannot see their screen or use hypothetical placeholders):\n"
         f"- Active Ticker: {ticker}\n"
+        f"{live_data_text}"
         f"- Active Indicators on Screen: {indicators_text}\n"
         f"- Trader's Custom reference level markers drawn on the canvas:\n{markers_text}\n"
         f"- Coordinated ML Model Bullish Probability: {probability_score}%\n\n"
