@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, Sparkles, Lock, ArrowRight, Loader2 } from 'lucide-react';
+import { Send, Sparkles, Lock, ArrowRight, Loader2, Trash2 } from 'lucide-react';
 import Logo from './Logo';
 
 interface ChartChatbotProps {
@@ -29,6 +29,7 @@ export default function ChartChatbot({ ticker, markers, activeIndicators, user, 
   });
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   
   // Local quota tracking synchronized with parent user prop
   const [localRemaining, setLocalRemaining] = useState<number>(() => user?.messagesRemaining ?? 0);
@@ -231,6 +232,86 @@ export default function ChartChatbot({ ticker, markers, activeIndicators, user, 
         position: 'relative'
       }}
     >
+      {/* Clear Chat Confirmation Overlay */}
+      {showConfirm && (
+        <div style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          background: 'rgba(7, 9, 14, 0.85)',
+          backdropFilter: 'blur(10px)',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '24px',
+          zIndex: 100,
+          textAlign: 'center'
+        }}>
+          <div style={{
+            background: 'rgba(255, 255, 255, 0.02)',
+            border: '1px solid rgba(255, 255, 255, 0.05)',
+            borderRadius: '16px',
+            padding: '20px',
+            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4)',
+            maxWidth: '280px'
+          }}>
+            <Trash2 size={24} color="#ef4444" style={{ marginBottom: '12px', margin: '0 auto' }} />
+            <h4 style={{ margin: '8px 0 8px', color: '#fff', fontSize: '14px', fontWeight: 700 }}>Clear Chat from UI?</h4>
+            <p style={{ margin: '0 0 20px', color: 'var(--text-secondary)', fontSize: '11px', lineHeight: 1.5 }}>
+              This will clear the conversation from your screen. The backup will remain securely stored in our database.
+            </p>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button
+                onClick={() => setShowConfirm(false)}
+                style={{
+                  flex: 1,
+                  padding: '8px',
+                  borderRadius: '8px',
+                  border: '1px solid rgba(255, 255, 255, 0.08)',
+                  background: 'none',
+                  color: '#fff',
+                  fontSize: '11px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  outline: 'none'
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  localStorage.removeItem(`quantiq_chat_history_${ticker}`);
+                  setMessages([
+                    {
+                      role: 'assistant',
+                      content: `Hello! I am your QuantIQ AI Strategy Advisor. I have analyzed the chart for ${ticker} and loaded your custom reference markers. Ask me anything about your entry/exit levels or risk setup!`
+                    }
+                  ]);
+                  setShowConfirm(false);
+                }}
+                style={{
+                  flex: 1,
+                  padding: '8px',
+                  borderRadius: '8px',
+                  border: 'none',
+                  background: '#ef4444',
+                  color: '#fff',
+                  fontSize: '11px',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  outline: 'none',
+                  boxShadow: '0 4px 12px rgba(239, 68, 68, 0.2)'
+                }}
+              >
+                Clear
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {/* Background Cyber Glowing Orbs */}
       <div style={{
         position: 'absolute',
@@ -297,6 +378,35 @@ export default function ChartChatbot({ ticker, markers, activeIndicators, user, 
         >
           {getQuotaDisplay()}
         </span>
+
+        {/* Clear Chat Button */}
+        <button
+          onClick={() => setShowConfirm(true)}
+          style={{
+            background: 'none',
+            border: 'none',
+            color: 'rgba(255, 255, 255, 0.4)',
+            cursor: 'pointer',
+            padding: '6px',
+            borderRadius: '6px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            transition: 'all 0.2s ease',
+            outline: 'none'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.color = '#ef4444';
+            e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.1)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.color = 'rgba(255, 255, 255, 0.4)';
+            e.currentTarget.style.backgroundColor = 'transparent';
+          }}
+          title="Clear Chat from screen"
+        >
+          <Trash2 size={13} />
+        </button>
       </div>
 
       {/* Message Feed */}
