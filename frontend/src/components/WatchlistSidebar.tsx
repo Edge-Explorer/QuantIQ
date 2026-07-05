@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Plus, Trash, Activity } from 'lucide-react';
 import Sparkline from './Sparkline';
+import Logo from './Logo';
 
 interface WatchlistSidebarProps {
   watchlist: string[];
@@ -143,13 +144,13 @@ export default function WatchlistSidebar({
   };
 
   return (
-    <section className="left-sidebar glass-panel watchlist-container">
-      <div className="panel-title">
+    <section className="left-sidebar glass-panel watchlist-container" style={{ position: 'relative', overflow: 'hidden' }}>
+      <div className="panel-title" style={{ position: 'relative', zIndex: 2 }}>
         <span>Watchlist</span>
         <Activity size={18} color="#94a3b8" />
       </div>
       
-      <div style={{ position: 'relative' }} ref={dropdownRef}>
+      <div style={{ position: 'relative', zIndex: 2 }} ref={dropdownRef}>
         <form className="watchlist-search" onSubmit={handleSubmit}>
           <input 
             type="text" 
@@ -187,7 +188,21 @@ export default function WatchlistSidebar({
         )}
       </div>
 
-      <div className="watchlist-items">
+      {/* Subtle background Logo watermark */}
+      <div style={{
+        position: 'absolute',
+        top: '60%',
+        left: '50%',
+        transform: 'translate(-50%, -50%)',
+        opacity: 0.035,
+        pointerEvents: 'none',
+        zIndex: 1,
+        userSelect: 'none'
+      }}>
+        <Logo size={180} />
+      </div>
+
+      <div className="watchlist-items" style={{ position: 'relative', zIndex: 2 }}>
         {watchlist.map((ticker) => {
           const quote = watchlistQuotes ? watchlistQuotes[ticker] : null;
           const isPositive = quote ? quote.changePercent >= 0 : true;
