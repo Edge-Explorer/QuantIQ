@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { TrendingUp, Newspaper, Plus } from 'lucide-react';
 import Logo from './Logo';
+import Sparkline from './Sparkline';
 
 interface TrendingHubProps {
   onAddTicker: (ticker: string) => Promise<void>;
@@ -311,11 +312,12 @@ export default function TrendingHub({ onAddTicker }: TrendingHubProps) {
                     </button>
                   </div>
 
-                  <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+                  <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div>
                       <span style={{ fontSize: '9px', color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Price</span>
                       <span style={{ fontSize: '15px', fontWeight: 800, color: '#fff' }}>${asset.price.toLocaleString()}</span>
                     </div>
+                    <Sparkline symbol={asset.symbol} change={asset.change} width={75} height={25} />
                     <div style={{ textAlign: 'right' }}>
                       <span 
                         style={{ 

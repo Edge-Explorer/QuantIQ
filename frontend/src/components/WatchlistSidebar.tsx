@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Plus, Trash, Activity } from 'lucide-react';
+import Sparkline from './Sparkline';
 
 interface WatchlistSidebarProps {
   watchlist: string[];
@@ -196,7 +197,7 @@ export default function WatchlistSidebar({
               className={`watchlist-item ${activeTicker === ticker ? 'active' : ''}`}
               onClick={() => onSelectTicker(ticker)}
             >
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'flex-start' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'flex-start', flex: 1 }}>
                 <span className="ticker-symbol">{ticker}</span>
                 {quote && (
                   <span className={`ticker-quote-badge ${isPositive ? 'text-bull' : 'text-bear'}`} style={{ fontSize: '11px', fontWeight: 500 }}>
@@ -204,6 +205,13 @@ export default function WatchlistSidebar({
                   </span>
                 )}
               </div>
+
+              {quote && (
+                <div style={{ marginRight: '6px', display: 'flex', alignItems: 'center' }}>
+                  <Sparkline symbol={ticker} change={quote.changePercent} width={60} height={20} />
+                </div>
+              )}
+
               <button 
                 className="delete-ticker-btn"
                 onClick={(e) => handleRemove(ticker, e)}
