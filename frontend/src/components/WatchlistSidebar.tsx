@@ -178,7 +178,14 @@ export default function WatchlistSidebar({
               <div 
                 key={item.symbol} 
                 className="suggestion-item"
-                onClick={() => handleAdd(item.symbol)}
+                onMouseDown={(e) => {
+                  // prevent blur event from closing the dropdown before state is updated
+                  e.preventDefault();
+                }}
+                onClick={() => {
+                  setNewTicker(item.symbol);
+                  setShowDropdown(false);
+                }}
               >
                 <span className="suggestion-symbol">{item.symbol}</span>
                 <span className="suggestion-name">{item.name}</span>
