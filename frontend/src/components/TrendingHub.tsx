@@ -295,12 +295,14 @@ export default function TrendingHub({ onAddTicker }: TrendingHubProps) {
                     justifyContent: 'space-between',
                     textAlign: 'left',
                     position: 'relative',
+                    overflow: 'visible',
                     border: '1px solid var(--border-glass)',
                     transition: 'all 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
                     background: 'rgba(13, 16, 27, 0.6)',
                     backdropFilter: 'blur(10px)',
                     cursor: 'pointer',
-                    boxSizing: 'border-box'
+                    boxSizing: 'border-box',
+                    minHeight: '160px'
                   }}
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
