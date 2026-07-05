@@ -179,10 +179,7 @@ export default function WatchlistSidebar({
                 key={item.symbol} 
                 className="suggestion-item"
                 onMouseDown={(e) => {
-                  // prevent blur event from closing the dropdown before state is updated
-                  e.preventDefault();
-                }}
-                onClick={() => {
+                  e.preventDefault(); // Keep input focused & prevent unmount before state updates
                   setNewTicker(item.symbol);
                   setShowDropdown(false);
                 }}
