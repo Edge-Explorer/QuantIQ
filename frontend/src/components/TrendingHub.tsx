@@ -9,17 +9,41 @@ interface TrendingHubProps {
 
 export default function TrendingHub({ onAddTicker }: TrendingHubProps) {
   const [news, setNews] = useState<any[]>([]);
-
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
-  const trendingAssets = [
-    { symbol: 'BTC-USD', name: 'Bitcoin', price: 60534.05, change: 1.82, volume: '28.4B', category: 'Crypto' },
-    { symbol: 'ETH-USD', name: 'Ethereum', price: 3421.10, change: 0.54, volume: '14.1B', category: 'Crypto' },
-    { symbol: 'NVDA', name: 'NVIDIA Corp.', price: 121.40, change: -1.25, volume: '42.8B', category: 'Stock' },
-    { symbol: 'AAPL', name: 'Apple Inc.', price: 210.62, change: 0.95, volume: '29.3B', category: 'Stock' },
-    { symbol: 'TSLA', name: 'Tesla Inc.', price: 187.30, change: 4.12, volume: '18.7B', category: 'Stock' },
-    { symbol: 'SOL-USD', name: 'Solana', price: 142.15, change: 3.85, volume: '3.9B', category: 'Crypto' },
-  ];
+  const [trendingAssets, setTrendingAssets] = useState<any[]>([
+    { symbol: 'BTC-USD', name: 'Bitcoin', price: 60534.05, change: 1.82, category: 'Crypto' },
+    { symbol: 'ETH-USD', name: 'Ethereum', price: 3421.10, change: 0.54, category: 'Crypto' },
+    { symbol: 'NVDA', name: 'NVIDIA Corp.', price: 121.40, change: -1.25, category: 'Stock' },
+    { symbol: 'AAPL', name: 'Apple Inc.', price: 210.62, change: 0.95, category: 'Stock' },
+    { symbol: 'TSLA', name: 'Tesla Inc.', price: 187.30, change: 4.12, category: 'Stock' },
+    { symbol: 'SOL-USD', name: 'Solana', price: 142.15, change: 3.85, category: 'Crypto' },
+  ]);
+
+  // Fetch trending assets from API and sort by magnitude of trend
+  useEffect(() => {
+    let active = true;
+    const fetchTrending = async () => {
+      try {
+        const res = await fetch(`${API_URL}/api/v1/stocks/trending`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.length > 0 && active) {
+            setTrendingAssets(data);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to fetch trending assets:', err);
+      }
+    };
+
+    fetchTrending();
+    const interval = setInterval(fetchTrending, 60000);
+    return () => {
+      active = false;
+      clearInterval(interval);
+    };
+  }, []);
 
   const trendingNews = [
     {

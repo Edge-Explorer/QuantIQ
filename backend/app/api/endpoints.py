@@ -458,6 +458,114 @@ async def get_global_indices():
     }
     return results
 
+_trending_cache = {}
+
+@router.get("/stocks/trending")
+async def get_trending_assets():
+    global _trending_cache
+    now = datetime.datetime.now(datetime.timezone.utc)
+    
+    if "data" in _trending_cache and _trending_cache["timestamp"]:
+        if now - _trending_cache["timestamp"] < datetime.timedelta(seconds=60):
+            return _trending_cache["data"]
+            
+    # List of trending assets
+    tickers = ["BTC-USD", "ETH-USD", "NVDA", "AAPL", "TSLA", "SOL-USD", "MSFT", "AMZN", "NFLX", "GOOGL"]
+    names_map = {
+        "BTC-USD": "Bitcoin",
+        "ETH-USD": "Ethereum",
+        "NVDA": "NVIDIA Corp.",
+        "AAPL": "Apple Inc.",
+        "TSLA": "Tesla Inc.",
+        "SOL-USD": "Solana",
+        "MSFT": "Microsoft Corp.",
+        "AMZN": "Amazon.com Inc.",
+        "NFLX": "Netflix Inc.",
+        "GOOGL": "Alphabet Inc."
+    }
+    categories_map = {
+        "BTC-USD": "Crypto",
+        "ETH-USD": "Crypto",
+        "NVDA": "Stock",
+        "AAPL": "Stock",
+        "TSLA": "Stock",
+        "SOL-USD": "Crypto",
+        "MSFT": "Stock",
+        "AMZN": "Stock",
+        "NFLX": "Stock",
+        "GOOGL": "Stock"
+    }
+    
+    results = []
+    try:
+        import yfinance as yf
+        import asyncio
+        import pandas as pd
+        
+        loop = asyncio.get_event_loop()
+        df = await loop.run_in_executor(
+            None,
+            lambda: yf.download(tickers=" ".join(tickers), period="2d", group_by="ticker", progress=False)
+        )
+        
+        for symbol in tickers:
+            name = names_map[symbol]
+            category = categories_map[symbol]
+            price = 0.0
+            change_percent = 0.0
+            
+            try:
+                if isinstance(df.columns, pd.MultiIndex):
+                    ticker_df = df[symbol].dropna(subset=["Close"])
+                else:
+                    ticker_df = df.dropna(subset=["Close"])
+                
+                if not ticker_df.empty:
+                    close_series = ticker_df["Close"]
+                    open_series = ticker_df["Open"]
+                    
+                    if len(close_series) >= 2:
+                        curr = float(close_series.iloc[-1])
+                        prev = float(close_series.iloc[-2])
+                        price = curr
+                        change_percent = ((curr - prev) / prev) * 100
+                    elif len(close_series) == 1:
+                        curr = float(close_series.iloc[-1])
+                        op = float(open_series.iloc[-1]) if not open_series.empty else curr
+                        price = curr
+                        change_percent = ((curr - op) / op) * 100 if op != 0 else 0.0
+            except Exception as inner_e:
+                print(f"Error parsing trending data for {symbol}: {inner_e}")
+                
+            results.append({
+                "symbol": symbol,
+                "name": name,
+                "price": round(price, 2),
+                "change": round(change_percent, 2),
+                "category": category
+            })
+            
+        # Sort by highest absolute price change percentage (the stocks that are "more trending")
+        results.sort(key=lambda x: abs(x["change"]), reverse=True)
+            
+    except Exception as e:
+        print(f"Error fetching trending assets: {e}")
+        # fallback
+        results = [
+            { "symbol": 'BTC-USD', "name": 'Bitcoin', "price": 60534.05, "change": 1.82, "category": 'Crypto' },
+            { "symbol": 'ETH-USD', "name": 'Ethereum', "price": 3421.10, "change": 0.54, "category": 'Crypto' },
+            { "symbol": 'NVDA', "name": 'NVIDIA Corp.', "price": 121.40, "change": -1.25, "category": 'Stock' },
+            { "symbol": 'AAPL', "name": 'Apple Inc.', "price": 210.62, "change": 0.95, "category": 'Stock' },
+            { "symbol": 'TSLA', "name": 'Tesla Inc.', "price": 187.30, "change": 4.12, "category": 'Stock' },
+            { "symbol": 'SOL-USD', "name": 'Solana', "price": 142.15, "change": 3.85, "category": 'Crypto' },
+        ]
+        
+    _trending_cache = {
+        "data": results,
+        "timestamp": now
+    }
+    return results
+
 @router.get("/stocks/news")
 async def get_market_news():
     """
