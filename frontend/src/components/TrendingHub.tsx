@@ -272,6 +272,7 @@ export default function TrendingHub({ onAddTicker }: TrendingHubProps) {
             style={{ 
               display: 'grid', 
               gridTemplateColumns: '1fr 1fr', 
+              gridAutoRows: '145px',
               gap: '12px',
               maxHeight: '520px',
               overflowY: 'auto',
@@ -299,7 +300,10 @@ export default function TrendingHub({ onAddTicker }: TrendingHubProps) {
                     transition: 'all 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
                     background: 'rgba(13, 16, 27, 0.6)',
                     backdropFilter: 'blur(10px)',
-                    cursor: 'pointer'
+                    cursor: 'pointer',
+                    height: '145px',
+                    minHeight: '145px',
+                    boxSizing: 'border-box'
                   }}
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
