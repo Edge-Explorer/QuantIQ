@@ -272,11 +272,11 @@ export default function TrendingHub({ onAddTicker }: TrendingHubProps) {
             style={{ 
               display: 'grid', 
               gridTemplateColumns: '1fr 1fr', 
-              gridAutoRows: '145px',
               gap: '12px',
               maxHeight: '520px',
               overflowY: 'auto',
               paddingRight: '6px',
+              paddingBottom: '4px',
               scrollbarWidth: 'thin',
               scrollbarColor: 'rgba(255,255,255,0.06) transparent'
             }}
@@ -288,21 +288,18 @@ export default function TrendingHub({ onAddTicker }: TrendingHubProps) {
                   key={asset.symbol} 
                   className="glass-panel genz-trend-card"
                   style={{ 
-                    padding: '18px 16px', 
+                    padding: '14px 14px', 
                     borderRadius: '12px', 
                     display: 'flex', 
                     flexDirection: 'column', 
-                    gap: '12px',
+                    justifyContent: 'space-between',
                     textAlign: 'left',
                     position: 'relative',
-                    overflow: 'hidden',
                     border: '1px solid var(--border-glass)',
                     transition: 'all 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
                     background: 'rgba(13, 16, 27, 0.6)',
                     backdropFilter: 'blur(10px)',
                     cursor: 'pointer',
-                    height: '145px',
-                    minHeight: '145px',
                     boxSizing: 'border-box'
                   }}
                 >
@@ -321,8 +318,8 @@ export default function TrendingHub({ onAddTicker }: TrendingHubProps) {
                       }}>
                         {asset.category}
                       </span>
-                      <h4 style={{ margin: '8px 0 2px', fontSize: '15px', fontWeight: 800, color: '#fff', letterSpacing: '-0.01em' }}>{asset.symbol}</h4>
-                      <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{asset.name}</span>
+                      <h4 style={{ margin: '6px 0 2px', fontSize: '14px', fontWeight: 800, color: '#fff', letterSpacing: '-0.01em' }}>{asset.symbol}</h4>
+                      <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>{asset.name}</span>
                     </div>
                     
                     <button 
@@ -343,7 +340,8 @@ export default function TrendingHub({ onAddTicker }: TrendingHubProps) {
                         display: 'flex',
                         alignItems: 'center',
                         gap: '3px',
-                        boxShadow: '0 0 10px rgba(0, 242, 254, 0.15)'
+                        boxShadow: '0 0 10px rgba(0, 242, 254, 0.15)',
+                        flexShrink: 0
                       }}
                       title="Add to Watchlist"
                     >
@@ -351,22 +349,23 @@ export default function TrendingHub({ onAddTicker }: TrendingHubProps) {
                     </button>
                   </div>
 
-                  <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div>
-                      <span style={{ fontSize: '9px', color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Price</span>
-                      <span style={{ fontSize: '15px', fontWeight: 800, color: '#fff' }}>${asset.price.toLocaleString()}</span>
+                  <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '4px' }}>
+                    <div style={{ minWidth: 0 }}>
+                      <span style={{ fontSize: '8px', color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Price</span>
+                      <span style={{ fontSize: '13px', fontWeight: 800, color: '#fff', whiteSpace: 'nowrap' }}>${asset.price.toLocaleString()}</span>
                     </div>
-                    <Sparkline symbol={asset.symbol} change={asset.change} width={75} height={25} />
-                    <div style={{ textAlign: 'right' }}>
+                    <Sparkline symbol={asset.symbol} change={asset.change} width={60} height={22} />
+                    <div style={{ textAlign: 'right', flexShrink: 0 }}>
                       <span 
                         style={{ 
                           fontSize: '11px', 
                           fontWeight: 700, 
                           color: isBull ? '#10b981' : '#ef4444', 
                           background: isBull ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
-                          padding: '3px 8px',
+                          padding: '3px 7px',
                           borderRadius: '6px',
-                          border: `1px solid ${isBull ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)'}`
+                          border: `1px solid ${isBull ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)'}`,
+                          whiteSpace: 'nowrap'
                         }}
                       >
                         {isBull ? '+' : ''}{asset.change}%
