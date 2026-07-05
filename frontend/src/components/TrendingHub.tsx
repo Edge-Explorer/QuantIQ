@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { TrendingUp, Newspaper, Plus } from 'lucide-react';
+import { TrendingUp, Newspaper, Plus, BarChart2 } from 'lucide-react';
 import Logo from './Logo';
 import Sparkline from './Sparkline';
 
@@ -137,10 +137,32 @@ export default function TrendingHub({ onAddTicker }: TrendingHubProps) {
     };
   }, []);
 
-  // Market Movers state
+  // Market Movers state — pre-loaded with fallback so it never shows blank
   const [marketMovers, setMarketMovers] = useState<{
     gainers: any[]; losers: any[]; most_active: any[];
-  }>({ gainers: [], losers: [], most_active: [] });
+  }>({
+    gainers: [
+      { symbol: 'SLBT', name: 'SL Science Holding', price: 5.99, change: 1.54, changePercent: 34.61 },
+      { symbol: 'PLBL', name: 'Polibeli Group Ltd', price: 10.26, change: 1.58, changePercent: 18.20 },
+      { symbol: 'GPC', name: 'Genuine Parts Co.', price: 132.57, change: 15.17, changePercent: 12.92 },
+      { symbol: 'SLS', name: 'SELLAS Life Sciences', price: 14.98, change: 1.71, changePercent: 12.89 },
+      { symbol: 'CAR', name: 'Avis Budget Group', price: 163.44, change: 16.50, changePercent: 11.23 },
+    ],
+    losers: [
+      { symbol: 'RGC', name: 'Regencell Bioscience', price: 6.37, change: -1.66, changePercent: -20.67 },
+      { symbol: 'VICR', name: 'Vicor Corporation', price: 282.95, change: -67.26, changePercent: -19.21 },
+      { symbol: 'ACLS', name: 'Axcelis Technologies', price: 144.50, change: -33.83, changePercent: -18.97 },
+      { symbol: 'VECO', name: 'Veeco Instruments', price: 57.49, change: -13.03, changePercent: -18.48 },
+      { symbol: 'BELFA', name: 'Bel Fuse Inc.', price: 230.16, change: -51.51, changePercent: -18.29 },
+    ],
+    most_active: [
+      { symbol: 'AAL', name: 'American Airlines', price: 17.92, change: -0.23, changePercent: -1.27 },
+      { symbol: 'T', name: 'AT&T Inc.', price: 20.58, change: 0.10, changePercent: 0.49 },
+      { symbol: 'NVDA', name: 'NVIDIA Corporation', price: 194.83, change: -2.75, changePercent: -1.39 },
+      { symbol: 'INTC', name: 'Intel Corporation', price: 120.35, change: -6.67, changePercent: -5.25 },
+      { symbol: 'OPEN', name: 'Opendoor Technologies', price: 4.90, change: -0.04, changePercent: -0.81 },
+    ],
+  });
 
   useEffect(() => {
     let active = true;
@@ -490,8 +512,8 @@ export default function TrendingHub({ onAddTicker }: TrendingHubProps) {
         {/* Section header */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
           <div style={{ width: '6px', height: '18px', background: '#f59e0b', borderRadius: '2px' }} />
-          <span style={{ fontSize: '13px', fontWeight: 700, color: '#fff', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Market Movers</span>
-          <span style={{ fontSize: '10px', color: 'var(--text-muted)', marginLeft: '4px' }}>• Live · refreshes every 60s</span>
+          <BarChart2 size={16} color="#f59e0b" />
+          <h3 style={{ margin: 0, fontSize: '13px', fontWeight: 700, color: '#fff', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Market Movers</h3>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
