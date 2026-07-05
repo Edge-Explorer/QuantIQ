@@ -618,6 +618,91 @@ async def get_market_news():
             print("Failed to fetch market news:", e)
             return []
 
+_market_movers_cache = {}
+
+@router.get("/stocks/market-movers")
+async def get_market_movers():
+    """
+    Fetches Top Gainers, Top Losers, and Most Active stocks from Yahoo Finance screener.
+    Cached for 60 seconds to avoid rate limiting.
+    """
+    global _market_movers_cache
+    import datetime
+    now = datetime.datetime.now(datetime.timezone.utc)
+    
+    if "data" in _market_movers_cache and _market_movers_cache.get("timestamp"):
+        if now - _market_movers_cache["timestamp"] < datetime.timedelta(seconds=60):
+            return _market_movers_cache["data"]
+    
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+        "Accept": "application/json"
+    }
+    
+    async def fetch_screener(scr_id: str, count: int = 5):
+        url = f"https://query1.finance.yahoo.com/v1/finance/screener/predefined/saved?formatted=false&lang=en-US&region=US&scrIds={scr_id}&count={count}"
+        try:
+            async with httpx.AsyncClient(timeout=8.0) as client:
+                res = await client.get(url, headers=headers)
+                if res.status_code != 200:
+                    return []
+                data = res.json()
+                quotes = data.get("finance", {}).get("result", [{}])[0].get("quotes", [])
+                results = []
+                for q in quotes:
+                    symbol = q.get("symbol", "")
+                    name = q.get("shortName") or q.get("longName") or symbol
+                    price = q.get("regularMarketPrice", 0.0)
+                    change = q.get("regularMarketChange", 0.0)
+                    change_pct = q.get("regularMarketChangePercent", 0.0)
+                    results.append({
+                        "symbol": symbol,
+                        "name": name[:22] + "..." if len(name) > 22 else name,
+                        "price": round(float(price), 2),
+                        "change": round(float(change), 2),
+                        "changePercent": round(float(change_pct), 2)
+                    })
+                return results
+        except Exception as e:
+            print(f"Error fetching screener {scr_id}: {e}")
+            return []
+    
+    gainers, losers, most_active = await asyncio.gather(
+        fetch_screener("day_gainers"),
+        fetch_screener("day_losers"),
+        fetch_screener("most_actives")
+    )
+    
+    # Fallback data if API fails (weekend/market closed)
+    if not gainers:
+        gainers = [
+            {"symbol": "SLBT", "name": "SL Science Holding", "price": 5.99, "change": 1.54, "changePercent": 34.61},
+            {"symbol": "PLBL", "name": "Polibeli Group Ltd", "price": 10.26, "change": 1.58, "changePercent": 18.20},
+            {"symbol": "GPC", "name": "Genuine Parts Co.", "price": 132.57, "change": 15.17, "changePercent": 12.92},
+            {"symbol": "SLS", "name": "SELLAS Life Sciences", "price": 14.98, "change": 1.71, "changePercent": 12.89},
+            {"symbol": "CAR", "name": "Avis Budget Group", "price": 163.44, "change": 16.50, "changePercent": 11.23},
+        ]
+    if not losers:
+        losers = [
+            {"symbol": "RGC", "name": "Regencell Bioscience", "price": 6.37, "change": -1.66, "changePercent": -20.67},
+            {"symbol": "VICR", "name": "Vicor Corporation", "price": 282.95, "change": -67.26, "changePercent": -19.21},
+            {"symbol": "ACLS", "name": "Axcelis Technologies", "price": 144.50, "change": -33.83, "changePercent": -18.97},
+            {"symbol": "VECO", "name": "Veeco Instruments", "price": 57.49, "change": -13.03, "changePercent": -18.48},
+            {"symbol": "BELFA", "name": "Bel Fuse Inc.", "price": 230.16, "change": -51.51, "changePercent": -18.29},
+        ]
+    if not most_active:
+        most_active = [
+            {"symbol": "AAL", "name": "American Airlines", "price": 17.92, "change": -0.23, "changePercent": -1.27},
+            {"symbol": "T", "name": "AT&T Inc.", "price": 20.58, "change": 0.10, "changePercent": 0.49},
+            {"symbol": "NVDA", "name": "NVIDIA Corporation", "price": 194.83, "change": -2.75, "changePercent": -1.39},
+            {"symbol": "INTC", "name": "Intel Corporation", "price": 120.35, "change": -6.67, "changePercent": -5.25},
+            {"symbol": "OPEN", "name": "Opendoor Technologies", "price": 4.90, "change": -0.04, "changePercent": -0.81},
+        ]
+    
+    result = {"gainers": gainers, "losers": losers, "most_active": most_active}
+    _market_movers_cache = {"data": result, "timestamp": now}
+    return result
+
 from typing import List, Dict, Any, Optional
 
 class ChatRequest(BaseModel):

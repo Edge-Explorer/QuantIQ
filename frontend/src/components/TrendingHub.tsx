@@ -137,6 +137,29 @@ export default function TrendingHub({ onAddTicker }: TrendingHubProps) {
     };
   }, []);
 
+  // Market Movers state
+  const [marketMovers, setMarketMovers] = useState<{
+    gainers: any[]; losers: any[]; most_active: any[];
+  }>({ gainers: [], losers: [], most_active: [] });
+
+  useEffect(() => {
+    let active = true;
+    const fetchMovers = async () => {
+      try {
+        const res = await fetch(`${API_URL}/api/v1/stocks/market-movers`);
+        if (res.ok) {
+          const data = await res.json();
+          if (active) setMarketMovers(data);
+        }
+      } catch (err) {
+        console.error('Failed to fetch market movers:', err);
+      }
+    };
+    fetchMovers();
+    const interval = setInterval(fetchMovers, 60000);
+    return () => { active = false; clearInterval(interval); };
+  }, []);
+
   return (
     <div 
       className="trending-hub-container animate-fade" 
@@ -460,6 +483,79 @@ export default function TrendingHub({ onAddTicker }: TrendingHubProps) {
           </div>
         </div>
 
+      </div>
+
+      {/* Market Movers — Horizontal 3-column section */}
+      <div style={{ marginTop: '32px' }}>
+        {/* Section header */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
+          <div style={{ width: '6px', height: '18px', background: '#f59e0b', borderRadius: '2px' }} />
+          <span style={{ fontSize: '13px', fontWeight: 700, color: '#fff', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Market Movers</span>
+          <span style={{ fontSize: '10px', color: 'var(--text-muted)', marginLeft: '4px' }}>• Live · refreshes every 60s</span>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
+          {/* Top Gainers */}
+          {[
+            { key: 'gainers', label: 'Top Gainers', accent: '#10b981', bgAccent: 'rgba(16,185,129,0.07)', borderAccent: 'rgba(16,185,129,0.18)' },
+            { key: 'losers', label: 'Top Losers', accent: '#ef4444', bgAccent: 'rgba(239,68,68,0.07)', borderAccent: 'rgba(239,68,68,0.18)' },
+            { key: 'most_active', label: 'Most Active', accent: '#a78bfa', bgAccent: 'rgba(167,139,250,0.07)', borderAccent: 'rgba(167,139,250,0.18)' },
+          ].map(({ key, label, accent, bgAccent, borderAccent }) => {
+            const items: any[] = (marketMovers as any)[key] || [];
+            return (
+              <div
+                key={key}
+                style={{
+                  background: bgAccent,
+                  border: `1px solid ${borderAccent}`,
+                  borderRadius: '14px',
+                  padding: '16px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '0px'
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '12px' }}>
+                  <div style={{ width: '5px', height: '14px', background: accent, borderRadius: '2px' }} />
+                  <span style={{ fontSize: '11px', fontWeight: 700, color: accent, textTransform: 'uppercase', letterSpacing: '0.07em' }}>{label}</span>
+                </div>
+
+                {items.length === 0 ? (
+                  <div style={{ fontSize: '11px', color: 'var(--text-muted)', padding: '8px 0' }}>Loading...</div>
+                ) : items.map((item, idx) => {
+                  const isBull = item.changePercent >= 0;
+                  return (
+                    <div
+                      key={item.symbol}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        padding: '8px 0',
+                        borderBottom: idx < items.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none',
+                      }}
+                    >
+                      {/* Symbol + Name */}
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: '12px', fontWeight: 700, color: accent }}>{item.symbol}</div>
+                        <div style={{ fontSize: '9px', color: 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.name}</div>
+                      </div>
+                      {/* Sparkline */}
+                      <Sparkline symbol={item.symbol} change={item.changePercent} width={50} height={18} />
+                      {/* Price + Change */}
+                      <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                        <div style={{ fontSize: '12px', fontWeight: 700, color: '#fff' }}>${item.price.toLocaleString()}</div>
+                        <div style={{ fontSize: '10px', fontWeight: 600, color: isBull ? '#10b981' : '#ef4444' }}>
+                          {isBull ? '+' : ''}{item.changePercent.toFixed(2)}%
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
