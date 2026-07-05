@@ -134,7 +134,7 @@ export default function ChartChatbot({ ticker, markers, activeIndicators, user, 
   const adjustHeight = () => {
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
-      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 120)}px`;
+      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 100)}px`;
     }
   };
 
@@ -504,7 +504,7 @@ export default function ChartChatbot({ ticker, markers, activeIndicators, user, 
             </button>
           </div>
         ) : (
-          <form onSubmit={handleSendMessage} style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+          <form onSubmit={handleSendMessage} style={{ display: 'flex', gap: '10px', alignItems: 'flex-end' }}>
             <textarea 
               ref={textareaRef}
               rows={1}
@@ -529,9 +529,10 @@ export default function ChartChatbot({ ticker, markers, activeIndicators, user, 
                 outline: 'none',
                 resize: 'none',
                 lineHeight: 1.4,
-                maxHeight: '120px',
+                maxHeight: '100px',
                 minHeight: '38px',
                 height: '38px',
+                overflowY: 'auto',
                 transition: 'border-color 0.2s, box-shadow 0.2s',
                 boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.2)',
                 fontFamily: 'inherit'
