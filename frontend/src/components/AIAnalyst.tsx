@@ -32,28 +32,107 @@ export default function AIAnalyst({
   const [isStyleOpen, setIsStyleOpen] = useState(false);
   const [isRiskOpen, setIsRiskOpen] = useState(false);
 
-  // Custom parser to format **bold** words in neon-cyan and support paragraph newlines
+  // Parse inline markdown: **bold**, *italic*
+  const parseInline = (text: string, keyPrefix: string) => {
+    // Handle **bold** and *italic* (in that order, bold first)
+    const parts = text.split(/(\*\*[^*]+\*\*|\*[^*]+\*)/g);
+    return parts.map((part, j) => {
+      if (part.startsWith('**') && part.endsWith('**')) {
+        return (
+          <strong key={`${keyPrefix}-b${j}`} style={{ color: 'var(--neon-cyan)', fontWeight: 700 }}>
+            {part.slice(2, -2)}
+          </strong>
+        );
+      }
+      if (part.startsWith('*') && part.endsWith('*')) {
+        return (
+          <em key={`${keyPrefix}-i${j}`} style={{ color: 'rgba(255,255,255,0.8)', fontStyle: 'italic' }}>
+            {part.slice(1, -1)}
+          </em>
+        );
+      }
+      return part;
+    });
+  };
+
+  // Full markdown formatter — handles headings, bullets, bold, italic
   const formatReason = (text: string) => {
     if (!text) return null;
-    const paragraphs = text.split('\n');
-    return paragraphs.map((para, i) => {
-      if (!para.trim()) return null;
-      const parts = para.split(/\*\*([^*]+)\*\*/g);
-      return (
-        <p key={i} className="insight-explanation">
-          {parts.map((part, j) => {
-            if (j % 2 === 1) {
-              return (
-                <strong key={j} style={{ color: 'var(--neon-cyan)', fontWeight: 600 }}>
-                  {part}
-                </strong>
-              );
-            }
-            return part;
-          })}
+    const lines = text.split('\n');
+    const elements: React.ReactNode[] = [];
+    let bulletBuffer: string[] = [];
+
+    const flushBullets = (keyBase: string) => {
+      if (bulletBuffer.length === 0) return;
+      elements.push(
+        <ul key={`ul-${keyBase}`} style={{ margin: '6px 0', paddingLeft: '18px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+          {bulletBuffer.map((item, bi) => (
+            <li key={`li-${keyBase}-${bi}`} style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.6, listStyleType: 'disc' }}>
+              {parseInline(item, `li-${keyBase}-${bi}`)}
+            </li>
+          ))}
+        </ul>
+      );
+      bulletBuffer = [];
+    };
+
+    lines.forEach((line, i) => {
+      const trimmed = line.trim();
+      if (!trimmed) {
+        flushBullets(`${i}`);
+        return;
+      }
+
+      // ### Heading 3
+      if (trimmed.startsWith('### ')) {
+        flushBullets(`${i}`);
+        elements.push(
+          <h4 key={`h3-${i}`} style={{ margin: '14px 0 6px', fontSize: '13px', fontWeight: 700, color: 'var(--neon-cyan)', textTransform: 'uppercase', letterSpacing: '0.04em', borderBottom: '1px solid rgba(0,242,254,0.15)', paddingBottom: '4px' }}>
+            {trimmed.slice(4)}
+          </h4>
+        );
+        return;
+      }
+
+      // ## Heading 2
+      if (trimmed.startsWith('## ')) {
+        flushBullets(`${i}`);
+        elements.push(
+          <h3 key={`h2-${i}`} style={{ margin: '14px 0 6px', fontSize: '14px', fontWeight: 700, color: '#fff', letterSpacing: '-0.01em' }}>
+            {parseInline(trimmed.slice(3), `h2-${i}`)}
+          </h3>
+        );
+        return;
+      }
+
+      // # Heading 1
+      if (trimmed.startsWith('# ')) {
+        flushBullets(`${i}`);
+        elements.push(
+          <h2 key={`h1-${i}`} style={{ margin: '14px 0 8px', fontSize: '15px', fontWeight: 800, color: '#fff' }}>
+            {parseInline(trimmed.slice(2), `h1-${i}`)}
+          </h2>
+        );
+        return;
+      }
+
+      // * bullet or - bullet
+      if (trimmed.startsWith('* ') || trimmed.startsWith('- ')) {
+        bulletBuffer.push(trimmed.slice(2));
+        return;
+      }
+
+      // Plain paragraph
+      flushBullets(`${i}`);
+      elements.push(
+        <p key={`p-${i}`} className="insight-explanation">
+          {parseInline(trimmed, `p-${i}`)}
         </p>
       );
     });
+
+    flushBullets('end');
+    return elements;
   };
 
   const renderGauge = (probability: number) => (
