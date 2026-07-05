@@ -80,6 +80,36 @@ export default function App() {
 
 
 
+  const fetchWatchlistData = async () => {
+    try {
+      const watchlistData = await graphqlRequest(`
+        query {
+          watchlist {
+            ticker
+            price
+            changePercent
+          }
+        }
+      `);
+      if (watchlistData && watchlistData.watchlist) {
+        const tickers = watchlistData.watchlist.map((w: any) => w.ticker);
+        setWatchlist(tickers);
+        
+        const quotes: Record<string, { price: number; changePercent: number }> = {};
+        watchlistData.watchlist.forEach((w: any) => {
+          if (w.price !== null && w.price !== undefined) {
+            quotes[w.ticker] = { price: w.price, changePercent: w.changePercent || 0.0 };
+          }
+        });
+        setWatchlistQuotes(quotes);
+        return tickers;
+      }
+    } catch (err) {
+      console.error('Error fetching watchlist data:', err);
+    }
+    return [];
+  };
+
   // 1. Load external Razorpay Script on mount
   useEffect(() => {
     // Razorpay Standard Checkout SDK
@@ -139,33 +169,12 @@ export default function App() {
         setUser(profileData.me);
 
         // Fetch user watchlist
-        const watchlistData = await graphqlRequest(`
-          query {
-            watchlist {
-              ticker
-              price
-              changePercent
-            }
-          }
-        `);
-        if (watchlistData && watchlistData.watchlist) {
-          const tickers = watchlistData.watchlist.map((w: any) => w.ticker);
-          setWatchlist(tickers);
-          
-          const quotes: Record<string, { price: number; changePercent: number }> = {};
-          watchlistData.watchlist.forEach((w: any) => {
-            if (w.price !== null && w.price !== undefined) {
-              quotes[w.ticker] = { price: w.price, changePercent: w.changePercent || 0.0 };
-            }
-          });
-          setWatchlistQuotes(quotes);
-          
-          if (tickers.length > 0) {
-            // Default to the first watchlisted item
-            setActiveTicker(tickers[0]);
-          } else {
-            setActiveTicker('');
-          }
+        const tickers = await fetchWatchlistData();
+        if (tickers.length > 0) {
+          // Default to the first watchlisted item
+          setActiveTicker(tickers[0]);
+        } else {
+          setActiveTicker('');
         }
 
         // Fetch alerts
@@ -456,9 +465,7 @@ export default function App() {
       }
     `, { ticker: tickerUpper });
 
-    if (!watchlist.includes(tickerUpper)) {
-      setWatchlist([...watchlist, tickerUpper]);
-    }
+    await fetchWatchlistData();
     setActiveTicker(tickerUpper);
   };
 
