@@ -268,7 +268,18 @@ export default function TrendingHub({ onAddTicker }: TrendingHubProps) {
             <h3 style={{ margin: 0, fontSize: '13px', fontWeight: 700, color: '#fff', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Trending Assets</h3>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+          <div 
+            style={{ 
+              display: 'grid', 
+              gridTemplateColumns: '1fr 1fr', 
+              gap: '12px',
+              maxHeight: '520px',
+              overflowY: 'auto',
+              paddingRight: '6px',
+              scrollbarWidth: 'thin',
+              scrollbarColor: 'rgba(255,255,255,0.06) transparent'
+            }}
+          >
             {trendingAssets.map((asset) => {
               const isBull = asset.change >= 0;
               return (
