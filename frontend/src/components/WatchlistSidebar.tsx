@@ -150,7 +150,7 @@ export default function WatchlistSidebar({
         <Activity size={18} color="#94a3b8" />
       </div>
       
-      <div style={{ position: 'relative', zIndex: 2 }} ref={dropdownRef}>
+      <div style={{ position: 'relative', zIndex: 10 }} ref={dropdownRef}>
         <form className="watchlist-search" onSubmit={handleSubmit}>
           <input 
             type="text" 
