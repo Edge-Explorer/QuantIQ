@@ -4,7 +4,7 @@ import { X, Eye, EyeOff, Lock, Mail, User, Globe } from 'lucide-react';
 import Logo from '../components/Logo';
 import LogoLoop from '../components/LogoLoop';
 import Sparkline from '../components/Sparkline';
-import { SiReact, SiTypescript, SiFastapi, SiPostgresql, SiGraphql, SiApachekafka, SiRazorpay, SiTailwindcss, SiPython } from 'react-icons/si';
+import { SiReact, SiTypescript, SiFastapi, SiPostgresql, SiGraphql, SiApachekafka, SiRazorpay, SiTailwindcss, SiPython, SiGrafana } from 'react-icons/si';
 
 
 interface LandingPageProps {
@@ -671,6 +671,7 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
               { node: <SiPython />, title: "Python", href: "https://www.python.org" },
               { node: <SiApachekafka />, title: "Redpanda", href: "https://redpanda.com" },
               { node: <SiRazorpay />, title: "Razorpay", href: "https://razorpay.com" },
+              { node: <SiGrafana />, title: "Grafana", href: "https://grafana.com" },
             ]}
             logoSize={48}
             gap={72}
