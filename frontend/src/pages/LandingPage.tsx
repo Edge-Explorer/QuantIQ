@@ -438,11 +438,11 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
             <a href="#hero" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
               Home
             </a>
-            <a href="#stack" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
-              The Stack
-            </a>
             <a href="#market-movers" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
               Market Movers
+            </a>
+            <a href="#stack" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+              The Stack
             </a>
             <a href="#capabilities" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
               Capabilities
