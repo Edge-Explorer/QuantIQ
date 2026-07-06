@@ -1776,30 +1776,46 @@
 }
 
 .pricing-full-card {
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  background: rgba(13, 16, 27, 0.45) !important;
+  border: 1px solid rgba(255, 255, 255, 0.05) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3) !important;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
 }
 
 .pricing-full-card:hover {
-  transform: translateY(-6px);
-  background: rgba(255, 255, 255, 0.04) !important;
-  border-color: rgba(255, 255, 255, 0.15) !important;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4) !important;
+  transform: translateY(-8px) !important;
+  background: rgba(13, 16, 27, 0.6) !important;
+  border-color: rgba(255, 255, 255, 0.25) !important;
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.5) !important;
+}
+
+.pricing-full-card.free-tier-card:hover {
+  border-color: rgba(255, 255, 255, 0.2) !important;
+  box-shadow: 0 24px 48px rgba(255, 255, 255, 0.03) !important;
+}
+
+.pricing-full-card.analyst-tier-card:hover {
+  border-color: rgba(0, 242, 254, 0.5) !important;
+  box-shadow: 0 24px 48px rgba(0, 242, 254, 0.15) !important;
+}
+
+.pricing-full-card.trader-tier-card:hover {
+  border-color: rgba(161, 84, 255, 0.5) !important;
+  box-shadow: 0 24px 48px rgba(161, 84, 255, 0.15) !important;
+}
+
+.pricing-full-card.hot-deal-card {
+  background: rgba(0, 242, 254, 0.02) !important;
+  border-color: rgba(0, 242, 254, 0.3) !important;
+  box-shadow: 0 8px 32px rgba(0, 242, 254, 0.05) !important;
 }
 
 .pricing-full-card.hot-deal-card:hover {
-  background: rgba(161, 84, 255, 0.08) !important;
-  border-color: rgba(161, 84, 255, 0.6) !important;
-  box-shadow: 0 20px 50px rgba(161, 84, 255, 0.25) !important;
-}
-
-.pricing-full-card.lifetime-deal-card:hover {
-  background: rgba(0, 242, 254, 0.08) !important;
-  border-color: rgba(0, 242, 254, 0.8) !important;
-  box-shadow: 0 20px 50px rgba(0, 242, 254, 0.3) !important;
-}
-
-.pricing-full-card.lifetime-deal-card {
-  animation: pulse-cyan-glow 3s infinite ease-in-out;
+  background: rgba(0, 242, 254, 0.05) !important;
+  border-color: rgba(0, 242, 254, 0.7) !important;
+  box-shadow: 0 24px 50px rgba(0, 242, 254, 0.25) !important;
 }
 
 /* Toast Notification System Styles */

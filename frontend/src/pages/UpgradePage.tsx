@@ -63,10 +63,20 @@ export default function UpgradePage({ user, onBack, onSelectPackage }: UpgradePa
     <div className="upgrade-page-container" style={{ minHeight: '100vh', background: '#07090e', color: 'var(--text-primary)', padding: '40px 24px', position: 'relative', overflowY: 'auto' }}>
       
       {/* Header / Nav */}
-      <header style={{ maxWidth: '1200px', margin: '0 auto 40px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <header style={{ 
+        maxWidth: '1200px', 
+        margin: '0 auto 40px', 
+        position: 'relative', 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center',
+        minHeight: '48px'
+      }}>
         <button 
           onClick={onBack}
           style={{
+            position: 'absolute',
+            left: 0,
             background: 'rgba(255, 255, 255, 0.02)',
             border: '1px solid var(--border-glass)',
             borderRadius: '8px',
@@ -79,7 +89,8 @@ export default function UpgradePage({ user, onBack, onSelectPackage }: UpgradePa
             alignItems: 'center',
             gap: '8px',
             transition: 'all 0.2s ease',
-            outline: 'none'
+            outline: 'none',
+            zIndex: 10
           }}
           className="back-dashboard-btn"
         >
@@ -87,9 +98,11 @@ export default function UpgradePage({ user, onBack, onSelectPackage }: UpgradePa
           Back to Dashboard
         </button>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <Logo size={28} className="glow-cyan" />
-          <span style={{ fontSize: '20px', fontWeight: 800, letterSpacing: '0.05em', color: '#fff' }}>QuantIQ</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{ display: 'inline-flex', filter: 'drop-shadow(0 0 8px rgba(0, 242, 254, 0.6))' }}>
+            <Logo size={36} className="glow-cyan" />
+          </div>
+          <span style={{ fontSize: '24px', fontWeight: 900, letterSpacing: '0.05em', color: '#fff', background: 'linear-gradient(135deg, #fff 0%, rgba(255,255,255,0.7) 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>QuantIQ</span>
         </div>
       </header>
 
@@ -108,7 +121,7 @@ export default function UpgradePage({ user, onBack, onSelectPackage }: UpgradePa
         <div className="pricing-full-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '24px', alignItems: 'stretch', marginBottom: '40px' }}>
           
           {/* Card 0: Free Tier */}
-          <div className="pricing-full-card free-tier-card" style={{ display: 'flex', flexDirection: 'column', padding: '32px 24px', background: 'rgba(255,255,255,0.01)', border: '1px solid rgba(255,255,255,0.03)', borderRadius: '16px', textAlign: 'left', transition: 'all 0.3s ease', position: 'relative' }}>
+          <div className="pricing-full-card free-tier-card" style={{ display: 'flex', flexDirection: 'column', padding: '32px 24px', borderRadius: '16px', textAlign: 'left', position: 'relative' }}>
             <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase' }}>Starter</span>
             <h3 style={{ fontSize: '22px', fontWeight: 800, color: 'var(--text-primary)', marginTop: '8px' }}>Free Tier</h3>
             <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '8px', minHeight: '38px' }}>Essential market data & basic analytics.</p>
@@ -142,7 +155,7 @@ export default function UpgradePage({ user, onBack, onSelectPackage }: UpgradePa
           </div>
 
           {/* Card 1: 10 Messages */}
-          <div className="pricing-full-card" onClick={() => onSelectPackage(500)} style={{ display: 'flex', flexDirection: 'column', padding: '32px 24px', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-glass)', borderRadius: '16px', textAlign: 'left', transition: 'all 0.3s ease', cursor: 'pointer', position: 'relative' }}>
+          <div className="pricing-full-card analyst-tier-card" onClick={() => onSelectPackage(500)} style={{ display: 'flex', flexDirection: 'column', padding: '32px 24px', borderRadius: '16px', textAlign: 'left', cursor: 'pointer', position: 'relative' }}>
             <span style={{ fontSize: '12px', color: 'var(--neon-cyan)', fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase' }}>Analyst Pack</span>
             <h3 style={{ fontSize: '22px', fontWeight: 800, color: 'var(--text-primary)', marginTop: '8px' }}>10 Messages</h3>
             <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '8px', minHeight: '38px' }}>Great for casual traders looking for reliable market strategies.</p>
@@ -176,7 +189,7 @@ export default function UpgradePage({ user, onBack, onSelectPackage }: UpgradePa
           </div>
 
           {/* Card 2: 25 Messages */}
-          <div className="pricing-full-card" onClick={() => onSelectPackage(1500)} style={{ display: 'flex', flexDirection: 'column', padding: '32px 24px', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-glass)', borderRadius: '16px', textAlign: 'left', transition: 'all 0.3s ease', cursor: 'pointer', position: 'relative' }}>
+          <div className="pricing-full-card trader-tier-card" onClick={() => onSelectPackage(1500)} style={{ display: 'flex', flexDirection: 'column', padding: '32px 24px', borderRadius: '16px', textAlign: 'left', cursor: 'pointer', position: 'relative' }}>
             <span style={{ fontSize: '12px', color: 'var(--neon-violet)', fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase' }}>Trader Pack</span>
             <h3 style={{ fontSize: '22px', fontWeight: 800, color: 'var(--text-primary)', marginTop: '8px' }}>25 Messages</h3>
             <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '8px', minHeight: '38px' }}>Designed for active traders seeking deep market intelligence.</p>
@@ -217,14 +230,10 @@ export default function UpgradePage({ user, onBack, onSelectPackage }: UpgradePa
               display: 'flex', 
               flexDirection: 'column', 
               padding: '32px 24px', 
-              background: 'rgba(0, 242, 254, 0.03)', 
-              border: '1px solid rgba(0, 242, 254, 0.4)', 
               borderRadius: '16px', 
               textAlign: 'left', 
-              transition: 'all 0.3s ease', 
               cursor: 'pointer', 
-              position: 'relative', 
-              boxShadow: '0 12px 48px rgba(0, 242, 254, 0.15)' 
+              position: 'relative'
             }}
           >
             {isNewUser && timeLeft && (
@@ -316,16 +325,13 @@ export default function UpgradePage({ user, onBack, onSelectPackage }: UpgradePa
 
         </div>
 
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--border-glass)', paddingTop: '20px', marginTop: '20px' }}>
-          <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: 0 }}>
-            Test Mode active. Pay securely using Razorpay Test UPI / Cards.
-          </p>
-          {isNewUser && timeLeft && (
-            <p style={{ fontSize: '13px', color: 'var(--neon-cyan)', margin: 0, fontWeight: 700 }} className="offer-countdown">
+        {isNewUser && timeLeft && (
+          <div style={{ borderTop: '1px solid var(--border-glass)', paddingTop: '24px', marginTop: '32px', display: 'flex', justifyContent: 'center' }}>
+            <p style={{ fontSize: '14px', color: 'var(--neon-cyan)', margin: 0, fontWeight: 700, letterSpacing: '0.02em' }} className="offer-countdown">
               ⚡ Exclusive 3-Day Pro Discount Offer active!
             </p>
-          )}
-        </div>
+          </div>
+        )}
       </main>
     </div>
   );
