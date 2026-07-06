@@ -36,6 +36,8 @@ export default function LogoLoop({ logos, durationSeconds = 20, logoSize = 48, g
       <div className="logoloop-track" style={{ animationDuration: `${durationSeconds}s` }}>
         {renderSet('a', false)}
         {renderSet('b', true)}
+        {renderSet('c', true)}
+        {renderSet('d', true)}
       </div>
     </div>
   );
