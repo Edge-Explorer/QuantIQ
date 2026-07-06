@@ -3,6 +3,7 @@ import { Button } from '../components/ui/button';
 import { X, Eye, EyeOff, Lock, Mail, User, Globe } from 'lucide-react';
 import Logo from '../components/Logo';
 import LogoLoop from '../components/LogoLoop';
+import Sparkline from '../components/Sparkline';
 import { SiReact, SiTypescript, SiFastapi, SiPostgresql, SiGraphql, SiApachekafka, SiRazorpay, SiTailwindcss, SiPython } from 'react-icons/si';
 
 
@@ -90,6 +91,51 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
         setGithubStars('Star');
       });
   }, []);
+
+  // Market Movers live state
+  const [marketMovers, setMarketMovers] = useState<{
+    gainers: any[]; losers: any[]; most_active: any[];
+  }>({
+    gainers: [
+      { symbol: 'SLBT', name: 'SL Science Holding', price: 5.99, changePercent: 34.61 },
+      { symbol: 'PLBL', name: 'Polibeli Group Ltd', price: 10.26, changePercent: 18.20 },
+      { symbol: 'GPC', name: 'Genuine Parts Co.', price: 132.57, changePercent: 12.92 },
+      { symbol: 'SLS', name: 'SELLAS Life Sciences', price: 14.98, changePercent: 12.89 },
+      { symbol: 'CAR', name: 'Avis Budget Group', price: 163.44, changePercent: 11.23 },
+    ],
+    losers: [
+      { symbol: 'RGC', name: 'Regencell Bioscience', price: 6.37, changePercent: -20.67 },
+      { symbol: 'VICR', name: 'Vicor Corporation', price: 282.95, changePercent: -19.21 },
+      { symbol: 'ACLS', name: 'Axcelis Technologies', price: 144.50, changePercent: -18.97 },
+      { symbol: 'VECO', name: 'Veeco Instruments', price: 57.49, changePercent: -18.48 },
+      { symbol: 'BELFA', name: 'Bel Fuse Inc.', price: 230.16, changePercent: -18.29 },
+    ],
+    most_active: [
+      { symbol: 'AAL', name: 'American Airlines', price: 17.92, changePercent: -1.27 },
+      { symbol: 'T', name: 'AT&T Inc.', price: 20.58, changePercent: 0.49 },
+      { symbol: 'NVDA', name: 'NVIDIA Corporation', price: 194.83, changePercent: -1.39 },
+      { symbol: 'INTC', name: 'Intel Corporation', price: 120.35, changePercent: -5.25 },
+      { symbol: 'OPEN', name: 'Opendoor Technologies', price: 4.90, changePercent: -0.81 },
+    ],
+  });
+
+  useEffect(() => {
+    let active = true;
+    const fetchMovers = async () => {
+      try {
+        const res = await fetch(`${apiUrl}/api/v1/stocks/market-movers`);
+        if (res.ok) {
+          const data = await res.json();
+          if (active && data.gainers?.length) setMarketMovers(data);
+        }
+      } catch (err) {
+        console.error('Landing market movers fetch failed:', err);
+      }
+    };
+    fetchMovers();
+    const interval = setInterval(fetchMovers, 60000);
+    return () => { active = false; clearInterval(interval); };
+  }, [apiUrl]);
 
   useEffect(() => {
     // Append Google Identity Services SDK script
@@ -441,6 +487,86 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
             )}
           </div>
 
+        </section>
+
+        {/* LIVE MARKET MOVERS SECTION */}
+        <section className="w-full py-16 border-t border-white/5">
+          <div className="max-w-7xl mx-auto px-8">
+
+            {/* Section Header */}
+            <div className="flex items-center gap-3 mb-8">
+              <div style={{ display: 'flex', gap: '3px', alignItems: 'flex-end' }}>
+                <div style={{ width: '4px', height: '14px', background: '#f59e0b', borderRadius: '2px' }} />
+                <div style={{ width: '4px', height: '10px', background: '#f59e0b', borderRadius: '2px', opacity: 0.6 }} />
+                <div style={{ width: '4px', height: '18px', background: '#f59e0b', borderRadius: '2px' }} />
+              </div>
+              <h2 className="text-sm font-bold text-white uppercase tracking-widest">Market Movers</h2>
+              <span className="text-xs text-white/30 ml-1">· Live</span>
+            </div>
+
+            {/* 3 Column Glassmorphic Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+              {[
+                { key: 'gainers', label: 'Top Gainers', accent: '#10b981', bgAccent: 'rgba(16,185,129,0.06)', borderAccent: 'rgba(16,185,129,0.18)' },
+                { key: 'losers', label: 'Top Losers', accent: '#ef4444', bgAccent: 'rgba(239,68,68,0.06)', borderAccent: 'rgba(239,68,68,0.18)' },
+                { key: 'most_active', label: 'Most Active', accent: '#a78bfa', bgAccent: 'rgba(167,139,250,0.06)', borderAccent: 'rgba(167,139,250,0.18)' },
+              ].map(({ key, label, accent, bgAccent, borderAccent }) => {
+                const items: any[] = (marketMovers as any)[key] || [];
+                return (
+                  <div
+                    key={key}
+                    style={{
+                      background: `linear-gradient(135deg, ${bgAccent}, rgba(255,255,255,0.02))`,
+                      border: `1px solid ${borderAccent}`,
+                      borderRadius: '18px',
+                      padding: '20px',
+                      backdropFilter: 'blur(24px)',
+                      WebkitBackdropFilter: 'blur(24px)',
+                      boxShadow: `0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.06)`,
+                    }}
+                  >
+                    {/* Panel Header */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+                      <div style={{ width: '4px', height: '16px', background: accent, borderRadius: '2px', boxShadow: `0 0 8px ${accent}` }} />
+                      <span style={{ fontSize: '11px', fontWeight: 700, color: accent, textTransform: 'uppercase', letterSpacing: '0.07em' }}>{label}</span>
+                    </div>
+
+                    {/* Stock Rows */}
+                    {items.map((item, idx) => {
+                      const isBull = item.changePercent >= 0;
+                      return (
+                        <div
+                          key={item.symbol}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            padding: '9px 0',
+                            borderBottom: idx < items.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none',
+                          }}
+                        >
+                          {/* Symbol + Name */}
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: '12px', fontWeight: 700, color: accent }}>{item.symbol}</div>
+                            <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.35)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '90px' }}>{item.name}</div>
+                          </div>
+                          {/* Sparkline */}
+                          <Sparkline symbol={item.symbol} change={item.changePercent} width={52} height={20} />
+                          {/* Price + % */}
+                          <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                            <div style={{ fontSize: '12px', fontWeight: 700, color: '#fff' }}>${item.price.toLocaleString()}</div>
+                            <div style={{ fontSize: '10px', fontWeight: 600, color: isBull ? '#10b981' : '#ef4444' }}>
+                              {isBull ? '+' : ''}{item.changePercent.toFixed(2)}%
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         </section>
 
         {/* TECH STACK LOGO LOOP */}
