@@ -441,8 +441,14 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
             <a href="#stack" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
               The Stack
             </a>
+            <a href="#market-movers" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+              Market Movers
+            </a>
             <a href="#capabilities" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
               Capabilities
+            </a>
+            <a href="#news" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+              News
             </a>
             <div className="relative">
               <button 
@@ -576,7 +582,7 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
         </section>
 
         {/* MARKET MOVERS SECTION */}
-        <section className="w-full py-24 border-t border-white/5 flex flex-col items-center">
+        <section id="market-movers" className="w-full py-24 border-t border-white/5 flex flex-col items-center">
           <div className="max-w-7xl mx-auto px-8 w-full flex flex-col items-center">
 
             {/* Section Header — matches page style */}
@@ -860,7 +866,7 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
         </section>
 
         {/* FINANCIAL NEWS SECTION */}
-        <section className="w-full py-28 border-t border-white/5 flex flex-col items-center text-center bg-black/20 backdrop-blur-[1px]">
+        <section id="news" className="w-full py-28 border-t border-white/5 flex flex-col items-center text-center bg-black/20 backdrop-blur-[1px]">
           <div className="max-w-7xl mx-auto px-8 w-full flex flex-col items-center">
 
             {/* Section Header */}
