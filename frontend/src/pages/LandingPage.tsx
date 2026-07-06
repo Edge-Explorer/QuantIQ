@@ -489,46 +489,40 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
 
         </section>
 
-        {/* LIVE MARKET MOVERS SECTION */}
-        <section className="w-full py-16 border-t border-white/5">
-          <div className="max-w-7xl mx-auto px-8">
+        {/* MARKET MOVERS SECTION */}
+        <section className="w-full py-24 border-t border-white/5 flex flex-col items-center">
+          <div className="max-w-7xl mx-auto px-8 w-full flex flex-col items-center">
 
-            {/* Section Header */}
-            <div className="flex items-center gap-3 mb-8">
-              <div style={{ display: 'flex', gap: '3px', alignItems: 'flex-end' }}>
-                <div style={{ width: '4px', height: '14px', background: '#f59e0b', borderRadius: '2px' }} />
-                <div style={{ width: '4px', height: '10px', background: '#f59e0b', borderRadius: '2px', opacity: 0.6 }} />
-                <div style={{ width: '4px', height: '18px', background: '#f59e0b', borderRadius: '2px' }} />
-              </div>
-              <h2 className="text-sm font-bold text-white uppercase tracking-widest">Market Movers</h2>
-              <span className="text-xs text-white/30 ml-1">· Live</span>
-            </div>
+            {/* Section Header — matches page style */}
+            <span className="text-amber-400 text-xs font-semibold uppercase tracking-widest mb-3">Market Intelligence</span>
+            <h2
+              className="text-4xl sm:text-5xl font-normal text-foreground tracking-tight mb-4"
+              style={{ fontFamily: "'Instrument Serif', serif" }}
+            >
+              Market Movers
+            </h2>
+            <p className="text-muted-foreground max-w-xl text-sm sm:text-base mb-14 leading-relaxed text-center">
+              Real-time top gainers, losers and most-active stocks — refreshed every 60 seconds from live market data.
+            </p>
 
             {/* 3 Column Glassmorphic Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5 w-full">
               {[
-                { key: 'gainers', label: 'Top Gainers', accent: '#10b981', bgAccent: 'rgba(16,185,129,0.06)', borderAccent: 'rgba(16,185,129,0.18)' },
-                { key: 'losers', label: 'Top Losers', accent: '#ef4444', bgAccent: 'rgba(239,68,68,0.06)', borderAccent: 'rgba(239,68,68,0.18)' },
-                { key: 'most_active', label: 'Most Active', accent: '#a78bfa', bgAccent: 'rgba(167,139,250,0.06)', borderAccent: 'rgba(167,139,250,0.18)' },
-              ].map(({ key, label, accent, bgAccent, borderAccent }) => {
+                { key: 'gainers', label: 'Top Gainers', accent: '#10b981', borderAccent: 'rgba(16,185,129,0.2)' },
+                { key: 'losers', label: 'Top Losers', accent: '#ef4444', borderAccent: 'rgba(239,68,68,0.2)' },
+                { key: 'most_active', label: 'Most Active', accent: '#a78bfa', borderAccent: 'rgba(167,139,250,0.2)' },
+              ].map(({ key, label, accent, borderAccent }) => {
                 const items: any[] = (marketMovers as any)[key] || [];
                 return (
                   <div
                     key={key}
-                    style={{
-                      background: `linear-gradient(135deg, ${bgAccent}, rgba(255,255,255,0.02))`,
-                      border: `1px solid ${borderAccent}`,
-                      borderRadius: '18px',
-                      padding: '20px',
-                      backdropFilter: 'blur(24px)',
-                      WebkitBackdropFilter: 'blur(24px)',
-                      boxShadow: `0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.06)`,
-                    }}
+                    className="liquid-glass rounded-2xl p-6 text-left"
+                    style={{ border: `1px solid ${borderAccent}` }}
                   >
                     {/* Panel Header */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-                      <div style={{ width: '4px', height: '16px', background: accent, borderRadius: '2px', boxShadow: `0 0 8px ${accent}` }} />
-                      <span style={{ fontSize: '11px', fontWeight: 700, color: accent, textTransform: 'uppercase', letterSpacing: '0.07em' }}>{label}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '18px' }}>
+                      <div style={{ width: '3px', height: '14px', background: accent, borderRadius: '2px', boxShadow: `0 0 6px ${accent}80` }} />
+                      <span style={{ fontSize: '10px', fontWeight: 700, color: accent, textTransform: 'uppercase', letterSpacing: '0.1em' }}>{label}</span>
                     </div>
 
                     {/* Stock Rows */}
@@ -540,22 +534,22 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
                           style={{
                             display: 'flex',
                             alignItems: 'center',
-                            gap: '8px',
-                            padding: '9px 0',
-                            borderBottom: idx < items.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none',
+                            gap: '10px',
+                            padding: '10px 0',
+                            borderBottom: idx < items.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none',
                           }}
                         >
                           {/* Symbol + Name */}
                           <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ fontSize: '12px', fontWeight: 700, color: accent }}>{item.symbol}</div>
-                            <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.35)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '90px' }}>{item.name}</div>
+                            <div style={{ fontSize: '12px', fontWeight: 700, color: accent, letterSpacing: '0.02em' }}>{item.symbol}</div>
+                            <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.3)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100px', marginTop: '2px' }}>{item.name}</div>
                           </div>
                           {/* Sparkline */}
-                          <Sparkline symbol={item.symbol} change={item.changePercent} width={52} height={20} />
+                          <Sparkline symbol={item.symbol} change={item.changePercent} width={54} height={22} />
                           {/* Price + % */}
                           <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                            <div style={{ fontSize: '12px', fontWeight: 700, color: '#fff' }}>${item.price.toLocaleString()}</div>
-                            <div style={{ fontSize: '10px', fontWeight: 600, color: isBull ? '#10b981' : '#ef4444' }}>
+                            <div style={{ fontSize: '12px', fontWeight: 700, color: 'rgba(255,255,255,0.9)' }}>${item.price.toLocaleString()}</div>
+                            <div style={{ fontSize: '10px', fontWeight: 600, color: isBull ? '#10b981' : '#ef4444', marginTop: '2px' }}>
                               {isBull ? '+' : ''}{item.changePercent.toFixed(2)}%
                             </div>
                           </div>
@@ -695,34 +689,84 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
               className="text-4xl sm:text-5xl font-normal text-foreground tracking-tight"
               style={{ fontFamily: "'Instrument Serif', serif" }}
             >
-              Real-Time Stock Intelligence
+              Everything you need to trade smarter
             </h2>
             <p className="text-muted-foreground max-w-xl text-sm sm:text-base mt-4 mb-16 leading-relaxed">
-              Unlock data-driven execution tools to back up and cross-reference your investing strategies.
+              QuantIQ bundles real-time market data, AI-powered analysis, and precision charting into one intelligent trading terminal.
             </p>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-4xl">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full max-w-6xl text-left">
               
-              {/* Feature A */}
-              <div className="liquid-glass rounded-3xl p-8 border border-white/5 text-left flex flex-col justify-between hover:border-white/10 hover:shadow-xl transition-all duration-300">
+              {/* Feature 1: AI Analyst */}
+              <div className="liquid-glass rounded-3xl p-8 border border-white/5 flex flex-col justify-between hover:border-purple-400/20 hover:scale-[1.01] transition-all duration-300">
                 <div>
-                  <h3 className="text-xl font-medium text-foreground mb-4">Event-Driven Price Alerts</h3>
-                  <p className="text-xs text-muted-foreground leading-relaxed mb-6">
-                    Establish target limits on active stock tickers. The platform checks prices against targets in real time, notifying you immediately when thresholds are crossed.
+                  <span className="text-[10px] text-purple-400 uppercase tracking-widest font-semibold block mb-3">AI Strategy Analyst</span>
+                  <h3 className="text-lg font-medium text-foreground mb-3">Gemini-Powered Deep Analysis</h3>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    Ask the Gemini ReAct agent to analyze any stock. It cross-examines live indicators, price history, financial news and your watchlist signals — returning structured markdown strategy reports.
                   </p>
                 </div>
-                <div className="h-[2px] w-12 bg-cyan-400/50"></div>
+                <div className="h-[2px] w-12 bg-purple-400/50 mt-6" />
               </div>
 
-              {/* Feature B */}
-              <div className="liquid-glass rounded-3xl p-8 border border-white/5 text-left flex flex-col justify-between hover:border-white/10 hover:shadow-xl transition-all duration-300">
+              {/* Feature 2: Interactive Charts */}
+              <div className="liquid-glass rounded-3xl p-8 border border-white/5 flex flex-col justify-between hover:border-cyan-400/20 hover:scale-[1.01] transition-all duration-300">
                 <div>
-                  <h3 className="text-xl font-medium text-foreground mb-4">Interactive Strategy Gauges</h3>
-                  <p className="text-xs text-muted-foreground leading-relaxed mb-6">
-                    Formulate bullish or bearish confidence indicators based on qualitative and quantitative inputs from your watchlists, ONNX models, and technical indicator metrics.
+                  <span className="text-[10px] text-cyan-400 uppercase tracking-widest font-semibold block mb-3">Advanced Charting</span>
+                  <h3 className="text-lg font-medium text-foreground mb-3">Interactive Candlestick Charts</h3>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    Visualize any ticker with professional candlestick charts powered by Lightweight Charts. Switch between 1D, 1W, 1M, 3M, and 1Y timeframes, overlaid with RSI, MACD, Bollinger Bands and more.
                   </p>
                 </div>
-                <div className="h-[2px] w-12 bg-purple-400/50"></div>
+                <div className="h-[2px] w-12 bg-cyan-400/50 mt-6" />
+              </div>
+
+              {/* Feature 3: Price Alerts */}
+              <div className="liquid-glass rounded-3xl p-8 border border-white/5 flex flex-col justify-between hover:border-emerald-400/20 hover:scale-[1.01] transition-all duration-300">
+                <div>
+                  <span className="text-[10px] text-emerald-400 uppercase tracking-widest font-semibold block mb-3">Event-Driven Alerts</span>
+                  <h3 className="text-lg font-medium text-foreground mb-3">Real-Time Price Threshold Alerts</h3>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    Set upper and lower price targets on any watchlist ticker. QuantIQ continuously monitors live prices and fires instant in-app notifications the moment a threshold is breached.
+                  </p>
+                </div>
+                <div className="h-[2px] w-12 bg-emerald-400/50 mt-6" />
+              </div>
+
+              {/* Feature 4: Watchlist */}
+              <div className="liquid-glass rounded-3xl p-8 border border-white/5 flex flex-col justify-between hover:border-amber-400/20 hover:scale-[1.01] transition-all duration-300">
+                <div>
+                  <span className="text-[10px] text-amber-400 uppercase tracking-widest font-semibold block mb-3">Smart Watchlist</span>
+                  <h3 className="text-lg font-medium text-foreground mb-3">Global Ticker Search & Watchlist</h3>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    Search thousands of global stocks, crypto, ETFs and indices using the intelligent autocomplete. Track live prices, percentage changes and portfolio performance across your personalized watchlist.
+                  </p>
+                </div>
+                <div className="h-[2px] w-12 bg-amber-400/50 mt-6" />
+              </div>
+
+              {/* Feature 5: Trending Hub */}
+              <div className="liquid-glass rounded-3xl p-8 border border-white/5 flex flex-col justify-between hover:border-rose-400/20 hover:scale-[1.01] transition-all duration-300">
+                <div>
+                  <span className="text-[10px] text-rose-400 uppercase tracking-widest font-semibold block mb-3">Market Intelligence</span>
+                  <h3 className="text-lg font-medium text-foreground mb-3">Trending Stocks & Financial Feed</h3>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    Stay ahead with a curated trending stocks feed and a live financial news stream. Market Movers surface the day's top gainers, losers and most-active tickers — refreshed every 60 seconds.
+                  </p>
+                </div>
+                <div className="h-[2px] w-12 bg-rose-400/50 mt-6" />
+              </div>
+
+              {/* Feature 6: Strategy Gauge */}
+              <div className="liquid-glass rounded-3xl p-8 border border-white/5 flex flex-col justify-between hover:border-indigo-400/20 hover:scale-[1.01] transition-all duration-300">
+                <div>
+                  <span className="text-[10px] text-indigo-400 uppercase tracking-widest font-semibold block mb-3">Quantitative Tools</span>
+                  <h3 className="text-lg font-medium text-foreground mb-3">Interactive Strategy Gauges</h3>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    Formulate bullish or bearish confidence scores using qualitative and quantitative inputs. Cross-reference ONNX model predictions, RSI levels, and watchlist signals to validate your thesis before entry.
+                  </p>
+                </div>
+                <div className="h-[2px] w-12 bg-indigo-400/50 mt-6" />
               </div>
 
             </div>
