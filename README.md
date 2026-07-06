@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="assets/logo.png" alt="QuantIQ — AI Stock Intelligence" width="450" />
+  <img src="assets/banner.png" alt="QuantIQ — AI Stock Intelligence" width="750" />
   <br /><br />
   <p>
     <img src="https://img.shields.io/badge/Python-3.12-blue?style=flat-square" alt="Python" />
