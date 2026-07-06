@@ -871,14 +871,9 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
             >
               Financial Intelligence Feed
             </h2>
-            <p className="text-muted-foreground max-w-xl text-sm sm:text-base mb-3 leading-relaxed">
+            <p className="text-muted-foreground max-w-xl text-sm sm:text-base mb-14 leading-relaxed">
               Stay ahead of the market with curated financial news from leading global sources.
             </p>
-            {/* Live pulse indicator */}
-            <div className="flex items-center gap-2 mb-14">
-              <span style={{ display: 'inline-block', width: 7, height: 7, borderRadius: '50%', background: '#10b981', boxShadow: '0 0 8px #10b981', animation: 'pulse 2s infinite' }} />
-              <span className="text-xs text-emerald-400 font-medium">Live feed · updates every 5 min</span>
-            </div>
 
             {/* News Grid — 3 columns */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 w-full text-left">
