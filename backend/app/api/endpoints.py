@@ -15,6 +15,7 @@ from backend.app.config.settings import settings
 from backend.app.database.session import get_db
 from backend.app.database import crud
 from backend.app.schemas import schemas
+from backend.app.config.metrics import payment_callbacks_total, external_api_calls_total
 
 router= APIRouter()
 
@@ -202,6 +203,7 @@ async def razorpay_webhook(request: Request, x_razorpay_signature: str= Header(N
     Verifies signature and updates user credit balance asynchronously.
     """
     if not x_razorpay_signature:
+        payment_callbacks_total.labels(package="unknown", status="failed").inc()
         raise HTTPException(status_code= 400, detail= "Missing X-Razorpay-Signature header")
     body= await request.body()
     
@@ -214,6 +216,7 @@ async def razorpay_webhook(request: Request, x_razorpay_signature: str= Header(N
         ).hexdigest()
         
         if not hmac.compare_digest(expected_signature, x_razorpay_signature):
+            payment_callbacks_total.labels(package="unknown", status="failed").inc()
             raise HTTPException(status_code= 400, detail= "Invalid webhook signature")
         
     try:
@@ -224,6 +227,16 @@ async def razorpay_webhook(request: Request, x_razorpay_signature: str= Header(N
             payment_entity= payload["payload"] ["payment"] ["entity"]
             order_id= payment_entity.get("order_id")
             payment_id= payment_entity.get("id")
+            raw_amount = payment_entity.get("amount", 0)
+            amount = raw_amount // 100
+            
+            package_name = "unknown"
+            if amount == 500:
+                package_name = "analyst"
+            elif amount == 1500:
+                package_name = "trader"
+            elif amount in (10000, 15000):
+                package_name = "pro"
             
             if order_id and payment_id:
                 # Atomically update transaction status and user credit count
@@ -231,8 +244,13 @@ async def razorpay_webhook(request: Request, x_razorpay_signature: str= Header(N
                 
                 if tx:
                     print(f"Razorpay Webhook: Captured Order {order_id} | Payment {payment_id}")
-                    
+                    payment_callbacks_total.labels(package=package_name, status="success").inc()
+                else:
+                    payment_callbacks_total.labels(package=package_name, status="failed").inc()
+            else:
+                payment_callbacks_total.labels(package=package_name, status="failed").inc()
     except Exception as e:
+        payment_callbacks_total.labels(package="unknown", status="failed").inc()
         raise HTTPException(status_code= 500, detail= f"Webhook processing error: {str(e)}")
     
     return {"status": "ok"}
@@ -400,10 +418,15 @@ async def get_global_indices():
         loop = asyncio.get_event_loop()
         
         # Download historical data for the last 2 days in a single batch request
-        df = await loop.run_in_executor(
-            None,
-            lambda: yf.download(tickers=" ".join(tickers), period="2d", group_by="ticker", progress=False)
-        )
+        try:
+            df = await loop.run_in_executor(
+                None,
+                lambda: yf.download(tickers=" ".join(tickers), period="2d", group_by="ticker", progress=False)
+            )
+            external_api_calls_total.labels(provider="yfinance", status="success").inc()
+        except Exception as batch_err:
+            external_api_calls_total.labels(provider="yfinance", status="failed").inc()
+            raise batch_err
         
         for symbol in tickers:
             name = names_map[symbol]

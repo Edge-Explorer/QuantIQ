@@ -12,6 +12,12 @@ import onnxruntime as ort
 from backend.app.config.settings import settings
 from backend.app.database import crud, models
 from backend.app.schemas import schemas
+from backend.app.config.metrics import (
+    llm_tokens_total,
+    agent_steps_total,
+    agent_latency_seconds,
+    agent_tool_calls_total
+)
 
 # Global variable to hold the ONNX inference session
 onnx_session= None
@@ -99,6 +105,10 @@ async def run_agent_chat(db: AsyncSession, user_id: uuid.UUID, prompt: str) -> d
             "reason": "Gemini API key is not set. Running in offline mockup mode."
         }
 
+    # Fetch user subscription tier for metrics labeling
+    user = await crud.get_user(db, user_id)
+    user_tier = user.subscription_tier if user else "free"
+
     main_loop = asyncio.get_running_loop()
 
     # 1. Define tools inside the function to capture db and user_id via closure
@@ -106,10 +116,15 @@ async def run_agent_chat(db: AsyncSession, user_id: uuid.UUID, prompt: str) -> d
         """
         Retrieves the tickers on the user's active watchlist.
         """
-        coro = crud.get_user_watchlist(db, user_id)
-        future = asyncio.run_coroutine_threadsafe(coro, main_loop)
-        watchlist = future.result()
-        return [w.ticker for w in watchlist]
+        try:
+            coro = crud.get_user_watchlist(db, user_id)
+            future = asyncio.run_coroutine_threadsafe(coro, main_loop)
+            watchlist = future.result()
+            agent_tool_calls_total.labels(tool_name="get_user_watchlist", status="success").inc()
+            return [w.ticker for w in watchlist]
+        except Exception as e:
+            agent_tool_calls_total.labels(tool_name="get_user_watchlist", status="failed").inc()
+            raise e
 
     def get_stock_history_and_indicators(ticker: str) -> str:
         """
@@ -119,36 +134,43 @@ async def run_agent_chat(db: AsyncSession, user_id: uuid.UUID, prompt: str) -> d
         import pandas as pd
         import pandas_ta as ta
 
-        coro = crud.get_stock_history(db, ticker.upper(), limit=100)
-        future = asyncio.run_coroutine_threadsafe(coro, main_loop)
-        history = future.result()
+        try:
+            coro = crud.get_stock_history(db, ticker.upper(), limit=100)
+            future = asyncio.run_coroutine_threadsafe(coro, main_loop)
+            history = future.result()
 
-        if not history:
-            return json.dumps({"error": f"No stock history found for ticker {ticker}."})
+            if not history:
+                agent_tool_calls_total.labels(tool_name="get_stock_history_and_indicators", status="success").inc()
+                return json.dumps({"error": f"No stock history found for ticker {ticker}."})
 
-        # Convert to DataFrame
-        df = pd.DataFrame([{
-            "open": h.open,
-            "high": h.high,
-            "low": h.low,
-            "close": h.close,
-            "volume": h.volume,
-            "timestamp": h.timestamp.isoformat()
-        } for h in history])
+            # Convert to DataFrame
+            df = pd.DataFrame([{
+                "open": h.open,
+                "high": h.high,
+                "low": h.low,
+                "close": h.close,
+                "volume": h.volume,
+                "timestamp": h.timestamp.isoformat()
+            } for h in history])
 
-        if len(df) < 26:
-            # Not enough candles to compute MACD
+            if len(df) < 26:
+                # Not enough candles to compute MACD
+                latest = df.iloc[-1].to_dict()
+                latest["note"] = "Not enough candles to compute full technical indicators (minimum 26 required)."
+                agent_tool_calls_total.labels(tool_name="get_stock_history_and_indicators", status="success").inc()
+                return json.dumps(latest)
+
+            # Compute indicators
+            df.ta.rsi(close="close", length=14, append=True)
+            df.ta.macd(close="close", fast=12, slow=26, signal=9, append=True)
+            df.ta.ema(close="close", length=20, append=True)
+
             latest = df.iloc[-1].to_dict()
-            latest["note"] = "Not enough candles to compute full technical indicators (minimum 26 required)."
+            agent_tool_calls_total.labels(tool_name="get_stock_history_and_indicators", status="success").inc()
             return json.dumps(latest)
-
-        # Compute indicators
-        df.ta.rsi(close="close", length=14, append=True)
-        df.ta.macd(close="close", fast=12, slow=26, signal=9, append=True)
-        df.ta.ema(close="close", length=20, append=True)
-
-        latest = df.iloc[-1].to_dict()
-        return json.dumps(latest)
+        except Exception as e:
+            agent_tool_calls_total.labels(tool_name="get_stock_history_and_indicators", status="failed").inc()
+            raise e
 
     def get_ml_prediction(ticker: str) -> str:
         """
@@ -158,84 +180,96 @@ async def run_agent_chat(db: AsyncSession, user_id: uuid.UUID, prompt: str) -> d
         import pandas as pd
         import pandas_ta as ta
 
-        coro = crud.get_stock_history(db, ticker.upper(), limit=100)
-        future = asyncio.run_coroutine_threadsafe(coro, main_loop)
-        history = future.result()
+        try:
+            coro = crud.get_stock_history(db, ticker.upper(), limit=100)
+            future = asyncio.run_coroutine_threadsafe(coro, main_loop)
+            history = future.result()
 
-        if not history:
-            return json.dumps({"ticker": ticker, "error": "No history available"})
+            if not history:
+                agent_tool_calls_total.labels(tool_name="get_ml_prediction", status="success").inc()
+                return json.dumps({"ticker": ticker, "error": "No history available"})
 
-        df = pd.DataFrame([{
-            "open": h.open,
-            "high": h.high,
-            "low": h.low,
-            "close": h.close,
-            "volume": h.volume
-        } for h in history])
+            df = pd.DataFrame([{
+                "open": h.open,
+                "high": h.high,
+                "low": h.low,
+                "close": h.close,
+                "volume": h.volume
+            } for h in history])
 
-        if len(df) >= 26 and onnx_session is not None:
-            try:
-                df.ta.rsi(close= "close", length= 14, append= True)
-                df.ta.macd(close= "close", fast= 12, slow= 26, signal= 9, append= True)
-                df.ta.ema(close= "close", length= 20, append= True)
-                df["EMA_20_ratio"]= (df["close"] - df["EMA_20"]) / df["EMA_20"]
-                
-                latest= df.iloc[-1]
-                rsi_val= float(latest.get("RSI_14", 50.0))
-                macd_val= float(latest.get("MACD_12_26_9", 0.0))
-                macds_val= float(latest.get("MACDs_12_26_9", 0.0))
-                ema_ratio_val= float(latest.get("EMA_20_ratio", 0.0))
-                
-                input_data= np.array([[rsi_val, macd_val, macds_val, ema_ratio_val]], dtype= np.float32)
-                input_name= onnx_session.get_inputs()[0].name
-                label, prob= onnx_session.run(None, {input_name: input_data})
-                
-                if isinstance(prob, list) and len(prob) > 0:
-                    p_dict= prob[0]
-                    if isinstance(p_dict, dict):
-                        p_val= p_dict.get(1, 0.5)
+            if len(df) >= 26 and onnx_session is not None:
+                try:
+                    df.ta.rsi(close= "close", length= 14, append= True)
+                    df.ta.macd(close= "close", fast= 12, slow= 26, signal= 9, append= True)
+                    df.ta.ema(close= "close", length= 20, append= True)
+                    df["EMA_20_ratio"]= (df["close"] - df["EMA_20"]) / df["EMA_20"]
+                    
+                    latest= df.iloc[-1]
+                    rsi_val= float(latest.get("RSI_14", 50.0))
+                    macd_val= float(latest.get("MACD_12_26_9", 0.0))
+                    macds_val= float(latest.get("MACDs_12_26_9", 0.0))
+                    ema_ratio_val= float(latest.get("EMA_20_ratio", 0.0))
+                    
+                    input_data= np.array([[rsi_val, macd_val, macds_val, ema_ratio_val]], dtype= np.float32)
+                    input_name= onnx_session.get_inputs()[0].name
+                    label, prob= onnx_session.run(None, {input_name: input_data})
+                    
+                    if isinstance(prob, list) and len(prob) > 0:
+                        p_dict= prob[0]
+                        if isinstance(p_dict, dict):
+                            p_val= p_dict.get(1, 0.5)
+                        else:
+                            p_val= prob[0][0][1]
                     else:
-                        p_val= prob[0][0][1]
-                else:
-                    p_val= prob[0][1]
-                
-                p_val_clipped= min(max(float(p_val), 0.0), 1.0)
-                bullish_prob= int(p_val_clipped * 100)
-                
-                return json.dumps({
-                    "ticker": ticker.upper(),
-                    "bullish_probability": bullish_prob,
-                    "status": "onnx_inference"
-                })
-            except Exception as e:
-                print(f"Error running ONNX model inference: {str(e)}")
-                
-        if len(df)>= 14:
-            df.ta.rsi(close= "close", length= 14, append= True)
-            rsi= df.iloc[-1].get("RSI_14", 50.0)
-        else:
-            rsi= 50.0
-        mock_prob= int(min(max(rsi*1.1, 10.0), 90.0))
-        return json.dumps({
-            "ticker": ticker.upper(),
-            "bullish_probability": mock_prob,
-            "status": "dev_mock_mode"
-        })
+                        p_val= prob[0][1]
+                    
+                    p_val_clipped= min(max(float(p_val), 0.0), 1.0)
+                    bullish_prob= int(p_val_clipped * 100)
+                    
+                    agent_tool_calls_total.labels(tool_name="get_ml_prediction", status="success").inc()
+                    return json.dumps({
+                        "ticker": ticker.upper(),
+                        "bullish_probability": bullish_prob,
+                        "status": "onnx_inference"
+                    })
+                except Exception as e:
+                    print(f"Error running ONNX model inference: {str(e)}")
+                    
+            if len(df)>= 14:
+                df.ta.rsi(close= "close", length= 14, append= True)
+                rsi= df.iloc[-1].get("RSI_14", 50.0)
+            else:
+                rsi= 50.0
+            mock_prob= int(min(max(rsi*1.1, 10.0), 90.0))
+            agent_tool_calls_total.labels(tool_name="get_ml_prediction", status="success").inc()
+            return json.dumps({
+                "ticker": ticker.upper(),
+                "bullish_probability": mock_prob,
+                "status": "dev_mock_mode"
+            })
+        except Exception as e:
+            agent_tool_calls_total.labels(tool_name="get_ml_prediction", status="failed").inc()
+            raise e
 
     def get_user_alerts() -> list[dict]:
         """
         Retrieves all active and inactive price alerts configured by the user.
         """
-        coro = crud.get_user_alerts(db, user_id)
-        future = asyncio.run_coroutine_threadsafe(coro, main_loop)
-        alerts = future.result()
-        return [{
-            "id": str(a.id),
-            "ticker": a.ticker,
-            "target_price": a.target_price,
-            "condition": a.condition,
-            "is_active": a.is_active
-        } for a in alerts]
+        try:
+            coro = crud.get_user_alerts(db, user_id)
+            future = asyncio.run_coroutine_threadsafe(coro, main_loop)
+            alerts = future.result()
+            agent_tool_calls_total.labels(tool_name="get_user_alerts", status="success").inc()
+            return [{
+                "id": str(a.id),
+                "ticker": a.ticker,
+                "target_price": a.target_price,
+                "condition": a.condition,
+                "is_active": a.is_active
+            } for a in alerts]
+        except Exception as e:
+            agent_tool_calls_total.labels(tool_name="get_user_alerts", status="failed").inc()
+            raise e
 
     def create_price_alert(ticker: str, target_price: float, condition: str) -> str:
         """
@@ -244,15 +278,20 @@ async def run_agent_chat(db: AsyncSession, user_id: uuid.UUID, prompt: str) -> d
         - target_price: Trigger price (e.g. 175.50)
         - condition: 'above' or 'below'
         """
-        alert_in = schemas.AlertCreate(
-            ticker=ticker.upper(),
-            target_price=target_price,
-            condition=condition.lower()
-        )
-        coro = crud.create_alert(db, user_id, alert_in)
-        future = asyncio.run_coroutine_threadsafe(coro, main_loop)
-        alert = future.result()
-        return f"Successfully created alert: {alert.ticker} {alert.condition} {alert.target_price} (ID: {alert.id})"
+        try:
+            alert_in = schemas.AlertCreate(
+                ticker=ticker.upper(),
+                target_price=target_price,
+                condition=condition.lower()
+            )
+            coro = crud.create_alert(db, user_id, alert_in)
+            future = asyncio.run_coroutine_threadsafe(coro, main_loop)
+            alert = future.result()
+            agent_tool_calls_total.labels(tool_name="create_price_alert", status="success").inc()
+            return f"Successfully created alert: {alert.ticker} {alert.condition} {alert.target_price} (ID: {alert.id})"
+        except Exception as e:
+            agent_tool_calls_total.labels(tool_name="create_price_alert", status="failed").inc()
+            raise e
 
     # 2. Map tools and build the GenerativeModel
     tools = [
@@ -284,17 +323,45 @@ async def run_agent_chat(db: AsyncSession, user_id: uuid.UUID, prompt: str) -> d
     # 3. Execute automatic function calling chat session in thread pool
     chat = model.start_chat(enable_automatic_function_calling=True)
     
+    start_time = asyncio.get_event_loop().time()
     try:
         response = await main_loop.run_in_executor(
             None,
             lambda: chat.send_message(prompt)
         )
+        duration = asyncio.get_event_loop().time() - start_time
+        
+        # Track agent latency
+        agent_latency_seconds.observe(duration)
+        
+        # Track token usage if available in the response
+        if hasattr(response, "usage_metadata") and response.usage_metadata:
+            try:
+                llm_tokens_total.labels(direction="input", user_tier=user_tier).inc(response.usage_metadata.prompt_token_count)
+                llm_tokens_total.labels(direction="output", user_tier=user_tier).inc(response.usage_metadata.candidates_token_count)
+            except Exception as token_err:
+                print(f"Failed to record token usage metrics: {token_err}")
+
+        # Track reasoning steps/turns in this agent session
+        try:
+            steps = 0
+            for msg in chat.get_history():
+                for part in msg.parts:
+                    if hasattr(part, "function_call") and part.function_call:
+                        steps += 1
+            agent_steps_total.labels(status="success").inc(steps)
+        except Exception as step_err:
+            print(f"Failed to record agent steps metrics: {step_err}")
+
         data = extract_json_payload(response.text)
         return {
             "bullish_probability": data.get("bullish_probability", 50),
             "reason": data.get("reason", "No analysis summary could be generated.")
         }
     except Exception as e:
+        duration = asyncio.get_event_loop().time() - start_time
+        agent_latency_seconds.observe(duration)
+        agent_steps_total.labels(status="failed").inc(1)
         print(f"Error in Gemini ReAct Agent: {str(e)}")
         return {
             "bullish_probability": 50,

@@ -13,6 +13,7 @@ from backend.app.database import crud, models
 from backend.app.schemas import schemas
 from backend.app.config.settings import settings
 from backend.app.services import gemini
+from backend.app.config.metrics import websocket_connections_active, external_api_calls_total, ingestion_delay_seconds
 KAFKA_BOOTSTRAP_SERVERS = settings.KAFKA_BOOTSTRAP_SERVERS
 KAFKA_TOPIC = "stock-ticks"
 
@@ -137,6 +138,7 @@ async def get_cached_ticker_quote(ticker: str) -> dict:
             None,
             lambda: yf_ticker.history(period="2d")
         )
+        external_api_calls_total.labels(provider="yfinance", status="success").inc()
         if not df.empty and "Close" in df.columns:
             close_series = df["Close"].dropna()
             open_series = df["Open"].dropna()
@@ -152,6 +154,7 @@ async def get_cached_ticker_quote(ticker: str) -> dict:
                 price = curr
                 change_percent = ((curr - op) / op) * 100 if op != 0 else 0.0
     except Exception as e:
+        external_api_calls_total.labels(provider="yfinance", status="failed").inc()
         print(f"Error fetching quote for watchlist ticker {ticker}: {e}")
         
     data = {"price": round(price, 2), "change_percent": round(change_percent, 2)}
@@ -281,6 +284,7 @@ class Query:
                 None, 
                 lambda: yf_ticker.history(period=config["period"], interval=config["interval"])
             )
+            external_api_calls_total.labels(provider="yfinance", status="success").inc()
             
             history_list = []
             if not df.empty:
@@ -321,6 +325,7 @@ class Query:
                         )
             return history_list
         except Exception as e:
+            external_api_calls_total.labels(provider="yfinance", status="failed").inc()
             print(f"Error fetching yfinance history for {ticker}: {str(e)}")
             # Failover fallback
             local_data = await crud.get_stock_history(db, ticker, limit=100)
@@ -536,6 +541,7 @@ class Subscription:
         
         await consumer.start()
         print(f"GraphQL WebSocket Subscription: Client connected to stream {ticker} ticks.")
+        websocket_connections_active.inc()
         
         try:
             # 2. Stream ticks continuously from Redpanda topic
@@ -544,6 +550,14 @@ class Subscription:
                 
                 # Filter ticks only matching the requested ticker symbol
                 if tick_data["ticker"].upper() == ticker.upper():
+                    try:
+                        tick_timestamp = datetime.datetime.fromisoformat(tick_data["timestamp"])
+                        now = datetime.datetime.now(datetime.timezone.utc)
+                        delay = (now - tick_timestamp).total_seconds()
+                        ingestion_delay_seconds.observe(delay)
+                    except Exception as delay_err:
+                        print(f"Failed to record ingestion delay: {delay_err}")
+                        
                     yield StockTickType(
                         ticker=tick_data["ticker"],
                         price=tick_data["price"],
@@ -554,6 +568,7 @@ class Subscription:
             print(f"GraphQL WebSocket Subscription: Client disconnected from {ticker} stream.")
         finally:
             # 3. Clean up broker consumer session
+            websocket_connections_active.dec()
             await consumer.stop()
 
 # Build schema

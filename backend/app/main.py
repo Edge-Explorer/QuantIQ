@@ -7,6 +7,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from strawberry.fastapi import GraphQLRouter
 from huggingface_hub import hf_hub_download
 
+from prometheus_fastapi_instrumentator import Instrumentator
+
 from backend.app.config.settings import settings
 from backend.app.database.session import get_db
 from backend.app.database import crud
@@ -26,6 +28,9 @@ app.add_middleware(
     allow_methods= ["*"],
     allow_headers= ["*"],
 )
+
+# Instrument FastAPI and expose Prometheus metrics endpoint at /metrics
+Instrumentator().instrument(app).expose(app)
 
 @app.on_event("startup")
 async def startup_event():
