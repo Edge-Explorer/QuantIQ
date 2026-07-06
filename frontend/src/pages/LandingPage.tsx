@@ -502,7 +502,7 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
               Market Movers
             </h2>
             <p className="text-muted-foreground max-w-xl text-sm sm:text-base mb-14 leading-relaxed text-center">
-              Real-time top gainers, losers and most-active stocks — refreshed every 60 seconds from live market data.
+              Real-time top gainers, losers and most-active stocks.
             </p>
 
             {/* 3 Column Glassmorphic Grid */}
@@ -776,7 +776,7 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
         {/* FOOTER */}
         <footer className="w-full py-12 border-t border-white/5 text-center text-xs text-muted-foreground bg-black/30 backdrop-blur-[2px]">
           <div className="max-w-7xl mx-auto px-8 flex flex-col sm:flex-row justify-between items-center gap-4">
-            <span className="font-light">© {new Date().getFullYear()} QuantIQ Platform. All rights reserved.</span>
+            <span className="font-light">MIT License</span>
             <div className="flex gap-6 items-center">
               <a href="https://github.com/Edge-Explorer/QuantIQ" target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors">GitHub Repo</a>
               <a href="https://www.linkedin.com/in/karan-shelar-779381343/" target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors">LinkedIn</a>
