@@ -137,6 +137,92 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
     return () => { active = false; clearInterval(interval); };
   }, [apiUrl]);
 
+  // Landing Page News state
+  const [landingNews, setLandingNews] = useState<any[]>([
+    {
+      id: 1,
+      title: 'Federal Reserve Signals Potential Rate Cuts Later This Year',
+      summary: 'Fed Chair Powell indicated inflation is returning to the 2% target path, hinting at upcoming rate adjustments that could fuel market momentum.',
+      source: 'Bloomberg',
+      time: '12m ago',
+      category: 'Macro',
+      link: 'https://www.bloomberg.com/markets'
+    },
+    {
+      id: 2,
+      title: 'NVIDIA Demand Outstrips Supply as Tech Giants Expand AI Infrastructure',
+      summary: 'Top cloud providers continue to place record-breaking chip orders. Financial firms hike price targets as AI hardware revenues reach unprecedented highs.',
+      source: 'Reuters',
+      time: '35m ago',
+      category: 'Technology',
+      link: 'https://www.reuters.com/technology'
+    },
+    {
+      id: 3,
+      title: 'Bitcoin Solidifies Base Around $60K; On-Chain Accumulation Spikes',
+      summary: 'Market intelligence data shows heavy whale wallet accumulation at current support levels, indicating solid long-term investor conviction.',
+      source: 'CoinDesk',
+      time: '1h ago',
+      category: 'Crypto',
+      link: 'https://www.coindesk.com'
+    },
+    {
+      id: 4,
+      title: 'Global Tech Stock Indexes Experience Rotational Capital Inflows',
+      summary: 'Defensive sector gains support stock index benchmarks as fund managers rebalance portfolios ahead of upcoming CPI updates.',
+      source: 'CNBC',
+      time: '2h ago',
+      category: 'Markets',
+      link: 'https://www.cnbc.com/markets'
+    },
+    {
+      id: 5,
+      title: 'Tesla Q3 Deliveries Beat Expectations; Stock Surges Pre-Market',
+      summary: 'Tesla reported record deliveries surpassing analyst forecasts, signaling strong demand recovery and boosting EV market confidence.',
+      source: 'MarketWatch',
+      time: '3h ago',
+      category: 'Stocks',
+      link: 'https://www.marketwatch.com'
+    },
+    {
+      id: 6,
+      title: 'Apple Vision Pro Drives New Wave of Spatial Computing Investments',
+      summary: 'Institutional investors are increasing exposure to companies developing spatial computing platforms following Apple\'s growing developer ecosystem.',
+      source: 'Wall Street Journal',
+      time: '4h ago',
+      category: 'Technology',
+      link: 'https://www.wsj.com/tech'
+    },
+  ]);
+
+  useEffect(() => {
+    let active = true;
+    const fetchLandingNews = async () => {
+      try {
+        const res = await fetch(`${apiUrl}/api/v1/stocks/news`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.length > 0 && active) {
+            setLandingNews(data.map((item: any) => ({
+              id: item.id || Math.random().toString(),
+              title: item.title,
+              summary: item.summary || '',
+              source: item.source || 'Finance',
+              time: item.time || 'Recent',
+              category: item.category || 'Markets',
+              link: item.link || item.url || item.article_url || null,
+            })));
+          }
+        }
+      } catch (err) {
+        console.error('Landing news fetch failed:', err);
+      }
+    };
+    fetchLandingNews();
+    const newsInterval = setInterval(fetchLandingNews, 300000); // refresh every 5 min
+    return () => { active = false; clearInterval(newsInterval); };
+  }, [apiUrl]);
+
   useEffect(() => {
     // Append Google Identity Services SDK script
     const script = document.createElement('script');
@@ -769,6 +855,94 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
                 <div className="h-[2px] w-12 bg-indigo-400/50 mt-6" />
               </div>
 
+            </div>
+          </div>
+        </section>
+
+        {/* FINANCIAL NEWS SECTION */}
+        <section className="w-full py-28 border-t border-white/5 flex flex-col items-center text-center bg-black/20 backdrop-blur-[1px]">
+          <div className="max-w-7xl mx-auto px-8 w-full flex flex-col items-center">
+
+            {/* Section Header */}
+            <span className="text-rose-400 text-xs font-semibold uppercase tracking-widest mb-3">Market News</span>
+            <h2
+              className="text-4xl sm:text-5xl font-normal text-foreground tracking-tight mb-4"
+              style={{ fontFamily: "'Instrument Serif', serif" }}
+            >
+              Financial Intelligence Feed
+            </h2>
+            <p className="text-muted-foreground max-w-xl text-sm sm:text-base mb-3 leading-relaxed">
+              Stay ahead of the market with curated financial news from leading global sources.
+            </p>
+            {/* Live pulse indicator */}
+            <div className="flex items-center gap-2 mb-14">
+              <span style={{ display: 'inline-block', width: 7, height: 7, borderRadius: '50%', background: '#10b981', boxShadow: '0 0 8px #10b981', animation: 'pulse 2s infinite' }} />
+              <span className="text-xs text-emerald-400 font-medium">Live feed · updates every 5 min</span>
+            </div>
+
+            {/* News Grid — 3 columns */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 w-full text-left">
+              {landingNews.slice(0, 6).map((item) => {
+                const categoryColors: Record<string, string> = {
+                  Macro: '#f59e0b',
+                  Technology: '#06b6d4',
+                  Crypto: '#a78bfa',
+                  Markets: '#10b981',
+                  Stocks: '#3b82f6',
+                  Finance: '#ec4899',
+                };
+                const catColor = categoryColors[item.category] || '#94a3b8';
+                const CardEl = item.link ? 'a' : 'div';
+                const linkProps = item.link ? { href: item.link, target: '_blank', rel: 'noopener noreferrer' } : {};
+                return (
+                  <CardEl
+                    key={item.id}
+                    {...(linkProps as any)}
+                    className="liquid-glass rounded-2xl p-6 border border-white/5 flex flex-col gap-3 hover:border-white/10 hover:scale-[1.01] transition-all duration-300 group"
+                    style={{ textDecoration: 'none', color: 'inherit', display: 'flex' }}
+                  >
+                    {/* Category + Time */}
+                    <div className="flex items-center justify-between">
+                      <span
+                        style={{
+                          fontSize: '9px',
+                          fontWeight: 700,
+                          color: catColor,
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.1em',
+                          background: `${catColor}18`,
+                          border: `1px solid ${catColor}40`,
+                          padding: '2px 8px',
+                          borderRadius: '99px',
+                        }}
+                      >
+                        {item.category}
+                      </span>
+                      <span className="text-[10px] text-white/30">{item.time}</span>
+                    </div>
+
+                    {/* Title */}
+                    <h3 className="text-sm font-semibold text-foreground leading-snug group-hover:text-white transition-colors">
+                      {item.title}
+                    </h3>
+
+                    {/* Summary */}
+                    {item.summary && (
+                      <p className="text-[11px] text-muted-foreground leading-relaxed line-clamp-3">
+                        {item.summary}
+                      </p>
+                    )}
+
+                    {/* Source + Arrow */}
+                    <div className="flex items-center justify-between mt-auto pt-2 border-t border-white/5">
+                      <span className="text-[10px] font-medium" style={{ color: catColor }}>{item.source}</span>
+                      {item.link && (
+                        <span className="text-[10px] text-white/30 group-hover:text-white/60 transition-colors">Read →</span>
+                      )}
+                    </div>
+                  </CardEl>
+                );
+              })}
             </div>
           </div>
         </section>
