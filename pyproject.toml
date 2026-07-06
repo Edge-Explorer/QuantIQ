@@ -16,7 +16,6 @@ dependencies = [
     "yfinance>=0.2.37",
     "pandas>=2.2.1",
     "pandas-ta>=0.3.14b",
-    "google-generativeai>=0.4.1",
     "pydantic-settings>=2.2.1",
     "prometheus-fastapi-instrumentator>=7.0.0",
     "razorpay>=1.4.1",
@@ -28,4 +27,5 @@ dependencies = [
     "pyjwt>=2.8.0",
     "onnxruntime>=1.17.0",
     "huggingface_hub>=0.20.0",
+    "google-genai>=2.10.0",
 ]

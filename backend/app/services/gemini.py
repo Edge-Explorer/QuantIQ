@@ -3,7 +3,8 @@ import json
 import uuid
 import datetime
 import asyncio
-import google.generativeai as genai  # type: ignore
+from google import genai
+from google.genai import types
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 import numpy as np
@@ -33,25 +34,28 @@ def init_onnx_session(model_path: str):
     except Exception as e:
         print(f"Error loading ONNX session from {model_path}: {str(e)}")
 
-# Configure Google Generative AI API client
+# Initialize Google GenAI Client
+client = None
 if settings.GEMINI_API_KEY:
-    genai.configure(api_key=settings.GEMINI_API_KEY)
+    client = genai.Client(api_key=settings.GEMINI_API_KEY)
 
 async def generate_text(prompt: str) -> str:
     """
     Generates text using the Gemini model. Runs the synchronous SDK call 
     in an executor to avoid blocking the asyncio event loop. Used by Celery.
     """
-    if not settings.GEMINI_API_KEY:
+    if not settings.GEMINI_API_KEY or client is None:
         print("Warning: GEMINI_API_KEY not set. Returning a fallback mock response.")
         return f"[Mock Analysis for prompt: {prompt[:60]}...]"
 
     try:
-        model = genai.GenerativeModel("gemini-2.5-flash")
         loop = asyncio.get_event_loop()
         response = await loop.run_in_executor(
             None, 
-            lambda: model.generate_content(prompt)
+            lambda: client.models.generate_content(
+                model="gemini-2.5-flash",
+                contents=prompt
+            )
         )
         return response.text
     except Exception as e:
@@ -293,7 +297,7 @@ async def run_agent_chat(db: AsyncSession, user_id: uuid.UUID, prompt: str) -> d
             agent_tool_calls_total.labels(tool_name="create_price_alert", status="failed").inc()
             raise e
 
-    # 2. Map tools and build the GenerativeModel
+    # 2. Map tools and build the GenerativeModel config
     tools = [
         get_user_watchlist,
         get_stock_history_and_indicators,
@@ -302,26 +306,33 @@ async def run_agent_chat(db: AsyncSession, user_id: uuid.UUID, prompt: str) -> d
         create_price_alert
     ]
 
-    model = genai.GenerativeModel(
-        model_name="gemini-2.5-flash",
-        tools=tools,
-        system_instruction=(
-            "You are the QuantIQ AI Analyst. "
-            "Examine the requested stock and gather all necessary details using your tools. "
-            "You must refer to your machine learning predictions tool as the 'QuantIQ ML Signal Engine' "
-            "and your technical indicators tool as 'QuantIQ Technical Indicators' in your reasoning. "
-            "You must return your response in JSON format matching this schema: "
-            '{"bullish_probability": int, "reason": "string"}. '
-            "Ensure 'bullish_probability' is between 0 and 100 representing the upward price probability. "
-            "The 'reason' should be a detailed, structured, and comprehensive quantitative analysis. "
-            "Explain the technical metrics, crossover directions, and the ML Signal Engine predictions clearly. "
-            "Highlight key indicators, specific values, and signal strengths using bold markdown formatting "
-            "to make the analysis clear and professional."
+    # If API key is not configured or client is none, return offline mock
+    if not settings.GEMINI_API_KEY or client is None:
+        return {
+            "bullish_probability": 50,
+            "reason": "Gemini API key is not set. Running in offline mockup mode."
+        }
+
+    # 3. Create the chat session using the new chats service
+    chat = client.chats.create(
+        model="gemini-2.5-flash",
+        config=types.GenerateContentConfig(
+            tools=tools,
+            system_instruction=(
+                "You are the QuantIQ AI Analyst. "
+                "Examine the requested stock and gather all necessary details using your tools. "
+                "You must refer to your machine learning predictions tool as the 'QuantIQ ML Signal Engine' "
+                "and your technical indicators tool as 'QuantIQ Technical Indicators' in your reasoning. "
+                "You must return your response in JSON format matching this schema: "
+                '{"bullish_probability": int, "reason": "string"}. '
+                "Ensure 'bullish_probability' is between 0 and 100 representing the upward price probability. "
+                "The 'reason' should be a detailed, structured, and comprehensive quantitative analysis. "
+                "Explain the technical metrics, crossover directions, and the ML Signal Engine predictions clearly. "
+                "Highlight key indicators, specific values, and signal strengths using bold markdown formatting "
+                "to make the analysis clear and professional."
+            )
         )
     )
-
-    # 3. Execute automatic function calling chat session in thread pool
-    chat = model.start_chat(enable_automatic_function_calling=True)
     
     start_time = asyncio.get_event_loop().time()
     try:
