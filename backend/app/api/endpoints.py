@@ -869,3 +869,27 @@ async def chat_with_analyst(
         "messages_remaining": user.messages_remaining,
         "monthly_messages_used": user.monthly_messages_used
     }
+
+@router.get("/debug-logs")
+async def get_debug_logs(service: str = "worker", type: str = "err", lines: int = 100):
+    """
+    Temporary debug endpoint to read supervisor logs in the container.
+    """
+    import os
+    log_path = f"/var/log/{service}.{type}.log"
+    if not os.path.exists(log_path):
+        available = []
+        if os.path.exists("/var/log"):
+            available = os.listdir("/var/log")
+        return {"error": f"Log file not found: {log_path}", "available_logs": available}
+    
+    try:
+        with open(log_path, "r") as f:
+            content = f.readlines()
+            return {
+                "service": service,
+                "type": type,
+                "lines": content[-lines:]
+            }
+    except Exception as e:
+        return {"error": str(e)}
