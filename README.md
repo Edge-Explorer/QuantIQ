@@ -1,3 +1,9 @@
+---
+title: QuantIQ
+sdk: docker
+app_port: 7860
+---
+
 <div align="center">
   <img src="assets/banner.png" alt="QuantIQ — AI Stock Intelligence" width="750" />
   <br /><br />
