@@ -36,7 +36,7 @@ COPY model.onnx ./model.onnx
 COPY backend/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
 # Expose ports for API, Redpanda, and Redis
-EXPOSE 8000 9092 6379
+EXPOSE 7860 9092 6379
 
 # Run supervisord to start all services
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
