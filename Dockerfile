@@ -30,7 +30,8 @@ RUN uv sync --frozen
 # Copy the rest of the application code
 COPY backend ./backend
 COPY worker ./worker
-COPY model.onnx ./model.onnx
+# Copy model.onnx if it exists (falls back to downloading from HF Hub if not present)
+COPY Dockerfile model.onnx* ./
 
 # Copy supervisord configuration
 COPY backend/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
