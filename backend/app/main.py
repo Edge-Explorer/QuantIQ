@@ -30,7 +30,7 @@ app.add_middleware(
 )
 
 # Instrument FastAPI and expose Prometheus metrics endpoint at /metrics
-Instrumentator().instrument(app).expose(app)
+Instrumentator().instrument(app).expose(app, endpoint="/metrics", basic_auth=("admin", "admin"))
 
 @app.on_event("startup")
 async def startup_event():
