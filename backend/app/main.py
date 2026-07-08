@@ -29,8 +29,30 @@ app.add_middleware(
     allow_headers= ["*"],
 )
 
-# Instrument FastAPI and expose Prometheus metrics endpoint at /metrics
-Instrumentator().instrument(app).expose(app, endpoint="/metrics", basic_auth=("admin", "admin"))
+from fastapi.security import HTTPBasic, HTTPBasicCredentials
+from fastapi import HTTPException, status, Response
+from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
+import secrets
+
+security = HTTPBasic()
+
+def authenticate_metrics(credentials: HTTPBasicCredentials = Depends(security)):
+    correct_username = secrets.compare_digest(credentials.username, "admin")
+    correct_password = secrets.compare_digest(credentials.password, "admin")
+    if not (correct_username and correct_password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect username or password",
+            headers={"WWW-Authenticate": "Basic"},
+        )
+    return credentials.username
+
+# Instrument FastAPI
+Instrumentator().instrument(app)
+
+@app.get("/metrics")
+async def metrics(username: str = Depends(authenticate_metrics)):
+    return Response(content=generate_latest(), media_type=CONTENT_TYPE_LATEST)
 
 @app.on_event("startup")
 async def startup_event():
