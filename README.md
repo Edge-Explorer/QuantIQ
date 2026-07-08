@@ -1,12 +1,3 @@
----
-title: QuantIQ
-emoji: 📈
-colorFrom: indigo
-colorTo: blue
-sdk: docker
-app_port: 7860
-pinned: false
----
 
 <div align="center">
   <img src="assets/banner.png" alt="QuantIQ — AI Stock Intelligence" width="750" />
@@ -18,10 +9,6 @@ pinned: false
     <img src="https://img.shields.io/badge/TypeScript-5.x-3178C6?style=flat-square" alt="TypeScript" />
     <img src="https://img.shields.io/badge/Gemini-2.5 Flash-orange?style=flat-square" alt="Gemini" />
     <img src="https://img.shields.io/badge/License-MIT-lightgrey?style=flat-square" alt="MIT License" />
-  </p>
-  <p>
-    <a href="https://quant-iq-pi.vercel.app"><strong>🌐 Live Demo</strong></a> &nbsp;·&nbsp;
-    <a href="https://karan6124-quantiq.hf.space"><strong>⚙️ Backend API</strong></a>
   </p>
 </div>
 
