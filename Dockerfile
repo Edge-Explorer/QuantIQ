@@ -1,5 +1,9 @@
 FROM python:3.12-slim
 
+# Force stdout/stderr to be unbuffered to enable live streaming logs in Docker
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1
+
 # Install system dependencies, Redis, supervisor, and curl
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
