@@ -56,3 +56,4 @@ out/
 
 # Model
 model.onnx
+deploy_hf.ps1
