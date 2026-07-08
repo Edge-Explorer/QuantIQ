@@ -1,6 +1,10 @@
 {
   "rewrites": [
     {
+      "source": "/api/metrics",
+      "destination": "https://karan6124-quantiq.hf.space/metrics"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
