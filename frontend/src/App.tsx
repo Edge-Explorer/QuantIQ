@@ -516,7 +516,7 @@ export default function App() {
   };
 
   // 8. Call QuantIQ AI Analyst Agent
-  const triggerAIInsight = async () => {
+  const triggerAIInsight = async (tradingStyle?: string, riskTolerance?: string) => {
     if (!user || (user.credits <= 0 && user.email !== 'karanshelar8775@gmail.com')) {
       setCurrentView('upgrade');
       return;
@@ -528,15 +528,15 @@ export default function App() {
 
     try {
       const insightData = await graphqlRequest(`
-        mutation GetAIInsight($ticker: String!) {
-          getAiInsight(ticker: $ticker) {
+        mutation GetAIInsight($ticker: String!, $tradingStyle: String, $riskTolerance: String) {
+          getAiInsight(ticker: $ticker, tradingStyle: $tradingStyle, riskTolerance: $riskTolerance) {
             ticker
             bullishProbability
             reason
             creditsRemaining
           }
         }
-      `, { ticker: activeTicker });
+      `, { ticker: activeTicker, tradingStyle, riskTolerance });
 
       setInsight(insightData.getAiInsight);
       setUser({ ...user, credits: insightData.getAiInsight.creditsRemaining });
@@ -662,6 +662,7 @@ export default function App() {
         onCreateAlert={handleCreateAlert}
         onDeactivateAlert={handleDeactivateAlert}
         onTriggerInsight={triggerAIInsight}
+        onResetInsight={() => { setInsight(null); setInsightError(null); }}
         onOpenRecharge={() => setCurrentView('upgrade')}
         onLogout={handleLogout}
         onLogoClick={() => setCurrentView('landing')}

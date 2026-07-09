@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Logo from './Logo';
 
 interface AIInsight {
@@ -15,6 +15,7 @@ interface AIAnalystProps {
   loadingInsight: boolean;
   insightError: string | null;
   onTriggerInsight: (tradingStyle: string, riskTolerance: string) => void;
+  onResetInsight: () => void;
 }
 
 export default function AIAnalyst({
@@ -24,6 +25,7 @@ export default function AIAnalyst({
   loadingInsight,
   insightError,
   onTriggerInsight,
+  onResetInsight,
 }: AIAnalystProps) {
   const [activeTab, setActiveTab] = useState<'analysis' | 'history'>('analysis');
   const [selectedHistoryItem, setSelectedHistoryItem] = useState<any | null>(null);
@@ -31,6 +33,14 @@ export default function AIAnalyst({
   const [riskTolerance, setRiskTolerance] = useState('moderate');
   const [isStyleOpen, setIsStyleOpen] = useState(false);
   const [isRiskOpen, setIsRiskOpen] = useState(false);
+
+  // Auto-switch to analysis tab when loading starts
+  useEffect(() => {
+    if (loadingInsight) {
+      setActiveTab('analysis');
+      setSelectedHistoryItem(null);
+    }
+  }, [loadingInsight]);
 
   // Parse inline markdown: **bold**, *italic*
   const parseInline = (text: string, keyPrefix: string) => {
@@ -466,8 +476,15 @@ export default function AIAnalyst({
             )}
 
             {insightError && (
-              <div style={{ padding: '20px', color: 'var(--bear-red)', textAlign: 'center' }}>
-                {insightError}
+              <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
+                <span style={{ color: 'var(--bear-red)', textAlign: 'center' }}>{insightError}</span>
+                <button 
+                  className="insight-btn" 
+                  onClick={onResetInsight}
+                  style={{ maxWidth: '250px' }}
+                >
+                  Try Again / Adjust Parameters
+                </button>
               </div>
             )}
 
@@ -485,6 +502,13 @@ export default function AIAnalyst({
                     <span style={{ color: 'var(--neon-cyan)', fontWeight: 600 }}>Disclaimer:</span>
                     <span>QuantIQ AI is an automated strategy assistant and can make mistakes. All analysis is for informational purposes only and should not be considered financial advice. Please verify financial data independently.</span>
                   </div>
+                  <button 
+                    className="insight-btn" 
+                    onClick={onResetInsight} 
+                    style={{ marginTop: '20px', width: '100%' }}
+                  >
+                    Generate Another Strategy Report
+                  </button>
                 </div>
               </div>
             )}

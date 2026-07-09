@@ -26,7 +26,8 @@ interface DashboardProps {
   onRemoveTicker: (ticker: string) => Promise<void>;
   onCreateAlert: (targetPrice: number, condition: string) => Promise<void>;
   onDeactivateAlert: (alertId: string) => Promise<void>;
-  onTriggerInsight: () => void;
+  onTriggerInsight: (tradingStyle: string, riskTolerance: string) => void;
+  onResetInsight: () => void;
   onOpenRecharge: () => void;
   onLogout: () => void;
   onLogoClick?: () => void;
@@ -54,6 +55,7 @@ export default function Dashboard({
   onCreateAlert,
   onDeactivateAlert,
   onTriggerInsight,
+  onResetInsight,
   onOpenRecharge,
   onLogout,
   onLogoClick,
@@ -110,6 +112,7 @@ export default function Dashboard({
                 loadingInsight={loadingInsight}
                 insightError={insightError}
                 onTriggerInsight={onTriggerInsight}
+                onResetInsight={onResetInsight}
               />
             </section>
 
