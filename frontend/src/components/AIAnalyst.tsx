@@ -456,7 +456,7 @@ export default function AIAnalyst({
                 </div>
 
                 <button className="insight-btn" onClick={() => onTriggerInsight(tradingStyle, riskTolerance)} style={{ marginTop: '4px' }}>
-                  Generate strategy for {activeTicker}
+                  Generate strategy for {activeTicker} (1 Credit)
                 </button>
               </div>
             )}
@@ -490,7 +490,16 @@ export default function AIAnalyst({
 
             {insight && !loadingInsight && (
               <div className="insight-result">
-                {renderGauge(insight.bullishProbability)}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', alignItems: 'center', flexShrink: 0 }}>
+                  {renderGauge(insight.bullishProbability)}
+                  <button 
+                    className="insight-btn" 
+                    onClick={onResetInsight} 
+                    style={{ width: '100%', padding: '10px 14px', fontSize: '12px' }}
+                  >
+                    Analyze Again
+                  </button>
+                </div>
                 <div className="insight-text-container">
                   <div className={`insight-tag ${insight.bullishProbability >= 50 ? 'tag-bullish' : 'tag-bearish'}`}>
                     {insight.bullishProbability >= 50 ? 'BULLISH BIAS' : 'BEARISH BIAS'}
@@ -502,13 +511,6 @@ export default function AIAnalyst({
                     <span style={{ color: 'var(--neon-cyan)', fontWeight: 600 }}>Disclaimer:</span>
                     <span>QuantIQ AI is an automated strategy assistant and can make mistakes. All analysis is for informational purposes only and should not be considered financial advice. Please verify financial data independently.</span>
                   </div>
-                  <button 
-                    className="insight-btn" 
-                    onClick={onResetInsight} 
-                    style={{ marginTop: '20px', width: '100%' }}
-                  >
-                    Generate Another Strategy Report
-                  </button>
                 </div>
               </div>
             )}
