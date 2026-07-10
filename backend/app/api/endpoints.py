@@ -331,6 +331,58 @@ async def resend_code(payload: schemas.ResendCodeRequest, db: AsyncSession= Depe
         
     return {"success": True}
 
+@router.get("/auth/test-email")
+async def test_email(email: str = None):
+    """
+    Diagnostic GET endpoint to check SMTP settings and send a test email.
+    """
+    to_email = email or settings.DEVELOPER_EMAIL
+    if not to_email:
+        to_email = "karansheler146@gmail.com"
+        
+    from backend.app.services.email_service import send_verification_email
+    import traceback
+    
+    config_status = {
+        "SMTP_HOST": settings.SMTP_HOST,
+        "SMTP_PORT": settings.SMTP_PORT,
+        "SMTP_USER": settings.SMTP_USER,
+        "SMTP_FROM": settings.SMTP_FROM,
+        "SMTP_PASSWORD_SET": bool(settings.SMTP_PASSWORD),
+        "TARGET_EMAIL": to_email
+    }
+    
+    if not settings.SMTP_HOST or not settings.SMTP_USER or not settings.SMTP_PASSWORD:
+        return {
+            "success": False,
+            "message": "SMTP settings are incomplete. Verify they are set in Hugging Face secrets.",
+            "config": config_status
+        }
+        
+    try:
+        # Run synchronous send directly to capture the exact exception stack trace
+        result = send_verification_email(to_email, "123456")
+        if result:
+            return {
+                "success": True,
+                "message": f"Test email sent successfully to {to_email}!",
+                "config": config_status
+            }
+        else:
+            return {
+                "success": False,
+                "message": "Failed to send email. SMTP returned False (check logs).",
+                "config": config_status
+            }
+    except Exception as e:
+        error_tb = traceback.format_exc()
+        return {
+            "success": False,
+            "message": f"SMTP Exception: {str(e)}",
+            "traceback": error_tb,
+            "config": config_status
+        }
+
 @router.post("/payments/webhook")
 async def razorpay_webhook(request: Request, x_razorpay_signature: str= Header(None), db: AsyncSession= Depends(get_db)):
     """
