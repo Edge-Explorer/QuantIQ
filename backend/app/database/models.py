@@ -1,7 +1,7 @@
 import uuid
 import datetime
 from typing import List, Optional
-from sqlalchemy import String, Integer, Float, DateTime, ForeignKey, UniqueConstraint, BigInteger, func
+from sqlalchemy import String, Integer, Float, DateTime, ForeignKey, UniqueConstraint, BigInteger, func, Boolean
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from backend.app.database.session import Base
 
@@ -13,6 +13,11 @@ class User(Base):
     full_name: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     google_id: Mapped[str] = mapped_column(String(255), unique=True, index=True, nullable=False)
     picture_url: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    
+    # Email Verification fields
+    is_verified: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    verification_code: Mapped[Optional[str]] = mapped_column(String(10), nullable=True)
+    verification_code_expires_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     
     # Credit SaaS parameters
     credits: Mapped[int] = mapped_column(Integer, default=5, nullable=False)

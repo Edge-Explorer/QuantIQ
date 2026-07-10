@@ -161,6 +161,16 @@ def process_triggered_alerts() -> str:
     """
     return asyncio.run(_async_process_triggered_alerts())
 
+
+@celery_app.task(name="tasks.send_verification_email")
+def send_verification_email_task(email: str, code: str) -> bool:
+    """
+    Celery task to send a registration verification OTP email.
+    """
+    from backend.app.services.email_service import send_verification_email
+    return send_verification_email(email, code)
+
+
 # Configure Celery Beat Schedule
 celery_app.conf.beat_schedule = {
     "process-triggered-alerts-every-2-min": {

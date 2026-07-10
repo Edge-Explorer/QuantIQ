@@ -4,6 +4,7 @@ import hmac
 import hashlib
 import datetime
 import smtplib
+import random
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from typing import Optional
@@ -140,42 +141,73 @@ class EmailLoginRequest(BaseModel):
     email:str
     password: str
 
-@router.post("/auth/signup", response_model= schemas.Token)
+@router.post("/auth/signup", response_model= schemas.AuthResponse)
 async def email_signup(payload: EmailSignUpRequest, db: AsyncSession= Depends(get_db)):
     """
     Registers a new user using their email, name, country, and password.
     Saves authentication credentials inside the existing schema.
-    Instantly returns a signed access token.
+    Generates a 6-digit OTP code, saves it to the database, sends the verification
+    email via Celery, and indicates verification is required.
     """
     # 1. Check if email already in use
     existing_user= await crud.get_user_by_email(db, payload.email)
-    if existing_user:
-        raise HTTPException(status_code= 400, detail= "Email is already registered.")
     
-    # 2. Setup mock google_id for compatibility and password hash payload
-    google_id = f"local:{payload.email}"
     pwd_hash = hashlib.sha256(payload.password.encode("utf-8")).hexdigest()
     picture_url = f"local_auth:{pwd_hash}:{payload.country}"
+    google_id = f"local:{payload.email}"
     
-    user_in= schemas.UserBase(
-        email= payload.email,
-        full_name= payload.full_name,
-        picture_url= picture_url
-    )
-    
-    try:
-        user= await crud.create_user(db, user_in, google_id= google_id)
-    except Exception as e:
-        raise HTTPException(status_code= 500, detail=f"Failed to register user: {str(e)}")
-    
-    token= create_access_token(data= {"sub": str(user.id)})
-    return {"access_token": token, "token_type": "bearer"}
+    if existing_user:
+        if existing_user.is_verified:
+            raise HTTPException(status_code= 400, detail= "Email is already registered.")
+        else:
+            # Reusing the existing unverified user record (updating password/profile details)
+            existing_user.full_name = payload.full_name
+            existing_user.picture_url = picture_url
+            user = existing_user
+    else:
+        # Create a new unverified user record
+        user_in= schemas.UserBase(
+            email= payload.email,
+            full_name= payload.full_name,
+            picture_url= picture_url
+        )
+        try:
+            user= await crud.create_user(db, user_in, google_id= google_id)
+        except Exception as e:
+            raise HTTPException(status_code= 500, detail=f"Failed to register user: {str(e)}")
 
-@router.post("/auth/login", response_model= schemas.Token)
+    # 2. Generate a 6-digit verification code
+    code = f"{random.randint(100000, 999999)}"
+    expires_at = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(minutes=15)
+    
+    user.is_verified = False
+    user.verification_code = code
+    user.verification_code_expires_at = expires_at
+    
+    db.add(user)
+    await db.commit()
+    await db.refresh(user)
+    
+    # 3. Trigger verification email via Celery
+    try:
+        from backend.app.services.celery_app import send_verification_email_task
+        send_verification_email_task.delay(user.email, code)
+    except Exception as email_err:
+        print(f"Failed to trigger verification email Celery task: {email_err}")
+        
+    return {
+        "access_token": None,
+        "token_type": "bearer",
+        "verification_required": True,
+        "email": user.email
+    }
+
+@router.post("/auth/login", response_model= schemas.AuthResponse)
 async def email_login(payload: EmailLoginRequest, db: AsyncSession= Depends(get_db)):
     """
     Authenticates a user via traditional email and password.
-    Returns a custom JWT token.
+    If credentials match but user is not verified, regenerates and sends a new OTP.
+    Returns custom JWT token or verification status.
     """
     user= await crud.get_user_by_email(db, payload.email)
     if not user:
@@ -194,8 +226,110 @@ async def email_login(payload: EmailLoginRequest, db: AsyncSession= Depends(get_
     if stored_hash != input_hash:
         raise HTTPException(status_code= 400, detail= "Invalid email or password.")
     
+    # Check if user is verified
+    if not user.is_verified:
+        # Regenerate and resend verification code to prevent lockout
+        code = f"{random.randint(100000, 999999)}"
+        expires_at = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(minutes=15)
+        
+        user.verification_code = code
+        user.verification_code_expires_at = expires_at
+        
+        db.add(user)
+        await db.commit()
+        await db.refresh(user)
+        
+        try:
+            from backend.app.services.celery_app import send_verification_email_task
+            send_verification_email_task.delay(user.email, code)
+        except Exception as email_err:
+            print(f"Failed to trigger verification email Celery task: {email_err}")
+            
+        return {
+            "access_token": None,
+            "token_type": "bearer",
+            "verification_required": True,
+            "email": user.email
+        }
+    
     token= create_access_token(data={"sub": str(user.id)})
-    return {"access_token": token, "token_type": "bearer"}
+    return {
+        "access_token": token,
+        "token_type": "bearer",
+        "verification_required": False,
+        "email": user.email
+    }
+
+@router.post("/auth/verify", response_model= schemas.AuthResponse)
+async def verify_email(payload: schemas.EmailVerifyRequest, db: AsyncSession= Depends(get_db)):
+    """
+    Verifies a user's email address by checking the 6-digit OTP code.
+    If valid, activates the account and returns a signed access token.
+    """
+    user = await crud.get_user_by_email(db, payload.email)
+    if not user:
+        raise HTTPException(status_code= 400, detail= "Invalid verification request.")
+        
+    if user.is_verified:
+        raise HTTPException(status_code= 400, detail= "Email is already verified.")
+        
+    if not user.verification_code or user.verification_code != payload.code:
+        raise HTTPException(status_code= 400, detail= "Invalid verification code.")
+        
+    now_utc = datetime.datetime.now(datetime.timezone.utc)
+    expires_at = user.verification_code_expires_at
+    if expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=datetime.timezone.utc)
+        
+    if now_utc > expires_at:
+        raise HTTPException(status_code= 400, detail= "Verification code has expired. Please request a new one.")
+        
+    # Activate user
+    user.is_verified = True
+    user.verification_code = None
+    user.verification_code_expires_at = None
+    
+    db.add(user)
+    await db.commit()
+    await db.refresh(user)
+    
+    token = create_access_token(data={"sub": str(user.id)})
+    return {
+        "access_token": token,
+        "token_type": "bearer",
+        "verification_required": False,
+        "email": user.email
+    }
+
+@router.post("/auth/resend-code")
+async def resend_code(payload: schemas.ResendCodeRequest, db: AsyncSession= Depends(get_db)):
+    """
+    Generates and resends a new 6-digit OTP code to the user's email.
+    """
+    user = await crud.get_user_by_email(db, payload.email)
+    if not user:
+        raise HTTPException(status_code= 400, detail= "Invalid request.")
+        
+    if user.is_verified:
+        raise HTTPException(status_code= 400, detail= "Email is already verified.")
+        
+    code = f"{random.randint(100000, 999999)}"
+    expires_at = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(minutes=15)
+    
+    user.verification_code = code
+    user.verification_code_expires_at = expires_at
+    
+    db.add(user)
+    await db.commit()
+    await db.refresh(user)
+    
+    try:
+        from backend.app.services.celery_app import send_verification_email_task
+        send_verification_email_task.delay(user.email, code)
+    except Exception as email_err:
+        print(f"Failed to trigger verification email Celery task: {email_err}")
+        
+    return {"success": True}
 
 @router.post("/payments/webhook")
 async def razorpay_webhook(request: Request, x_razorpay_signature: str= Header(None), db: AsyncSession= Depends(get_db)):

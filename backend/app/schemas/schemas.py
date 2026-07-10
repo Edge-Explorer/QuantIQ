@@ -10,9 +10,22 @@ class GoogleAuthRequest(BaseModel):
 class Token(BaseModel):
     access_token: str
     token_type: str= "bearer"
+
+class AuthResponse(BaseModel):
+    access_token: Optional[str] = None
+    token_type: Optional[str] = "bearer"
+    verification_required: bool = False
+    email: Optional[str] = None
     
 class TokenPayload(BaseModel):
     sub: Optional[str]= None
+
+class EmailVerifyRequest(BaseModel):
+    email: str = Field(description="User's email address")
+    code: str = Field(description="6-digit verification OTP code")
+
+class ResendCodeRequest(BaseModel):
+    email: str = Field(description="User's email address")
 
 class UserBase(BaseModel):
     email: str

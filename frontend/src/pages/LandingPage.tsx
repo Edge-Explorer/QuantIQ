@@ -16,7 +16,7 @@ interface LandingPageProps {
   onGoToDashboard?: () => void;
 }
 
-type AuthMode = 'signin' | 'signup';
+type AuthMode = 'signin' | 'signup' | 'verify';
 
 function GithubIcon({ size = 14, className = "" }) {
   return (
@@ -67,6 +67,29 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [githubStars, setGithubStars] = useState<string | null>(null);
   
+  // OTP Verification States
+  const [otp, setOtp] = useState('');
+  const [emailToVerify, setEmailToVerify] = useState('');
+  const [resendCooldown, setResendCooldown] = useState(0);
+
+  // OTP Countdown timer
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const timer = setTimeout(() => setResendCooldown(prev => prev - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [resendCooldown]);
+
+  // Reset verification states when auth modal closes
+  useEffect(() => {
+    if (!showAuthModal) {
+      setOtp('');
+      setEmailToVerify('');
+      setResendCooldown(0);
+      setErrorMsg(null);
+      setSuccessMsg(null);
+    }
+  }, [showAuthModal]);
+
   const googleButtonRef = useRef<HTMLDivElement>(null);
 
   // Fetch actual GitHub stargazers count for the repository
@@ -273,9 +296,13 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
   }, [showAuthModal]);
 
   const toggleAuthMode = () => {
-    setAuthMode(prev => prev === 'signin' ? 'signup' : 'signin');
     setErrorMsg(null);
     setSuccessMsg(null);
+    if (authMode === 'verify') {
+      setAuthMode('signin');
+    } else {
+      setAuthMode(prev => prev === 'signin' ? 'signup' : 'signin');
+    }
   };
 
   const handleTraditionalSubmit = async (e: React.FormEvent) => {
@@ -324,8 +351,16 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
           throw new Error(data.detail || "Sign up failed.");
         }
 
-        setSuccessMsg("Account created successfully!");
-        if (data.access_token) {
+        if (data.verification_required) {
+          setEmailToVerify(email.trim());
+          setAuthMode('verify');
+          setOtp('');
+          setResendCooldown(60);
+          setSuccessMsg("Account registered! A 6-digit verification code has been sent to your email.");
+          setPassword('');
+          setConfirmPassword('');
+        } else if (data.access_token) {
+          setSuccessMsg("Account created successfully!");
           setTimeout(() => {
             onAuthSuccess(data.access_token);
             setShowAuthModal(false);
@@ -347,7 +382,14 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
           throw new Error(data.detail || "Invalid email or password.");
         }
 
-        if (data.access_token) {
+        if (data.verification_required) {
+          setEmailToVerify(email.trim());
+          setAuthMode('verify');
+          setOtp('');
+          setResendCooldown(60);
+          setSuccessMsg("Your account is not verified yet. A new verification code has been sent to your email.");
+          setPassword('');
+        } else if (data.access_token) {
           onAuthSuccess(data.access_token);
           setShowAuthModal(false);
         }
@@ -356,6 +398,73 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
       setErrorMsg(err.message || "An unexpected error occurred.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleVerifySubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMsg(null);
+    setSuccessMsg(null);
+
+    if (otp.trim().length !== 6) {
+      setErrorMsg("Please enter the 6-digit verification code.");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const response = await fetch(`${apiUrl}/api/v1/auth/verify`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: emailToVerify,
+          code: otp.trim()
+        })
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.detail || "Verification failed.");
+      }
+
+      setSuccessMsg("Email verified successfully! Logging in...");
+      if (data.access_token) {
+        setTimeout(() => {
+          onAuthSuccess(data.access_token);
+          setShowAuthModal(false);
+        }, 1000);
+      }
+    } catch (err: any) {
+      setErrorMsg(err.message || "An unexpected verification error occurred.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResendCode = async () => {
+    if (resendCooldown > 0) return;
+    setErrorMsg(null);
+    setSuccessMsg(null);
+
+    try {
+      const response = await fetch(`${apiUrl}/api/v1/auth/resend-code`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: emailToVerify
+        })
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.detail || "Failed to resend code.");
+      }
+
+      setSuccessMsg("A new verification code has been sent to your email!");
+      setResendCooldown(60);
+    } catch (err: any) {
+      setErrorMsg(err.message || "An unexpected error occurred.");
     }
   };
 
@@ -994,12 +1103,14 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
             </div>
 
             <h2 className="text-xl font-medium mb-1 text-foreground tracking-tight">
-              {authMode === 'signin' ? 'Welcome Back' : 'Create Account'}
+              {authMode === 'verify' ? 'Verify Email' : (authMode === 'signin' ? 'Welcome Back' : 'Create Account')}
             </h2>
             <p className="text-xs text-muted-foreground text-center mb-6 max-w-xs">
-              {authMode === 'signin' 
-                ? 'Access your terminal to monitor watchlists and AI signals.' 
-                : 'Sign up to receive 5 free credits automatically.'}
+              {authMode === 'verify' 
+                ? `Enter the 6-digit code sent to ${emailToVerify}`
+                : (authMode === 'signin' 
+                  ? 'Access your terminal to monitor watchlists and AI signals.' 
+                  : 'Sign up to receive 5 free credits automatically.')}
             </p>
 
             {/* Feedback Messages */}
@@ -1014,123 +1125,166 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
               </div>
             )}
 
-            {/* Traditional Email Form */}
-            <form onSubmit={handleTraditionalSubmit} className="w-full flex flex-col gap-4">
-              
-              {authMode === 'signup' && (
-                <>
-                  {/* Full Name */}
+            {authMode === 'verify' ? (
+              /* OTP Form */
+              <form onSubmit={handleVerifySubmit} className="w-full flex flex-col gap-5">
+                <div className="relative w-full flex flex-col gap-2">
                   <div className="relative w-full">
-                    <User size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                    <Lock size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
                     <input 
                       type="text" 
-                      placeholder="Full Name"
-                      value={fullName}
-                      onChange={(e) => setFullName(e.target.value)}
-                      className="w-full bg-white/3 border border-white/8 rounded-xl pl-11 pr-4 py-3 text-sm text-white placeholder-muted-foreground outline-none focus:border-cyan-400/50 focus:ring-1 focus:ring-cyan-400/30 transition-all duration-200"
+                      maxLength={6}
+                      placeholder="6-digit verification code"
+                      value={otp}
+                      onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
+                      className="w-full bg-white/3 border border-white/8 rounded-xl pl-11 pr-4 py-3 text-center text-lg font-bold tracking-widest text-white placeholder:text-muted-foreground placeholder:font-normal placeholder:tracking-normal outline-none focus:border-cyan-400/50 focus:ring-1 focus:ring-cyan-400/30 transition-all duration-200"
                     />
                   </div>
-
-                  {/* Country */}
-                  <div className="relative w-full">
-                    <Globe size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                    <input 
-                      type="text" 
-                      placeholder="Country (e.g. India)"
-                      value={country}
-                      onChange={(e) => setCountry(e.target.value)}
-                      className="w-full bg-white/3 border border-white/8 rounded-xl pl-11 pr-4 py-3 text-sm text-white placeholder-muted-foreground outline-none focus:border-cyan-400/50 focus:ring-1 focus:ring-cyan-400/30 transition-all duration-200"
-                    />
+                  <div className="flex justify-between items-center px-1">
+                    <button
+                      type="button"
+                      onClick={handleResendCode}
+                      disabled={resendCooldown > 0}
+                      className="text-[11px] text-muted-foreground hover:text-white transition-colors disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed bg-transparent border-none outline-none"
+                    >
+                      {resendCooldown > 0 ? `Resend code in ${resendCooldown}s` : "Resend Verification Code"}
+                    </button>
                   </div>
-                </>
-              )}
+                </div>
 
-              {/* Email */}
-              <div className="relative w-full">
-                <Mail size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                <input 
-                  type="email" 
-                  placeholder="Email Address"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full bg-white/3 border border-white/8 rounded-xl pl-11 pr-4 py-3 text-sm text-white placeholder-muted-foreground outline-none focus:border-cyan-400/50 focus:ring-1 focus:ring-cyan-400/30 transition-all duration-200"
-                />
-              </div>
-
-              {/* Password */}
-              <div className="relative w-full">
-                <Lock size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                <input 
-                  type={showPassword ? 'text' : 'password'} 
-                  placeholder="Password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full bg-white/3 border border-white/8 rounded-xl pl-11 pr-11 py-3 text-sm text-white placeholder-muted-foreground outline-none focus:border-cyan-400/50 focus:ring-1 focus:ring-cyan-400/30 transition-all duration-200"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(prev => !prev)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-white transition-colors cursor-pointer"
+                <Button 
+                  type="submit"
+                  disabled={loading}
+                  className="w-full bg-white text-black hover:bg-white/95 rounded-xl py-3.5 text-sm font-semibold transition-all duration-200 cursor-pointer shadow-md flex justify-center items-center disabled:opacity-50"
                 >
-                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                </button>
-              </div>
+                  {loading ? 'Verifying...' : 'Verify & Continue'}
+                </Button>
+              </form>
+            ) : (
+              /* Traditional Email Form */
+              <form onSubmit={handleTraditionalSubmit} className="w-full flex flex-col gap-4">
+                
+                {authMode === 'signup' && (
+                  <>
+                    {/* Full Name */}
+                    <div className="relative w-full">
+                      <User size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                      <input 
+                        type="text" 
+                        placeholder="Full Name"
+                        value={fullName}
+                        onChange={(e) => setFullName(e.target.value)}
+                        className="w-full bg-white/3 border border-white/8 rounded-xl pl-11 pr-4 py-3 text-sm text-white placeholder-muted-foreground outline-none focus:border-cyan-400/50 focus:ring-1 focus:ring-cyan-400/30 transition-all duration-200"
+                      />
+                    </div>
 
-              {authMode === 'signup' && (
-                /* Confirm Password */
+                    {/* Country */}
+                    <div className="relative w-full">
+                      <Globe size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                      <input 
+                        type="text" 
+                        placeholder="Country (e.g. India)"
+                        value={country}
+                        onChange={(e) => setCountry(e.target.value)}
+                        className="w-full bg-white/3 border border-white/8 rounded-xl pl-11 pr-4 py-3 text-sm text-white placeholder-muted-foreground outline-none focus:border-cyan-400/50 focus:ring-1 focus:ring-cyan-400/30 transition-all duration-200"
+                      />
+                    </div>
+                  </>
+                )}
+
+                {/* Email */}
+                <div className="relative w-full">
+                  <Mail size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                  <input 
+                    type="email" 
+                    placeholder="Email Address"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full bg-white/3 border border-white/8 rounded-xl pl-11 pr-4 py-3 text-sm text-white placeholder-muted-foreground outline-none focus:border-cyan-400/50 focus:ring-1 focus:ring-cyan-400/30 transition-all duration-200"
+                  />
+                </div>
+
+                {/* Password */}
                 <div className="relative w-full">
                   <Lock size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
                   <input 
-                    type={showConfirmPassword ? 'text' : 'password'} 
-                    placeholder="Confirm Password"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    type={showPassword ? 'text' : 'password'} 
+                    placeholder="Password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
                     className="w-full bg-white/3 border border-white/8 rounded-xl pl-11 pr-11 py-3 text-sm text-white placeholder-muted-foreground outline-none focus:border-cyan-400/50 focus:ring-1 focus:ring-cyan-400/30 transition-all duration-200"
                   />
                   <button
                     type="button"
-                    onClick={() => setShowConfirmPassword(prev => !prev)}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-white transition-colors cursor-pointer"
+                    onClick={() => setShowPassword(prev => !prev)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-white transition-colors cursor-pointer bg-transparent border-none outline-none"
                   >
-                    {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
                 </div>
-              )}
 
-              {/* Submit Button */}
-              <Button 
-                type="submit"
-                disabled={loading}
-                className="w-full bg-white text-black hover:bg-white/95 rounded-xl py-3.5 text-sm font-semibold transition-all duration-200 cursor-pointer shadow-md flex justify-center items-center mt-2 disabled:opacity-50"
-              >
-                {loading ? 'Processing...' : (authMode === 'signin' ? 'Sign In' : 'Sign Up')}
-              </Button>
+                {authMode === 'signup' && (
+                  /* Confirm Password */
+                  <div className="relative w-full">
+                    <Lock size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                    <input 
+                      type={showConfirmPassword ? 'text' : 'password'} 
+                      placeholder="Confirm Password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      className="w-full bg-white/3 border border-white/8 rounded-xl pl-11 pr-11 py-3 text-sm text-white placeholder-muted-foreground outline-none focus:border-cyan-400/50 focus:ring-1 focus:ring-cyan-400/30 transition-all duration-200"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(prev => !prev)}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-white transition-colors cursor-pointer bg-transparent border-none outline-none"
+                    >
+                      {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                  </div>
+                )}
 
-            </form>
+                {/* Submit Button */}
+                <Button 
+                  type="submit"
+                  disabled={loading}
+                  className="w-full bg-white text-black hover:bg-white/95 rounded-xl py-3.5 text-sm font-semibold transition-all duration-200 cursor-pointer shadow-md flex justify-center items-center mt-2 disabled:opacity-50"
+                >
+                  {loading ? 'Processing...' : (authMode === 'signin' ? 'Sign In' : 'Sign Up')}
+                </Button>
+
+              </form>
+            )}
 
             {/* Toggle Link */}
             <div className="text-center mt-4">
               <button 
                 onClick={toggleAuthMode}
-                className="text-xs text-muted-foreground hover:text-white hover:underline transition-all cursor-pointer"
+                className="text-xs text-muted-foreground hover:text-white hover:underline transition-all cursor-pointer bg-transparent border-none outline-none"
               >
-                {authMode === 'signin' 
-                  ? "Don't have an account? Sign Up" 
-                  : "Already have an account? Sign In"}
+                {authMode === 'verify' 
+                  ? "Back to Sign In"
+                  : (authMode === 'signin' 
+                    ? "Don't have an account? Sign Up" 
+                    : "Already have an account? Sign In")}
               </button>
             </div>
 
             {/* Google Authentication Section */}
-            <div className="flex items-center justify-center gap-2 w-full my-4">
-              <span className="h-[1px] w-12 bg-white/10"></span>
-              <span className="text-[10px] text-muted-foreground uppercase tracking-widest">or login with</span>
-              <span className="h-[1px] w-12 bg-white/10"></span>
-            </div>
+            {authMode !== 'verify' && (
+              <>
+                <div className="flex items-center justify-center gap-2 w-full my-4">
+                  <span className="h-[1px] w-12 bg-white/10"></span>
+                  <span className="text-[10px] text-muted-foreground uppercase tracking-widest">or login with</span>
+                  <span className="h-[1px] w-12 bg-white/10"></span>
+                </div>
 
-            {/* Google Button Container */}
-            <div className="google-btn-wrapper w-full flex justify-center py-1">
-              <div ref={googleButtonRef}></div>
-            </div>
+                {/* Google Button Container */}
+                <div className="google-btn-wrapper w-full flex justify-center py-1">
+                  <div ref={googleButtonRef}></div>
+                </div>
+              </>
+            )}
 
 
 
