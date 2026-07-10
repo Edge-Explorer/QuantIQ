@@ -7,6 +7,41 @@ from backend.app.config.settings import settings
 
 logger = logging.getLogger("quantiq.email")
 
+def send_email_via_resend(to_email: str, subject: str, text_content: str, html_content: str, raise_on_error: bool = False) -> bool:
+    """
+    Sends an email using the Resend HTTP API.
+    """
+    import httpx
+    
+    headers = {
+        "Authorization": f"Bearer {settings.RESEND_API_KEY}",
+        "Content-Type": "application/json"
+    }
+    
+    payload = {
+        "from": settings.SMTP_FROM,
+        "to": [to_email],
+        "subject": subject,
+        "html": html_content,
+        "text": text_content
+    }
+    
+    try:
+        response = httpx.post("https://api.resend.com/emails", json=payload, headers=headers, timeout=10.0)
+        if response.status_code in (200, 201):
+            logger.info(f"Successfully sent email to {to_email} via Resend API")
+            return True
+            
+        logger.error(f"Resend API returned error status {response.status_code}: {response.text}")
+        if raise_on_error:
+            raise Exception(f"Resend API error (status {response.status_code}): {response.text}")
+        return False
+    except Exception as e:
+        logger.error(f"Failed to connect to Resend API: {e}")
+        if raise_on_error:
+            raise e
+        return False
+
 def send_price_alert_email(to_email: str, ticker: str, condition: str, target_price: float, current_price: float) -> bool:
     """
     Sends a price alert notification email using SMTP config, or logs to console as a fallback.
@@ -79,6 +114,10 @@ def send_price_alert_email(to_email: str, ticker: str, condition: str, target_pr
                 f"----------------------------------------\n"
                 f"{text_content}\n"
                 f"========================================")
+
+    # Check if Resend HTTP API should be used
+    if settings.RESEND_API_KEY:
+        return send_email_via_resend(to_email, subject, text_content, html_content)
 
     # Check if SMTP configuration is available
     if not settings.SMTP_HOST or not settings.SMTP_USER or not settings.SMTP_PASSWORD:
@@ -167,6 +206,10 @@ def send_verification_email(to_email: str, code: str, raise_on_error: bool = Fal
                 f"----------------------------------------\n"
                 f"{text_content}\n"
                 f"========================================")
+
+    # Check if Resend HTTP API should be used
+    if settings.RESEND_API_KEY:
+        return send_email_via_resend(to_email, subject, text_content, html_content, raise_on_error=raise_on_error)
 
     # Check if SMTP configuration is available
     if not settings.SMTP_HOST or not settings.SMTP_USER or not settings.SMTP_PASSWORD:

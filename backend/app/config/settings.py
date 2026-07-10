@@ -34,6 +34,7 @@ class Settings(BaseSettings):
     SMTP_PORT: int = Field(default=587)
     SMTP_USER: str = Field(default="")
     SMTP_PASSWORD: str = Field(default="")
+    RESEND_API_KEY: str = Field(default="")
     SMTP_FROM: str = Field(default="noreply@quantiq.io")
     DEVELOPER_EMAIL: str = Field(default="karanshelar8775@gmail.com")
     
