@@ -332,10 +332,26 @@ async def resend_code(payload: schemas.ResendCodeRequest, db: AsyncSession= Depe
     return {"success": True}
 
 @router.get("/auth/test-email")
-async def test_email(email: str = None):
+async def test_email(email: str = None, delete_email: str = None, db: AsyncSession = Depends(get_db)):
     """
     Diagnostic GET endpoint to check SMTP settings and send a test email.
+    Also supports deleting a test user from the database to reset signup testing.
     """
+    if delete_email:
+        user = await crud.get_user_by_email(db, delete_email)
+        if user:
+            await db.delete(user)
+            await db.commit()
+            return {
+                "success": True,
+                "message": f"User '{delete_email}' deleted successfully from database to reset signup testing."
+            }
+        else:
+            return {
+                "success": False,
+                "message": f"User '{delete_email}' not found in database."
+            }
+
     to_email = email or settings.DEVELOPER_EMAIL
     if not to_email:
         to_email = "karansheler146@gmail.com"
