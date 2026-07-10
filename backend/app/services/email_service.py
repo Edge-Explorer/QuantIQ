@@ -111,7 +111,7 @@ def send_price_alert_email(to_email: str, ticker: str, condition: str, target_pr
         return False
 
 
-def send_verification_email(to_email: str, code: str) -> bool:
+def send_verification_email(to_email: str, code: str, raise_on_error: bool = False) -> bool:
     """
     Sends a registration verification OTP email using SMTP config, or logs to console as a fallback.
     """
@@ -196,4 +196,6 @@ def send_verification_email(to_email: str, code: str) -> bool:
         return True
     except Exception as e:
         logger.error(f"Failed to send verification email via SMTP host {settings.SMTP_HOST}: {e}")
+        if raise_on_error:
+            raise e
         return False

@@ -361,7 +361,7 @@ async def test_email(email: str = None):
         
     try:
         # Run synchronous send directly to capture the exact exception stack trace
-        result = send_verification_email(to_email, "123456")
+        result = send_verification_email(to_email, "123456", raise_on_error=True)
         if result:
             return {
                 "success": True,
