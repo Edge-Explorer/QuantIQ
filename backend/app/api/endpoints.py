@@ -152,24 +152,29 @@ async def email_signup(payload: EmailSignUpRequest, db: AsyncSession= Depends(ge
     # 1. Check if email already in use
     existing_user= await crud.get_user_by_email(db, payload.email)
     
+    # Store password hash in google_id (local:{hash}) so picture_url stays free for profile photos
     pwd_hash = hashlib.sha256(payload.password.encode("utf-8")).hexdigest()
-    picture_url = f"local_auth:{pwd_hash}:{payload.country}"
-    google_id = f"local:{payload.email}"
+    google_id = f"local:{pwd_hash}"
     
     if existing_user:
         if existing_user.is_verified:
-            raise HTTPException(status_code= 400, detail= "Email is already registered.")
+            # If it's already a verified LOCAL account, block re-registration
+            if existing_user.google_id.startswith("local:"):
+                raise HTTPException(status_code= 400, detail= "Email is already registered.")
+            else:
+                # Verified Google account trying to register with email/password
+                raise HTTPException(status_code= 400, detail= "This email is linked to a Google account. Please sign in with Google.")
         else:
             # Reusing the existing unverified user record (updating password/profile details)
             existing_user.full_name = payload.full_name
-            existing_user.picture_url = picture_url
+            existing_user.google_id = google_id  # update hash in google_id
             user = existing_user
     else:
         # Create a new unverified user record
         user_in= schemas.UserBase(
             email= payload.email,
             full_name= payload.full_name,
-            picture_url= picture_url
+            picture_url= None  # no profile pic yet for email signup
         )
         try:
             user= await crud.create_user(db, user_in, google_id= google_id)
@@ -213,14 +218,11 @@ async def email_login(payload: EmailLoginRequest, db: AsyncSession= Depends(get_
     if not user:
         raise HTTPException(status_code= 400, detail= "Invalid email or password.")
     
-    if not user.picture_url or not user.picture_url.startswith("local_auth:"):
+    # Detect local (email/password) accounts by google_id starting with "local:"
+    if not user.google_id or not user.google_id.startswith("local:"):
         raise HTTPException(status_code= 400, detail= "Invalid login method. Please sign in using Google.")
     
-    parts= user.picture_url.split(":")
-    if len(parts) < 2:
-        raise HTTPException(status_code= 400, detail= "Invalid account details.")
-    
-    stored_hash= parts[1]
+    stored_hash= user.google_id[len("local:"):]
     input_hash= hashlib.sha256(payload.password.encode("utf-8")).hexdigest()
     
     if stored_hash != input_hash:
