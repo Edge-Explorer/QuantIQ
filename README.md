@@ -29,6 +29,48 @@ Both components share the same underlying machine learning pipeline. When a new 
 
 ---
 
+## Application Showcase
+
+### 1. Landing & Navigation
+The public entry point features a sleek, dark-themed responsive landing page outlining the platform's capabilities.
+<div align="center">
+  <img src="assets/Heropage.png" alt="QuantIQ Landing Page" width="700" />
+</div>
+
+### 2. User Authentication
+Stateless session management via JWT tokens, supporting traditional email signups and Google OAuth credential linking.
+<div align="center">
+  <img src="assets/Signuppage.png" alt="QuantIQ Sign Up" width="340" />
+  &nbsp;&nbsp;
+  <img src="assets/Loginpage.png" alt="QuantIQ Login" width="340" />
+</div>
+
+### 3. The Interactive Trading Terminal
+A real-time trading board with fluid, GPU-accelerated TradingView candlestick charts, interactive indicators (SMA, EMA, RSI), and a sidebar tape for watchlists and alert status.
+<div align="center">
+  <img src="assets/Terminalpage.png" alt="Trading Terminal" width="700" />
+</div>
+
+### 4. Coordinated AI Analyst Reports
+Generate detailed, tool-grounded financial analysis reports dynamically utilizing the ReAct agent architecture.
+<div align="center">
+  <img src="assets/Quantaianalystpage.png" alt="AI Analyst Report" width="700" />
+</div>
+
+### 5. Strategy Advisor & Contextual Chat
+Interact with your quantitative strategy co-pilot. Customize entry/exit targets on the chart, ask technical questions, and get real-time memory-anchored answers.
+<div align="center">
+  <img src="assets/Quantaichatpage.png" alt="AI Strategy Advisor Chat" width="700" />
+</div>
+
+### 6. Live Observability Dashboard
+Comprehensive system monitoring. Live Grafana dashboard scraping FastAPI, Celery latency, Redpanda delay, and memory footprint in real time.
+<div align="center">
+  <img src="assets/Monitoringpage.png" alt="Grafana Production Monitoring" width="700" />
+</div>
+
+---
+
 ## Core Features
 
 - **Live Market Data Pipeline** — Ingests real-time stock price ticks from Yahoo Finance every 5 seconds via a Kafka-compatible Redpanda message broker.
