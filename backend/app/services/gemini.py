@@ -366,7 +366,10 @@ async def run_agent_chat(db: AsyncSession, user_id: uuid.UUID, prompt: str) -> d
                 "The 'reason' should be a detailed, structured, and comprehensive quantitative analysis. "
                 "Explain the technical metrics, crossover directions, and the ML Signal Engine predictions clearly. "
                 "Highlight key indicators, specific values, and signal strengths using bold markdown formatting "
-                "to make the analysis clear and professional."
+                "to make the analysis clear and professional.\n"
+                "CRITICAL: If the bullish probability score is below 50% (e.g. 45%), you must explain it as a bearish bias or neutral-to-bearish outlook. "
+                "Clearly state that a lower bullish probability (like 45%) means a dominant bearish probability (like 55%). "
+                "Never let the word 'bullish' stand alone in the explanation of a bearish score, as it confuses readers who see a Bearish Bias label."
             )
         )
     )
