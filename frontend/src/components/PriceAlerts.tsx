@@ -58,7 +58,6 @@ export default function PriceAlerts({
           <div style={{ position: 'relative', flex: 1 }}>
             <div
               onClick={() => setIsConditionOpen(!isConditionOpen)}
-              className="premium-select"
               style={{
                 width: '100%',
                 padding: '8px 12px',
