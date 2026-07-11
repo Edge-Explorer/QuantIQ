@@ -95,6 +95,67 @@ def extract_json_payload(text: str) -> dict:
             
     raise ValueError(f"Could not extract JSON from: {text}")
 
+async def get_onnx_prediction(db: AsyncSession, ticker: str) -> int:
+    """
+    Computes the ONNX model prediction for a given ticker.
+    Returns a probability score between 0 and 100.
+    """
+    import pandas as pd
+    import pandas_ta as ta
+    
+    try:
+        history = await crud.get_stock_history(db, ticker.upper(), limit=100)
+        if not history or len(history) < 26 or onnx_session is None:
+            # Fallback mockup calculation if not enough data or session is missing
+            if history:
+                df = pd.DataFrame([{"close": h.close} for h in history])
+                if len(df) >= 14:
+                    df.ta.rsi(close="close", length=14, append=True)
+                    rsi = df.iloc[-1].get("RSI_14", 50.0)
+                else:
+                    rsi = 50.0
+            else:
+                rsi = 50.0
+            return int(min(max(rsi * 1.1, 10.0), 90.0))
+            
+        df = pd.DataFrame([{
+            "open": h.open,
+            "high": h.high,
+            "low": h.low,
+            "close": h.close,
+            "volume": h.volume
+        } for h in history])
+        
+        df.ta.rsi(close="close", length=14, append=True)
+        df.ta.macd(close="close", fast=12, slow=26, signal=9, append=True)
+        df.ta.ema(close="close", length=20, append=True)
+        df["EMA_20_ratio"] = (df["close"] - df["EMA_20"]) / df["EMA_20"]
+        
+        latest = df.iloc[-1]
+        rsi_val = float(latest.get("RSI_14", 50.0))
+        macd_val = float(latest.get("MACD_12_26_9", 0.0))
+        macds_val = float(latest.get("MACDs_12_26_9", 0.0))
+        ema_ratio_val = float(latest.get("EMA_20_ratio", 0.0))
+        
+        input_data = np.array([[rsi_val, macd_val, macds_val, ema_ratio_val]], dtype=np.float32)
+        input_name = onnx_session.get_inputs()[0].name
+        label, prob = onnx_session.run(None, {input_name: input_data})
+        
+        if isinstance(prob, list) and len(prob) > 0:
+            p_dict = prob[0]
+            if isinstance(p_dict, dict):
+                p_val = p_dict.get(1, 0.5)
+            else:
+                p_val = prob[0][0][1]
+        else:
+            p_val = prob[0][1]
+            
+        p_val_clipped = min(max(float(p_val), 0.0), 1.0)
+        return int(p_val_clipped * 100)
+    except Exception as e:
+        print(f"Error computing ONNX prediction helper: {e}")
+        return 50
+
 async def run_agent_chat(db: AsyncSession, user_id: uuid.UUID, prompt: str) -> dict:
     """
     Runs the Gemini ReAct agent loop using native automatic function calling.
@@ -168,6 +229,7 @@ async def run_agent_chat(db: AsyncSession, user_id: uuid.UUID, prompt: str) -> d
             df.ta.rsi(close="close", length=14, append=True)
             df.ta.macd(close="close", fast=12, slow=26, signal=9, append=True)
             df.ta.ema(close="close", length=20, append=True)
+            df.ta.ema(close="close", length=20, append=True)
 
             latest = df.iloc[-1].to_dict()
             agent_tool_calls_total.labels(tool_name="get_stock_history_and_indicators", status="success").inc()
@@ -181,123 +243,50 @@ async def run_agent_chat(db: AsyncSession, user_id: uuid.UUID, prompt: str) -> d
         Feeds technical indicators into the ONNX machine learning model
         to predict the upward price probability (0 to 100 percent).
         """
-        import pandas as pd
-        import pandas_ta as ta
-
         try:
-            coro = crud.get_stock_history(db, ticker.upper(), limit=100)
+            coro = get_onnx_prediction(db, ticker)
             future = asyncio.run_coroutine_threadsafe(coro, main_loop)
-            history = future.result()
-
-            if not history:
-                agent_tool_calls_total.labels(tool_name="get_ml_prediction", status="success").inc()
-                return json.dumps({"ticker": ticker, "error": "No history available"})
-
-            df = pd.DataFrame([{
-                "open": h.open,
-                "high": h.high,
-                "low": h.low,
-                "close": h.close,
-                "volume": h.volume
-            } for h in history])
-
-            if len(df) >= 26 and onnx_session is not None:
-                try:
-                    df.ta.rsi(close= "close", length= 14, append= True)
-                    df.ta.macd(close= "close", fast= 12, slow= 26, signal= 9, append= True)
-                    df.ta.ema(close= "close", length= 20, append= True)
-                    df["EMA_20_ratio"]= (df["close"] - df["EMA_20"]) / df["EMA_20"]
-                    
-                    latest= df.iloc[-1]
-                    rsi_val= float(latest.get("RSI_14", 50.0))
-                    macd_val= float(latest.get("MACD_12_26_9", 0.0))
-                    macds_val= float(latest.get("MACDs_12_26_9", 0.0))
-                    ema_ratio_val= float(latest.get("EMA_20_ratio", 0.0))
-                    
-                    input_data= np.array([[rsi_val, macd_val, macds_val, ema_ratio_val]], dtype= np.float32)
-                    input_name= onnx_session.get_inputs()[0].name
-                    label, prob= onnx_session.run(None, {input_name: input_data})
-                    
-                    if isinstance(prob, list) and len(prob) > 0:
-                        p_dict= prob[0]
-                        if isinstance(p_dict, dict):
-                            p_val= p_dict.get(1, 0.5)
-                        else:
-                            p_val= prob[0][0][1]
-                    else:
-                        p_val= prob[0][1]
-                    
-                    p_val_clipped= min(max(float(p_val), 0.0), 1.0)
-                    bullish_prob= int(p_val_clipped * 100)
-                    
-                    # Log prediction to database (MLOps loop)
-                    try:
-                        close_price = float(latest.get("close", 0.0))
-                        predicted_action = "BUY" if bullish_prob >= 55 else "SELL" if bullish_prob <= 45 else "HOLD"
-                        target_price = close_price * 1.02 if predicted_action == "BUY" else close_price * 0.98 if predicted_action == "SELL" else None
-                        stop_loss = close_price * 0.99 if predicted_action == "BUY" else close_price * 1.01 if predicted_action == "SELL" else None
-                        
-                        coro = crud.create_prediction_log(
-                            db=db,
-                            user_id=user_id,
-                            ticker=ticker.upper(),
-                            model_version="v1.0",
-                            confidence=p_val_clipped,
-                            predicted_action=predicted_action,
-                            entry_price=close_price,
-                            target_price=target_price,
-                            stop_loss=stop_loss
-                        )
-                        future = asyncio.run_coroutine_threadsafe(coro, main_loop)
-                        future.result()
-                    except Exception as log_err:
-                        print(f"MLOps: Failed to log ONNX prediction to database: {log_err}")
-                    
-                    agent_tool_calls_total.labels(tool_name="get_ml_prediction", status="success").inc()
-                    return json.dumps({
-                        "ticker": ticker.upper(),
-                        "bullish_probability": bullish_prob,
-                        "status": "onnx_inference"
-                    })
-                except Exception as e:
-                    print(f"Error running ONNX model inference: {str(e)}")
-                    
-            if len(df)>= 14:
-                df.ta.rsi(close= "close", length= 14, append= True)
-                rsi= df.iloc[-1].get("RSI_14", 50.0)
-            else:
-                rsi= 50.0
-            mock_prob= int(min(max(rsi*1.1, 10.0), 90.0))
+            bullish_prob = future.result()
             
-            # Log mockup prediction to database (MLOps loop)
+            # Log prediction to database (MLOps loop)
             try:
-                latest = df.iloc[-1]
-                close_price = float(latest.get("close", 0.0))
-                predicted_action = "BUY" if mock_prob >= 55 else "SELL" if mock_prob <= 45 else "HOLD"
+                history_coro = crud.get_stock_history(db, ticker.upper(), limit=1)
+                history_future = asyncio.run_coroutine_threadsafe(history_coro, main_loop)
+                history = history_future.result()
+                close_price = float(history[0].close) if history else 0.0
+                
+                predicted_action = "BUY" if bullish_prob >= 55 else "SELL" if bullish_prob <= 45 else "HOLD"
                 target_price = close_price * 1.02 if predicted_action == "BUY" else close_price * 0.98 if predicted_action == "SELL" else None
                 stop_loss = close_price * 0.99 if predicted_action == "BUY" else close_price * 1.01 if predicted_action == "SELL" else None
                 
-                coro = crud.create_prediction_log(
+                is_mock = (onnx_session is None)
+                model_ver = "mock_v1.0" if is_mock else "v1.0"
+                
+                log_coro = crud.create_prediction_log(
                     db=db,
                     user_id=user_id,
                     ticker=ticker.upper(),
-                    model_version="mock_v1.0",
-                    confidence=float(mock_prob) / 100.0,
+                    model_version=model_ver,
+                    confidence=float(bullish_prob) / 100.0,
                     predicted_action=predicted_action,
                     entry_price=close_price,
                     target_price=target_price,
                     stop_loss=stop_loss
                 )
-                future = asyncio.run_coroutine_threadsafe(coro, main_loop)
-                future.result()
+                log_future = asyncio.run_coroutine_threadsafe(log_coro, main_loop)
+                log_future.result()
             except Exception as log_err:
-                print(f"MLOps: Failed to log mock prediction to database: {log_err}")
+                print(f"MLOps: Failed to log prediction to database: {log_err}")
 
             agent_tool_calls_total.labels(tool_name="get_ml_prediction", status="success").inc()
+            
+            is_mock = (onnx_session is None)
+            status_str = "dev_mock_mode" if is_mock else "onnx_inference"
+            
             return json.dumps({
                 "ticker": ticker.upper(),
-                "bullish_probability": mock_prob,
-                "status": "dev_mock_mode"
+                "bullish_probability": bullish_prob,
+                "status": status_str
             })
         except Exception as e:
             agent_tool_calls_total.labels(tool_name="get_ml_prediction", status="failed").inc()

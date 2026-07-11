@@ -1089,15 +1089,10 @@ async def chat_with_analyst(
     else:
         markers_text = "No custom price level markers have been drawn on the chart."
 
-    # Calculate technical ML coordinated bullish probability score
-    ticker_sum = sum(ord(c) for c in ticker)
-    base_score = 48 + (ticker_sum % 27) # Base score between 48% and 75%
-    if active_indicators.get("rsi"):
-        base_score += 6 if (ticker_sum % 2 == 0) else -6
-    if active_indicators.get("sma") or active_indicators.get("ema"):
-        base_score += 5 if (ticker_sum % 3 == 0) else -4
-    probability_score = max(10, min(92, base_score))
-
+    # Calculate technical ML coordinated bullish probability score using the real ONNX helper
+    from backend.app.services.gemini import get_onnx_prediction
+    probability_score = await get_onnx_prediction(db, ticker)
+ 
     # Format indicators
     indicators_list = []
     if active_indicators.get("sma"):
@@ -1107,7 +1102,7 @@ async def chat_with_analyst(
     if active_indicators.get("rsi"):
         indicators_list.append("RSI 14 Panel")
     indicators_text = ", ".join(indicators_list) if indicators_list else "None"
-
+ 
     # Construct system instructions
     system_prompt = (
         "You are the QuantIQ Cooperative AI Strategy Advisor. A trader is chatting with you "
@@ -1120,19 +1115,23 @@ async def chat_with_analyst(
         f"- Coordinated ML Model Bullish Probability: {probability_score}%\n\n"
         "Guidelines:\n"
         "1. Act as a professional quantitative mentor. Evaluate their drawn levels (e.g. entry, target, stop loss) "
-        "relative to the stock price context and indicators.\n"
-        "2. When evaluating exit/entry points, you MUST provide a clearly formatted subtopic starting with a heading like '### **Optimized Entry & Exit Points**'. "
+        "relative to the stock price context, indicators, and your previous recommendations.\n"
+        "2. Check the chat history below. If you previously suggested specific levels, look at the trader's current markers "
+        "and compare them. If they match your recommendation, acknowledge it (e.g. 'I see you set your entry at X and stop loss at Y as suggested'). "
+        "If their markers differ or are incorrect (e.g. profit target equal to or below entry), politely point it out, explain the mistake, "
+        "and guide them to adjust their markers back to your recommended levels.\n"
+        "3. When evaluating exit/entry points, you MUST provide a clearly formatted subtopic starting with a heading like '### **Optimized Entry & Exit Points**'. "
         "Inside this section, explicitly list and highlight the Entry Price, Stop-Loss Level, and Profit Target Price in bold. "
         "Help the user identify where to place their chart markers to maximize profit and protect their capital.\n"
-        "3. Provide extremely detailed, thorough, comprehensive, and complete answers. Do not summarize or leave out details. "
+        "4. Provide extremely detailed, thorough, comprehensive, and complete answers. Do not summarize or leave out details. "
         "Break down your explanation step-by-step so that absolutely no doubt is left in the trader's mind.\n"
-        "4. Use very simple, layman, easy-to-understand language. Avoid overly complex terminology without explaining it simply first. "
+        "5. Use very simple, layman, easy-to-understand language. Avoid overly complex terminology without explaining it simply first. "
         "Ensure any beginner trader can follow your strategy critique.\n"
-        "5. Provide realistic risk-to-reward ratios and volatility warnings based on the asset.\n"
-        f"6. At the very end of your response, you MUST provide a final section called '**Probability Prediction Score:**'. "
-        f"Output the score as exactly: '**Probability Prediction Score:** {probability_score}% Bullish (Coordinated with QuantIQ ML Model)'. "
+        "6. Provide realistic risk-to-reward ratios and volatility warnings based on the asset.\n"
+        "7. At the very end of your response, you MUST provide a final section called '**Probability Prediction Score:**'. "
+        "Output the score as exactly: '**Probability Prediction Score:** {probability_score}% Bullish (Coordinated with QuantIQ ML Model)'. "
         "Add a 1-sentence simplified explanation of why the ML model outputs this probability based on current indicator alignment.\n"
-        "7. Strictly refuse to answer any questions that are not directly related to financial markets, trading, stock exchanges, "
+        "8. Strictly refuse to answer any questions that are not directly related to financial markets, trading, stock exchanges, "
         "crypto, technical indicators, or custom price levels. If the user asks about anything else (e.g. general history, unrelated coding, "
         "cooking, sports, life advice, general science), you must politely reject the query, state that you are optimized solely for "
         "trading strategy and market analysis, and divert the conversation back to the active chart analysis or custom markers. Be friendly but firm.\n\n"
