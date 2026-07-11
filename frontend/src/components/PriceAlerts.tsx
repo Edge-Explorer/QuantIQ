@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Bell, X } from 'lucide-react';
+import { Bell, X, ChevronDown } from 'lucide-react';
 
 interface Alert {
   id: string;
@@ -24,6 +24,7 @@ export default function PriceAlerts({
 }: PriceAlertsProps) {
   const [alertPrice, setAlertPrice] = useState('');
   const [alertCondition, setAlertCondition] = useState('above');
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,13 +53,33 @@ export default function PriceAlerts({
 
       <form className="alert-form" onSubmit={handleSubmit}>
         <div className="alert-form-row">
-          <select 
-            value={alertCondition} 
-            onChange={(e) => setAlertCondition(e.target.value)}
-          >
-            <option value="above">Above Target</option>
-            <option value="below">Below Target</option>
-          </select>
+          <div className="glass-dropdown-container" style={{ minWidth: '120px' }}>
+            <button 
+              type="button"
+              className="glass-dropdown-trigger" 
+              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+            >
+              <span>{alertCondition === 'above' ? 'Above Target' : 'Below Target'}</span>
+              <ChevronDown size={14} className={`arrow-icon ${isDropdownOpen ? 'open' : ''}`} />
+            </button>
+            
+            {isDropdownOpen && (
+              <div className="glass-dropdown-menu">
+                <div 
+                  className="glass-dropdown-item" 
+                  onClick={() => { setAlertCondition('above'); setIsDropdownOpen(false); }}
+                >
+                  Above Target
+                </div>
+                <div 
+                  className="glass-dropdown-item" 
+                  onClick={() => { setAlertCondition('below'); setIsDropdownOpen(false); }}
+                >
+                  Below Target
+                </div>
+              </div>
+            )}
+          </div>
           
           <input 
             type="number" 

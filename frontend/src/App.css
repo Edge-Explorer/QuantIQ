@@ -2008,3 +2008,81 @@ input[type=number] {
   box-shadow: 0 12px 30px rgba(161, 84, 255, 0.06) !important;
   background: rgba(13, 16, 27, 0.65) !important;
 }
+
+/* Custom Glassmorphic Dropdown Styling */
+.glass-dropdown-container {
+  position: relative;
+  width: 100%;
+}
+
+.glass-dropdown-trigger {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.04) !important;
+  border: 1px solid var(--border-glass) !important;
+  border-radius: 8px !important;
+  color: var(--text-primary) !important;
+  padding: 8px 12px !important;
+  font-size: 13px !important;
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  cursor: pointer !important;
+  outline: none !important;
+  transition: all 0.2s ease-in-out !important;
+}
+
+.glass-dropdown-trigger:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+.glass-dropdown-trigger .arrow-icon {
+  transition: transform 0.25s ease !important;
+  color: #94a3b8 !important;
+}
+
+.glass-dropdown-trigger .arrow-icon.open {
+  transform: rotate(180deg) !important;
+  color: var(--neon-cyan) !important;
+}
+
+.glass-dropdown-menu {
+  position: absolute !important;
+  top: calc(100% + 6px) !important;
+  left: 0 !important;
+  width: 100% !important;
+  background: rgba(13, 16, 26, 0.95) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border: 1px solid var(--border-glass) !important;
+  border-radius: 8px !important;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.65) !important;
+  z-index: 1000 !important;
+  overflow: hidden !important;
+  animation: dropdownSlideDown 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.glass-dropdown-item {
+  padding: 10px 12px !important;
+  font-size: 13px !important;
+  color: var(--text-muted) !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+  text-align: left !important;
+}
+
+.glass-dropdown-item:hover {
+  background: rgba(0, 242, 254, 0.08) !important;
+  color: var(--neon-cyan) !important;
+}
+
+@keyframes dropdownSlideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
