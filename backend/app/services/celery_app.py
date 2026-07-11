@@ -245,12 +245,112 @@ async def _async_update_prediction_outcomes() -> str:
         return f"MLOps: Successfully updated {updated_count} pending predictions."
 
 
+async def _async_update_strategy_outcomes() -> str:
+    """
+    Finds pending strategy logs that are at least 5 minutes old,
+    fetches their current price via yfinance, calculates outcomes for both
+    AI recommended levels and User customized levels, and updates their status to completed.
+    """
+    import yfinance as yf
+    from sqlalchemy import select
+    
+    async with SessionLocal() as db:
+        # Fetch pending strategy logs
+        stmt = select(models.StrategyLog).where(models.StrategyLog.status == "pending")
+        result = await db.execute(stmt)
+        pending = list(result.scalars().all())
+        
+        if not pending:
+            return "No pending strategies to update."
+            
+        now = datetime.datetime.now(datetime.timezone.utc)
+        updated_count = 0
+        
+        for strat in pending:
+            # Check if prediction is at least 5 minutes old to allow testing
+            elapsed = now - strat.timestamp
+            if elapsed < datetime.timedelta(minutes=5):
+                continue
+                
+            try:
+                # Fetch current price via yfinance
+                yf_ticker = yf.Ticker(strat.ticker)
+                df = await asyncio.get_event_loop().run_in_executor(
+                    None,
+                    lambda: yf_ticker.history(period="1d")
+                )
+                if df.empty or "Close" not in df.columns:
+                    print(f"MLOps: Could not retrieve price for {strat.ticker}")
+                    continue
+                    
+                current_price = float(df["Close"].iloc[-1])
+                
+                # Determine action based on probability score
+                predicted_action = "BUY" if strat.bullish_probability >= 55 else "SELL" if strat.bullish_probability <= 45 else "HOLD"
+                
+                # 1. Evaluate AI Outcome
+                ai_outcome = "neutral"
+                if predicted_action == "BUY":
+                    if current_price >= strat.ai_target:
+                        ai_outcome = "success"
+                    elif current_price <= strat.ai_stop_loss:
+                        ai_outcome = "failed"
+                    else:
+                        ai_outcome = "success" if current_price > strat.ai_entry else "failed"
+                elif predicted_action == "SELL":
+                    if current_price <= strat.ai_target:
+                        ai_outcome = "success"
+                    elif current_price >= strat.ai_stop_loss:
+                        ai_outcome = "failed"
+                    else:
+                        ai_outcome = "success" if current_price < strat.ai_entry else "failed"
+                else:
+                    ai_outcome = "neutral"
+                    
+                # 2. Evaluate User Outcome
+                user_outcome = "neutral"
+                if predicted_action == "BUY":
+                    if current_price >= strat.user_target:
+                        user_outcome = "success"
+                    elif current_price <= strat.user_stop_loss:
+                        user_outcome = "failed"
+                    else:
+                        user_outcome = "success" if current_price > strat.user_entry else "failed"
+                elif predicted_action == "SELL":
+                    if current_price <= strat.user_target:
+                        user_outcome = "success"
+                    elif current_price >= strat.user_stop_loss:
+                        user_outcome = "failed"
+                    else:
+                        user_outcome = "success" if current_price < strat.user_entry else "failed"
+                else:
+                    user_outcome = "neutral"
+                    
+                # Update record
+                strat.actual_exit_price = current_price
+                strat.status = "completed"
+                strat.ai_outcome = ai_outcome
+                strat.user_outcome = user_outcome
+                
+                db.add(strat)
+                updated_count += 1
+            except Exception as yf_err:
+                print(f"MLOps: Error updating strategy {strat.id} for {strat.ticker}: {yf_err}")
+                
+        if updated_count > 0:
+            await db.commit()
+            
+        return f"MLOps: Successfully updated {updated_count} pending strategy logs."
+
+
 @celery_app.task(name="tasks.update_prediction_outcomes")
 def update_prediction_outcomes() -> str:
     """
-    Celery task run periodically (every 2 minutes) to update prediction outcomes.
+    Celery task run periodically (every 2 minutes) to update prediction and strategy outcomes.
     """
-    return asyncio.run(_async_update_prediction_outcomes())
+    pred_summary = asyncio.run(_async_update_prediction_outcomes())
+    strat_summary = asyncio.run(_async_update_strategy_outcomes())
+    return f"{pred_summary} | {strat_summary}"
 
 
 # Configure Celery Beat Schedule

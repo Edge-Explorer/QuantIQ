@@ -48,6 +48,7 @@ class User(Base):
     transactions: Mapped[List["PaymentTransaction"]] = relationship(back_populates="user", cascade="all, delete-orphan")
     saved_strategies: Mapped[List["SavedStrategy"]] = relationship(back_populates="user", cascade="all, delete-orphan")
     prediction_logs: Mapped[List["PredictionLog"]] = relationship(back_populates="user", cascade="all, delete-orphan")
+    strategy_logs: Mapped[List["StrategyLog"]] = relationship(back_populates="user", cascade="all, delete-orphan")
 
 
 class PaymentTransaction(Base):
@@ -177,4 +178,34 @@ class PredictionLog(Base):
     
     # Relationship
     user: Mapped["User"] = relationship(back_populates="prediction_logs")
+
+
+class StrategyLog(Base):
+    __tablename__ = "strategy_logs"
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    ticker: Mapped[str] = mapped_column(String(50), index=True)
+    timestamp: Mapped[datetime.datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), index=True)
+    model_version: Mapped[str] = mapped_column(String(50), default="v1.0")
+    bullish_probability: Mapped[int] = mapped_column(Integer)
+
+    # AI Recommended Levels
+    ai_entry: Mapped[float] = mapped_column(Float)
+    ai_target: Mapped[float] = mapped_column(Float)
+    ai_stop_loss: Mapped[float] = mapped_column(Float)
+
+    # User Customized Levels
+    user_entry: Mapped[float] = mapped_column(Float)
+    user_target: Mapped[float] = mapped_column(Float)
+    user_stop_loss: Mapped[float] = mapped_column(Float)
+
+    # Outcomes (populated by background worker)
+    status: Mapped[str] = mapped_column(String(20), default="pending", index=True) # "pending", "completed"
+    ai_outcome: Mapped[Optional[str]] = mapped_column(String(20), nullable=True) # "success", "failed"
+    user_outcome: Mapped[Optional[str]] = mapped_column(String(20), nullable=True) # "success", "failed"
+    actual_exit_price: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+
+    # Relationship
+    user: Mapped["User"] = relationship(back_populates="strategy_logs")
     

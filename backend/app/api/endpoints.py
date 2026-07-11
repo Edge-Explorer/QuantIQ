@@ -468,6 +468,40 @@ async def get_model_metrics(db: AsyncSession = Depends(get_db)):
     )
     logs = list(logs_result.scalars().all())
     
+    # 5. Fetch Strategy Log Statistics (User vs AI comparison)
+    strat_total_result = await db.execute(select(func.count(models.StrategyLog.id)))
+    strat_total = strat_total_result.scalar() or 0
+    
+    strat_completed_result = await db.execute(
+        select(func.count(models.StrategyLog.id))
+        .where(models.StrategyLog.status == "completed")
+    )
+    strat_completed = strat_completed_result.scalar() or 0
+    
+    ai_success_result = await db.execute(
+        select(func.count(models.StrategyLog.id))
+        .where(models.StrategyLog.status == "completed")
+        .where(models.StrategyLog.ai_outcome == "success")
+    )
+    ai_success = ai_success_result.scalar() or 0
+    
+    user_success_result = await db.execute(
+        select(func.count(models.StrategyLog.id))
+        .where(models.StrategyLog.status == "completed")
+        .where(models.StrategyLog.user_outcome == "success")
+    )
+    user_success = user_success_result.scalar() or 0
+    
+    ai_win_rate = (ai_success / strat_completed * 100.0) if strat_completed > 0 else 0.0
+    user_win_rate = (user_success / strat_completed * 100.0) if strat_completed > 0 else 0.0
+    
+    # Calculate average target deviation (user_target - ai_target)
+    deviation_result = await db.execute(
+        select(func.avg(models.StrategyLog.user_target - models.StrategyLog.ai_target))
+        .where(models.StrategyLog.status == "completed")
+    )
+    avg_deviation = deviation_result.scalar() or 0.0
+    
     return {
         "summary": {
             "total_predictions": total_count,
@@ -477,6 +511,13 @@ async def get_model_metrics(db: AsyncSession = Depends(get_db)):
             "global_average_pnl_percent": round(avg_pnl, 4)
         },
         "performance_by_model_version": by_version,
+        "strategy_performance_tracker": {
+            "total_strategies_locked": strat_total,
+            "completed_strategy_evaluations": strat_completed,
+            "ai_strategy_win_rate_percent": round(ai_win_rate, 2),
+            "user_strategy_win_rate_percent": round(user_win_rate, 2),
+            "average_user_target_price_deviation": round(avg_deviation, 4)
+        },
         "recent_predictions": [
             {
                 "id": str(log.id),

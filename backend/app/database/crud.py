@@ -393,3 +393,55 @@ async def get_all_prediction_logs(db: AsyncSession, limit: int = 1000) -> List[m
         .limit(limit)
     )
     return list(result.scalars().all())
+
+
+# ==========================================
+# MLOPS STRATEGY LOG OPERATIONS
+# ==========================================
+
+async def create_strategy_log(
+    db: AsyncSession,
+    user_id: uuid.UUID,
+    ticker: str,
+    model_version: str,
+    bullish_probability: int,
+    ai_entry: float,
+    ai_target: float,
+    ai_stop_loss: float,
+    user_entry: float,
+    user_target: float,
+    user_stop_loss: float
+) -> models.StrategyLog:
+    db_strategy = models.StrategyLog(
+        user_id=user_id,
+        ticker=ticker.upper(),
+        model_version=model_version,
+        bullish_probability=bullish_probability,
+        ai_entry=ai_entry,
+        ai_target=ai_target,
+        ai_stop_loss=ai_stop_loss,
+        user_entry=user_entry,
+        user_target=user_target,
+        user_stop_loss=user_stop_loss,
+        status="pending"
+    )
+    db.add(db_strategy)
+    await db.commit()
+    await db.refresh(db_strategy)
+    return db_strategy
+
+async def get_pending_strategy_logs(db: AsyncSession) -> List[models.StrategyLog]:
+    result = await db.execute(
+        select(models.StrategyLog)
+        .where(models.StrategyLog.status == "pending")
+        .order_by(models.StrategyLog.timestamp.asc())
+    )
+    return list(result.scalars().all())
+
+async def get_all_strategy_logs(db: AsyncSession, limit: int = 1000) -> List[models.StrategyLog]:
+    result = await db.execute(
+        select(models.StrategyLog)
+        .order_by(models.StrategyLog.timestamp.desc())
+        .limit(limit)
+    )
+    return list(result.scalars().all())

@@ -86,6 +86,11 @@ class GeminiInsightType:
     credits_remaining: int
 
 @strawberry.type
+class LockInStrategyResultType:
+    success: bool
+    message: str
+
+@strawberry.type
 class SavedStrategyType:
     id: uuid.UUID
     ticker: str
@@ -517,6 +522,80 @@ class Mutation:
             reason=insight_data["reason"],
             credits_remaining=user.credits
         )
+
+    @strawberry.mutation
+    async def lock_in_strategy(
+        self,
+        info: Info,
+        ticker: str,
+        entry: float,
+        target: float,
+        stop_loss: float
+    ) -> LockInStrategyResultType:
+        """
+        Logs the AI's suggested target levels and the user's custom levels
+        for a ticker, tracking their outcome side-by-side.
+        """
+        user = get_authenticated_user(info)
+        db = info.context["db"]
+        
+        # 1. Fetch latest price history to get close price and run ONNX model
+        from backend.app.services.gemini import get_onnx_prediction, onnx_session
+        
+        try:
+            # Run the real ONNX prediction helper
+            probability_score = await get_onnx_prediction(db, ticker)
+            
+            # Fetch latest candle to determine entry price
+            history = await crud.get_stock_history(db, ticker.upper(), limit=1)
+            if not history:
+                return LockInStrategyResultType(success=False, message=f"No stock history available for {ticker}.")
+            
+            close_price = float(history[0].close)
+            
+            # Compute AI recommended levels (using same logic: +2% target, -1% stop loss for BUY)
+            predicted_action = "BUY" if probability_score >= 55 else "SELL" if probability_score <= 45 else "HOLD"
+            
+            if predicted_action == "BUY":
+                ai_entry = close_price
+                ai_target = close_price * 1.02
+                ai_stop_loss = close_price * 0.99
+            elif predicted_action == "SELL":
+                ai_entry = close_price
+                ai_target = close_price * 0.98
+                ai_stop_loss = close_price * 1.01
+            else:
+                ai_entry = close_price
+                ai_target = close_price
+                ai_stop_loss = close_price
+                
+            # Log to DB
+            is_mock = (onnx_session is None)
+            model_ver = "mock_v1.0" if is_mock else "v1.0"
+            
+            await crud.create_strategy_log(
+                db=db,
+                user_id=user.id,
+                ticker=ticker.upper(),
+                model_version=model_ver,
+                bullish_probability=probability_score,
+                ai_entry=ai_entry,
+                ai_target=ai_target,
+                ai_stop_loss=ai_stop_loss,
+                user_entry=entry,
+                user_target=target,
+                user_stop_loss=stop_loss
+            )
+            
+            return LockInStrategyResultType(
+                success=True,
+                message=f"Successfully locked in strategy for {ticker.upper()}!"
+            )
+        except Exception as err:
+            return LockInStrategyResultType(
+                success=False,
+                message=f"Failed to lock in strategy: {str(err)}"
+            )
 
 
 # ==========================================
