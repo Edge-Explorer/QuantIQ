@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Bell, X } from 'lucide-react';
+import { Bell, X, ChevronDown } from 'lucide-react';
 
 interface Alert {
   id: string;
@@ -24,6 +24,7 @@ export default function PriceAlerts({
 }: PriceAlertsProps) {
   const [alertPrice, setAlertPrice] = useState('');
   const [alertCondition, setAlertCondition] = useState('above');
+  const [isConditionOpen, setIsConditionOpen] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,6 +34,7 @@ export default function PriceAlerts({
     try {
       await onCreateAlert(priceVal, alertCondition);
       setAlertPrice('');
+      setIsConditionOpen(false);
     } catch (err) {
       console.error('Error setting alert:', err);
     }
@@ -52,15 +54,81 @@ export default function PriceAlerts({
 
       <form className="alert-form" onSubmit={handleSubmit}>
         <div className="alert-form-row">
-          <select 
-            className="premium-select"
-            value={alertCondition} 
-            onChange={(e) => setAlertCondition(e.target.value)}
-            style={{ width: '140px', background: 'rgba(255, 255, 255, 0.04)', border: '1px solid var(--border-glass)', borderRadius: '8px', color: 'var(--text-primary)', padding: '8px 12px', fontSize: '13px' }}
-          >
-            <option value="above">Above Target</option>
-            <option value="below">Below Target</option>
-          </select>
+          {/* Custom Glassmorphic Condition Dropdown — matches AI Analyst style */}
+          <div style={{ position: 'relative', flex: 1 }}>
+            <div
+              onClick={() => setIsConditionOpen(!isConditionOpen)}
+              className="premium-select"
+              style={{
+                width: '100%',
+                padding: '8px 12px',
+                background: 'rgba(255,255,255,0.02)',
+                border: '1px solid var(--border-glass)',
+                borderRadius: '8px',
+                color: 'var(--text-primary)',
+                cursor: 'pointer',
+                fontSize: '13px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                boxSizing: 'border-box',
+                minHeight: '36px',
+                userSelect: 'none',
+              }}
+            >
+              <span>{alertCondition === 'above' ? 'Above Target' : 'Below Target'}</span>
+              <ChevronDown
+                size={14}
+                style={{
+                  color: '#94a3b8',
+                  transition: 'transform 0.25s ease',
+                  transform: isConditionOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                }}
+              />
+            </div>
+
+            {isConditionOpen && (
+              <div
+                style={{
+                  position: 'absolute',
+                  top: 'calc(100% + 6px)',
+                  left: 0,
+                  width: '100%',
+                  background: 'rgba(13, 16, 27, 0.85)',
+                  backdropFilter: 'blur(20px)',
+                  WebkitBackdropFilter: 'blur(20px)',
+                  border: '1px solid rgba(255, 255, 255, 0.08)',
+                  borderRadius: '10px',
+                  boxShadow: '0 12px 32px rgba(0, 0, 0, 0.5)',
+                  zIndex: 200,
+                  padding: '6px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '2px',
+                  boxSizing: 'border-box',
+                }}
+              >
+                {['above', 'below'].map((val) => (
+                  <div
+                    key={val}
+                    className="glass-dropdown-item"
+                    onClick={() => { setAlertCondition(val); setIsConditionOpen(false); }}
+                    style={{
+                      padding: '9px 12px',
+                      borderRadius: '7px',
+                      cursor: 'pointer',
+                      fontSize: '13px',
+                      color: alertCondition === val ? 'var(--neon-cyan)' : 'var(--text-secondary)',
+                      background: alertCondition === val ? 'rgba(0, 242, 254, 0.06)' : 'none',
+                      transition: 'all 0.15s ease',
+                    }}
+                  >
+                    {val === 'above' ? 'Above Target' : 'Below Target'}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
           
           <input 
             type="number" 
