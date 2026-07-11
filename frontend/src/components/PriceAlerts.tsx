@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Bell, X, ChevronDown } from 'lucide-react';
+import { Bell, X } from 'lucide-react';
 
 interface Alert {
   id: string;
@@ -24,7 +24,6 @@ export default function PriceAlerts({
 }: PriceAlertsProps) {
   const [alertPrice, setAlertPrice] = useState('');
   const [alertCondition, setAlertCondition] = useState('above');
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,33 +52,15 @@ export default function PriceAlerts({
 
       <form className="alert-form" onSubmit={handleSubmit}>
         <div className="alert-form-row">
-          <div className="glass-dropdown-container" style={{ minWidth: '120px' }}>
-            <button 
-              type="button"
-              className="glass-dropdown-trigger" 
-              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            >
-              <span>{alertCondition === 'above' ? 'Above Target' : 'Below Target'}</span>
-              <ChevronDown size={14} className={`arrow-icon ${isDropdownOpen ? 'open' : ''}`} />
-            </button>
-            
-            {isDropdownOpen && (
-              <div className="glass-dropdown-menu">
-                <div 
-                  className="glass-dropdown-item" 
-                  onClick={() => { setAlertCondition('above'); setIsDropdownOpen(false); }}
-                >
-                  Above Target
-                </div>
-                <div 
-                  className="glass-dropdown-item" 
-                  onClick={() => { setAlertCondition('below'); setIsDropdownOpen(false); }}
-                >
-                  Below Target
-                </div>
-              </div>
-            )}
-          </div>
+          <select 
+            className="premium-select"
+            value={alertCondition} 
+            onChange={(e) => setAlertCondition(e.target.value)}
+            style={{ width: '140px', background: 'rgba(255, 255, 255, 0.04)', border: '1px solid var(--border-glass)', borderRadius: '8px', color: 'var(--text-primary)', padding: '8px 12px', fontSize: '13px' }}
+          >
+            <option value="above">Above Target</option>
+            <option value="below">Below Target</option>
+          </select>
           
           <input 
             type="number" 
