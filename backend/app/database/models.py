@@ -47,6 +47,7 @@ class User(Base):
     alerts: Mapped[List["Alert"]] = relationship(back_populates="user", cascade="all, delete-orphan")
     transactions: Mapped[List["PaymentTransaction"]] = relationship(back_populates="user", cascade="all, delete-orphan")
     saved_strategies: Mapped[List["SavedStrategy"]] = relationship(back_populates="user", cascade="all, delete-orphan")
+    prediction_logs: Mapped[List["PredictionLog"]] = relationship(back_populates="user", cascade="all, delete-orphan")
 
 
 class PaymentTransaction(Base):
@@ -146,4 +147,34 @@ class SavedStrategy(Base):
 
     # Relationship
     user: Mapped["User"] = relationship(back_populates="saved_strategies")
+
+
+class PredictionLog(Base):
+    __tablename__ = "prediction_logs"
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    ticker: Mapped[str] = mapped_column(String(50), index=True)
+    timestamp: Mapped[datetime.datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), index=True)
+    
+    # Model configuration
+    model_version: Mapped[str] = mapped_column(String(50), default="v1.0")
+    confidence: Mapped[float] = mapped_column(Float) # probability value between 0.0 and 1.0
+    predicted_action: Mapped[str] = mapped_column(String(20)) # "BUY", "SELL", "HOLD"
+    
+    # Price boundaries
+    entry_price: Mapped[float] = mapped_column(Float)
+    target_price: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    stop_loss: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    
+    # Actual outcome values (populated later by celery worker)
+    actual_price_1h: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    actual_price_24h: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    
+    status: Mapped[str] = mapped_column(String(20), default="pending", index=True) # "pending", "completed"
+    outcome: Mapped[Optional[str]] = mapped_column(String(20), nullable=True) # "success", "failed", "neutral"
+    pnl: Mapped[Optional[float]] = mapped_column(Float, nullable=True) # percent return
+    
+    # Relationship
+    user: Mapped["User"] = relationship(back_populates="prediction_logs")
     

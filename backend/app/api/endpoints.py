@@ -401,6 +401,100 @@ async def test_email(email: str = None, delete_email: str = None, db: AsyncSessi
             "config": config_status
         }
 
+@router.get("/auth/model-metrics")
+async def get_model_metrics(db: AsyncSession = Depends(get_db)):
+    """
+    Computes real-time MLOps prediction statistics from the database.
+    """
+    from sqlalchemy import select, func, case
+    
+    # 1. Fetch total counts, completed, successful
+    total_result = await db.execute(select(func.count(models.PredictionLog.id)))
+    total_count = total_result.scalar() or 0
+    
+    completed_result = await db.execute(
+        select(func.count(models.PredictionLog.id))
+        .where(models.PredictionLog.status == "completed")
+    )
+    completed_count = completed_result.scalar() or 0
+    
+    success_result = await db.execute(
+        select(func.count(models.PredictionLog.id))
+        .where(models.PredictionLog.status == "completed")
+        .where(models.PredictionLog.outcome == "success")
+    )
+    success_count = success_result.scalar() or 0
+    
+    # Calculate general win rate
+    win_rate = (success_count / completed_count * 100.0) if completed_count > 0 else 0.0
+    
+    # 2. Calculate average PnL
+    pnl_result = await db.execute(
+        select(func.avg(models.PredictionLog.pnl))
+        .where(models.PredictionLog.status == "completed")
+    )
+    avg_pnl = pnl_result.scalar() or 0.0
+    
+    # 3. Calculate statistics grouped by model_version
+    version_stmt = (
+        select(
+            models.PredictionLog.model_version,
+            func.count(models.PredictionLog.id).label("total"),
+            func.sum(case((models.PredictionLog.outcome == "success", 1), else_=0)).label("successes"),
+            func.avg(models.PredictionLog.pnl).label("avg_pnl")
+        )
+        .where(models.PredictionLog.status == "completed")
+        .group_by(models.PredictionLog.model_version)
+    )
+    
+    version_results = await db.execute(version_stmt)
+    by_version = []
+    for row in version_results:
+        total = row.total or 0
+        successes = row.successes or 0
+        wr = (successes / total * 100.0) if total > 0 else 0.0
+        by_version.append({
+            "model_version": row.model_version,
+            "total_predictions": total,
+            "success_rate": round(wr, 2),
+            "average_pnl": round(row.avg_pnl or 0.0, 4)
+        })
+        
+    # 4. Fetch the last 15 prediction logs
+    logs_result = await db.execute(
+        select(models.PredictionLog)
+        .order_by(models.PredictionLog.timestamp.desc())
+        .limit(15)
+    )
+    logs = list(logs_result.scalars().all())
+    
+    return {
+        "summary": {
+            "total_predictions": total_count,
+            "completed_evaluations": completed_count,
+            "successful_predictions": success_count,
+            "global_win_rate_percent": round(win_rate, 2),
+            "global_average_pnl_percent": round(avg_pnl, 4)
+        },
+        "performance_by_model_version": by_version,
+        "recent_predictions": [
+            {
+                "id": str(log.id),
+                "ticker": log.ticker,
+                "timestamp": log.timestamp.isoformat(),
+                "model_version": log.model_version,
+                "confidence": round(log.confidence, 4),
+                "predicted_action": log.predicted_action,
+                "entry_price": log.entry_price,
+                "actual_price_1h": log.actual_price_1h,
+                "status": log.status,
+                "outcome": log.outcome,
+                "pnl_percent": round(log.pnl or 0.0, 4) if log.pnl else None
+            }
+            for log in logs
+        ]
+    }
+
 @router.post("/payments/webhook")
 async def razorpay_webhook(request: Request, x_razorpay_signature: str= Header(None), db: AsyncSession= Depends(get_db)):
     """

@@ -230,6 +230,29 @@ async def run_agent_chat(db: AsyncSession, user_id: uuid.UUID, prompt: str) -> d
                     p_val_clipped= min(max(float(p_val), 0.0), 1.0)
                     bullish_prob= int(p_val_clipped * 100)
                     
+                    # Log prediction to database (MLOps loop)
+                    try:
+                        close_price = float(latest.get("close", 0.0))
+                        predicted_action = "BUY" if bullish_prob >= 55 else "SELL" if bullish_prob <= 45 else "HOLD"
+                        target_price = close_price * 1.02 if predicted_action == "BUY" else close_price * 0.98 if predicted_action == "SELL" else None
+                        stop_loss = close_price * 0.99 if predicted_action == "BUY" else close_price * 1.01 if predicted_action == "SELL" else None
+                        
+                        coro = crud.create_prediction_log(
+                            db=db,
+                            user_id=user_id,
+                            ticker=ticker.upper(),
+                            model_version="v1.0",
+                            confidence=p_val_clipped,
+                            predicted_action=predicted_action,
+                            entry_price=close_price,
+                            target_price=target_price,
+                            stop_loss=stop_loss
+                        )
+                        future = asyncio.run_coroutine_threadsafe(coro, main_loop)
+                        future.result()
+                    except Exception as log_err:
+                        print(f"MLOps: Failed to log ONNX prediction to database: {log_err}")
+                    
                     agent_tool_calls_total.labels(tool_name="get_ml_prediction", status="success").inc()
                     return json.dumps({
                         "ticker": ticker.upper(),
@@ -245,6 +268,31 @@ async def run_agent_chat(db: AsyncSession, user_id: uuid.UUID, prompt: str) -> d
             else:
                 rsi= 50.0
             mock_prob= int(min(max(rsi*1.1, 10.0), 90.0))
+            
+            # Log mockup prediction to database (MLOps loop)
+            try:
+                latest = df.iloc[-1]
+                close_price = float(latest.get("close", 0.0))
+                predicted_action = "BUY" if mock_prob >= 55 else "SELL" if mock_prob <= 45 else "HOLD"
+                target_price = close_price * 1.02 if predicted_action == "BUY" else close_price * 0.98 if predicted_action == "SELL" else None
+                stop_loss = close_price * 0.99 if predicted_action == "BUY" else close_price * 1.01 if predicted_action == "SELL" else None
+                
+                coro = crud.create_prediction_log(
+                    db=db,
+                    user_id=user_id,
+                    ticker=ticker.upper(),
+                    model_version="mock_v1.0",
+                    confidence=float(mock_prob) / 100.0,
+                    predicted_action=predicted_action,
+                    entry_price=close_price,
+                    target_price=target_price,
+                    stop_loss=stop_loss
+                )
+                future = asyncio.run_coroutine_threadsafe(coro, main_loop)
+                future.result()
+            except Exception as log_err:
+                print(f"MLOps: Failed to log mock prediction to database: {log_err}")
+
             agent_tool_calls_total.labels(tool_name="get_ml_prediction", status="success").inc()
             return json.dumps({
                 "ticker": ticker.upper(),

@@ -171,10 +171,96 @@ def send_verification_email_task(email: str, code: str) -> bool:
     return send_verification_email(email, code)
 
 
+async def _async_update_prediction_outcomes() -> str:
+    """
+    Finds pending predictions that are at least 5 minutes old,
+    fetches their current price via yfinance, calculates PnL and outcome,
+    and updates their status to completed.
+    """
+    import yfinance as yf
+    from sqlalchemy import select
+    
+    async with SessionLocal() as db:
+        # Fetch pending prediction logs
+        stmt = select(models.PredictionLog).where(models.PredictionLog.status == "pending")
+        result = await db.execute(stmt)
+        pending = list(result.scalars().all())
+        
+        if not pending:
+            return "No pending predictions to update."
+            
+        now = datetime.datetime.now(datetime.timezone.utc)
+        updated_count = 0
+        
+        for pred in pending:
+            # Check if prediction is at least 5 minutes old to allow testing
+            elapsed = now - pred.timestamp
+            if elapsed < datetime.timedelta(minutes=5):
+                continue
+                
+            try:
+                # Fetch current price via yfinance
+                yf_ticker = yf.Ticker(pred.ticker)
+                # Run history to get the latest close price
+                df = await asyncio.get_event_loop().run_in_executor(
+                    None,
+                    lambda: yf_ticker.history(period="1d")
+                )
+                if df.empty or "Close" not in df.columns:
+                    print(f"MLOps: Could not retrieve price for {pred.ticker}")
+                    continue
+                    
+                current_price = float(df["Close"].iloc[-1])
+                
+                # Calculate PnL and outcome
+                pnl = 0.0
+                outcome = "neutral"
+                
+                if pred.predicted_action == "BUY":
+                    pnl = ((current_price - pred.entry_price) / pred.entry_price) * 100.0
+                    outcome = "success" if current_price > pred.entry_price else "failed"
+                elif pred.predicted_action == "SELL":
+                    # For short/sell, positive PnL when price drops
+                    pnl = ((pred.entry_price - current_price) / pred.entry_price) * 100.0
+                    outcome = "success" if current_price < pred.entry_price else "failed"
+                else:
+                    pnl = 0.0
+                    outcome = "neutral"
+                    
+                # Update record
+                pred.actual_price_1h = current_price
+                pred.actual_price_24h = current_price # fallback duplicate for simple stats
+                pred.status = "completed"
+                pred.outcome = outcome
+                pred.pnl = pnl
+                
+                db.add(pred)
+                updated_count += 1
+            except Exception as yf_err:
+                print(f"MLOps: Error updating prediction {pred.id} for {pred.ticker}: {yf_err}")
+                
+        if updated_count > 0:
+            await db.commit()
+            
+        return f"MLOps: Successfully updated {updated_count} pending predictions."
+
+
+@celery_app.task(name="tasks.update_prediction_outcomes")
+def update_prediction_outcomes() -> str:
+    """
+    Celery task run periodically (every 2 minutes) to update prediction outcomes.
+    """
+    return asyncio.run(_async_update_prediction_outcomes())
+
+
 # Configure Celery Beat Schedule
 celery_app.conf.beat_schedule = {
     "process-triggered-alerts-every-2-min": {
         "task": "tasks.process_triggered_alerts",
+        "schedule": 120.0,  # 120 seconds = 2 minutes
+    },
+    "update-prediction-outcomes-every-2-min": {
+        "task": "tasks.update_prediction_outcomes",
         "schedule": 120.0,  # 120 seconds = 2 minutes
     }
 }

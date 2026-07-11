@@ -345,3 +345,51 @@ async def get_user_saved_strategies(db: AsyncSession, user_id: uuid.UUID) -> Lis
         .order_by(models.SavedStrategy.created_at.desc())
     )
     return list(result.scalars().all())
+
+
+# ==========================================
+# MLOPS PREDICTION LOG OPERATIONS
+# ==========================================
+
+async def create_prediction_log(
+    db: AsyncSession,
+    user_id: uuid.UUID,
+    ticker: str,
+    model_version: str,
+    confidence: float,
+    predicted_action: str,
+    entry_price: float,
+    target_price: Optional[float] = None,
+    stop_loss: Optional[float] = None
+) -> models.PredictionLog:
+    db_log = models.PredictionLog(
+        user_id=user_id,
+        ticker=ticker.upper(),
+        model_version=model_version,
+        confidence=confidence,
+        predicted_action=predicted_action,
+        entry_price=entry_price,
+        target_price=target_price,
+        stop_loss=stop_loss,
+        status="pending"
+    )
+    db.add(db_log)
+    await db.commit()
+    await db.refresh(db_log)
+    return db_log
+
+async def get_pending_predictions(db: AsyncSession) -> List[models.PredictionLog]:
+    result = await db.execute(
+        select(models.PredictionLog)
+        .where(models.PredictionLog.status == "pending")
+        .order_by(models.PredictionLog.timestamp.asc())
+    )
+    return list(result.scalars().all())
+
+async def get_all_prediction_logs(db: AsyncSession, limit: int = 1000) -> List[models.PredictionLog]:
+    result = await db.execute(
+        select(models.PredictionLog)
+        .order_by(models.PredictionLog.timestamp.desc())
+        .limit(limit)
+    )
+    return list(result.scalars().all())
