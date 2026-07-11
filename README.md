@@ -16,30 +16,32 @@
 
 ## What is QuantIQ?
 
-QuantIQ is a **personal learning project** I built to deeply understand how real-world full-stack systems come together — from live data pipelines and machine learning inference to generative AI agents, WebSocket streaming, and production observability.
+QuantIQ is an AI-powered decision intelligence platform for retail investors. Instead of forcing users to switch between charts, news sites, screeners, and general-purpose LLMs, QuantIQ brings live market data, historical trends, technical indicators, machine learning predictions, and AI-assisted reasoning into a single experience. The goal is not to predict the market with certainty, but to reduce research time and provide transparent, data-backed insights that help users make more informed trading and investment decisions.
 
-It is a stock market intelligence dashboard that:
-- **Ingests live stock price ticks** from Yahoo Finance every 5 seconds.
-- **Runs a locally-trained ML model** (exported to ONNX) to forecast directional movement probability — entirely on-device, no cloud inference API.
-- **Generates structured AI analysis reports** using a multi-step ReAct reasoning agent powered by Google Gemini 2.5 Flash.
-- **Streams everything to the browser in real time** over a GraphQL WebSocket subscription.
-- **Monitors production health** via a custom Prometheus metrics endpoint scraped by Grafana Cloud.
+The platform operates on two distinct but coordinated intelligence layers:
 
-> **Built by a fresher for learning.** Everything runs on free-tier infrastructure — the only paid component is the Gemini API key, which costs a few rupees per analysis call. The goal was to see how far you can get with zero infrastructure spend while still touching every part of a real system.
+- **The AI Analyst** runs a locally-hosted ONNX model to compute a bullish probability score and then passes that score — along with live indicators and watchlist data — to a multi-step Gemini ReAct agent that produces a fully grounded, structured market report.
+- **The AI Advisor** is an interactive chat interface anchored to the same ONNX model score. It allows users to ask follow-up questions, customize their entry and exit levels, and receive context-aware guidance without losing the thread of the conversation.
+
+Both components share the same underlying machine learning pipeline. When a new model version is trained, both tools update together automatically.
+
+> **Infrastructure note:** The entire platform runs on free-tier services. The only variable cost is the Gemini API, which amounts to a few rupees per analysis call.
 
 ---
 
-## What I Learned Building This
+## Core Features
 
-This project forced me to go hands-on with concepts I had only read about:
-
-- **Event-driven architecture with Kafka** — moved from Redis Pub/Sub to Redpanda (Kafka-compatible) to understand message retention, consumer groups, and offset management.
-- **ONNX and local ML inference** — trained a scikit-learn RandomForest model offline and exported it to ONNX. The backend loads and runs it in under 5ms per request with no external API call.
-- **Agentic AI with ReAct** — instead of a single prompt, built a multi-step agent that decides what tools to call, fetches live data, and then generates a grounded report. No hallucinated numbers.
-- **Async Python at scale** — deep-dived into `asyncio`, `asyncpg`, `AIOKafkaConsumer`, and Strawberry GraphQL subscriptions running concurrently under Uvicorn.
-- **Production observability** — wrote custom Prometheus collectors for token usage, agent latency, WebSocket connections, and pipeline delay. Imported a live Grafana dashboard to visualise everything.
-- **Payments and webhooks** — integrated Razorpay with HMAC webhook verification, tiered subscription logic, and a time-limited discount system.
-- **Docker and process supervision** — containerised the entire backend (FastAPI + Celery + Redis + Redpanda + ingestion worker) under a single Supervisor config for Hugging Face Spaces deployment.
+- **Live Market Data Pipeline** — Ingests real-time stock price ticks from Yahoo Finance every 5 seconds via a Kafka-compatible Redpanda message broker.
+- **On-Device ONNX ML Inference** — A RandomForest model trained on two years of OHLCV data is exported to ONNX and runs locally inside the FastAPI process. Inference latency is under 5ms with zero cloud cost.
+- **ReAct AI Analyst Agent** — A multi-step reasoning agent powered by Google Gemini 2.5 Flash that calls typed Python tool functions to fetch watchlist data, compute technical indicators, and run the ONNX model before synthesizing a structured analysis report.
+- **Context-Aware AI Advisor Chat** — A conversational interface that loads live chart context, active indicators, and user-drawn price markers into its system prompt on each turn. It references prior conversation turns to avoid contradicting its own previous recommendations.
+- **MLOps Feedback Loop** — Every prediction made by the Analyst is logged to PostgreSQL. A Celery background task runs every two minutes, fetches current prices via Yahoo Finance, and automatically labels each prediction as a success or failure with a calculated PnL percentage.
+- **User vs. AI Strategy Tracker** — When a user locks in custom entry, target, and stop-loss levels via the Advisor, those levels are stored alongside the AI's recommended levels. The Celery worker evaluates both configurations independently, enabling a direct performance comparison over time.
+- **User Intent Analytics** — Analysis queries are logged per user. Two GraphQL queries — `recentlyAnalyzed` and `trendingTickers` — surface a personalized recently viewed list and a platform-wide trending stocks widget derived entirely from real user behavior.
+- **Live Model Diagnostics** — A REST endpoint at `/api/v1/auth/model-metrics` exposes real-time win rates, average PnL, per-model-version breakdowns, and User vs. AI strategy performance comparisons.
+- **Price Alerts and Watchlists** — Users can set price alert thresholds evaluated on every incoming tick. Notifications are dispatched via Gmail SMTP when a threshold is crossed.
+- **Production Observability** — Custom Prometheus collectors expose token usage, agent latency, WebSocket connection counts, pipeline delay, and payment events, scraped every minute by Grafana Cloud.
+- **Subscription and Payments** — A tiered credit system enforced server-side and backed by Razorpay with HMAC webhook verification.
 
 ---
 
@@ -53,6 +55,7 @@ This project forced me to go hands-on with concepts I had only read about:
                          |   - AIOKafkaProducer publish      |
                          |   - 1-min OHLCV aggregation       |
                          |   - NeonDB batch write            |
+                         |   - Price alert evaluation        |
                          +----------------------------------+
                                        |
                           Redpanda Cloud (Kafka-compatible)
@@ -65,38 +68,47 @@ This project forced me to go hands-on with concepts I had only read about:
                          |   - AIOKafkaConsumer subscriber  |
                          |   - ONNX model inference         |
                          |   - Gemini ReAct Agent           |
+                         |   - Advisor Chat endpoint        |
                          |   - Razorpay webhook handler     |
                          |   - /metrics (Prometheus)        |
+                         +----------------------------------+
+                         |  Celery + Redis                  |
+                         |   - Prediction outcome labeling  |
+                         |   - Strategy outcome comparison  |
                          +----------------------------------+
                                        |
                   +--------------------+-------------------+
                   |                                        |
          NeonDB (PostgreSQL)                    Grafana Cloud
-         - users, watchlists,                  scrapes /metrics
+         - users, watchlists                   scrapes /metrics
          - stock_history, alerts               via Prometheus
+         - prediction_logs
+         - strategy_logs
                   |
          Vercel (Frontend)
          - React 19 + Vite + TypeScript
          - GraphQL WebSocket subscription
          - Lightweight Charts candlestick
          - Real-time ticker tape
+         - AI Analyst + Advisor Chat
 ```
 
 **Data Flow:**
 
-1. `worker.py` polls Yahoo Finance via `yfinance` every 5 seconds. The ticker list is fetched dynamically from NeonDB each cycle — no hardcoded symbols.
-2. Each tick is published as a JSON message to Redpanda Cloud (`stock-ticks` topic) via `AIOKafkaProducer`.
-3. The worker also accumulates ticks in-memory and flushes 1-minute OHLCV candles to NeonDB for historical chart rendering.
-4. The FastAPI backend subscribes to the Redpanda topic via `AIOKafkaConsumer` inside a Strawberry GraphQL subscription. Each connected browser gets its own consumer group — independent per-client delivery.
-5. Price alerts are evaluated by the worker on each tick and dispatched when thresholds are breached.
-6. When a user triggers an AI report, the Gemini ReAct agent runs a multi-step loop — calling tools to fetch watchlists, compute technical indicators, and run ONNX inference — before producing a structured bullish probability score with a full markdown rationale.
-7. All metrics (HTTP stats, agent latency, token counts, WebSocket connections, payment events) are exposed at `/metrics` and scraped every minute by Grafana Cloud.
+1. `worker.py` polls Yahoo Finance every 5 seconds. The ticker list is fetched dynamically from NeonDB each cycle.
+2. Each tick is published as a JSON message to Redpanda Cloud via `AIOKafkaProducer`.
+3. The worker accumulates ticks in-memory and flushes 1-minute OHLCV candles to NeonDB.
+4. The FastAPI backend subscribes to the topic via `AIOKafkaConsumer`. Each connected browser gets its own consumer group.
+5. When the AI Analyst is triggered, the Gemini ReAct agent runs a multi-step tool loop, calls the ONNX inference helper, and logs the prediction to `prediction_logs`.
+6. When the Advisor Chat is used, it calls the same ONNX helper and loads live chart context, user markers, and conversation history into the system prompt. Locked-in strategies are persisted to `strategy_logs`.
+7. The Celery beat worker fires every 2 minutes, fetches current prices, and updates outcomes for both `prediction_logs` and `strategy_logs`.
+8. All metrics are exposed at `/metrics` and scraped every minute by Grafana Cloud.
 
 ---
 
 ## Technology Stack
 
-| Layer | Technology | Why I Used It |
+| Layer | Technology | Why |
 |---|---|---|
 | Language | Python 3.12 | Native async/await, rich ecosystem |
 | Package Manager | uv | Faster than pip, lockfile-based reproducibility |
@@ -109,6 +121,7 @@ This project forced me to go hands-on with concepts I had only read about:
 | Validation | Pydantic v2 | Fast request/response schema validation |
 | Database | NeonDB (PostgreSQL) | Free-tier serverless Postgres |
 | Message Broker | Redpanda Cloud | Free-tier Kafka-compatible broker |
+| Task Queue | Celery + Redis | Periodic MLOps labeling background tasks |
 | Market Data | yfinance | Free Yahoo Finance wrapper, no API key |
 | Technical Analysis | pandas-ta | RSI, MACD, EMA on Pandas DataFrames |
 | ML Training | scikit-learn | RandomForestClassifier for direction prediction |
@@ -129,28 +142,28 @@ This project forced me to go hands-on with concepts I had only read about:
 | Build Tool | Vite | Fast dev server and production bundler |
 | Styling | Tailwind CSS v4 | Utility-first CSS |
 | Charting | Lightweight Charts (TradingView) | GPU-accelerated candlestick rendering |
-| Backend Hosting | Hugging Face Spaces | **Free** persistent Docker runtime |
-| Frontend Hosting | Vercel | **Free** zero-config React/Vite deployment |
+| Backend Hosting | Hugging Face Spaces | Free persistent Docker runtime |
+| Frontend Hosting | Vercel | Free zero-config React/Vite deployment |
 
 ---
 
 ## Why Redpanda Instead of a Simple Timer
 
-I initially used `asyncio.sleep` loops and Redis Pub/Sub. I migrated to Redpanda (Kafka-compatible) to learn what a real message broker gives you:
+The initial implementation used `asyncio.sleep` loops and Redis Pub/Sub. The migration to Redpanda was driven by three specific requirements:
 
 1. **Message retention** — Redis Pub/Sub is fire-and-forget. Redpanda retains messages on disk; consumers can replay from any offset after a restart.
-2. **Consumer isolation** — Each browser client gets its own consumer group with an independent offset, so two users watching different tickers never interfere.
-3. **Real scalability path** — Swapping Redpanda Cloud free tier for a paid Kafka cluster means changing only the connection string. The app logic stays identical.
+2. **Consumer isolation** — Each browser client gets its own consumer group with an independent offset, so two users watching different tickers never interfere with each other's stream.
+3. **Real scalability path** — Swapping Redpanda Cloud free tier for a paid Kafka cluster requires changing only the connection string.
 
 ---
 
 ## Why ONNX for ML Inference
 
-Rather than calling a hosted inference API on every request (slow + paid), I train the model once locally with `train.py`, export it to ONNX, and load it into the FastAPI process on startup.
+Rather than calling a hosted inference API on every request, the model is trained once locally with `train.py`, exported to ONNX, and loaded into the FastAPI process on startup.
 
-- **Inference latency**: under 5ms on CPU vs 200–800ms for a remote API call.
-- **Cost**: zero per-request cost regardless of volume.
-- **No dependency**: works even if external services are down.
+- **Inference latency:** under 5ms on CPU versus 200-800ms for a remote API call.
+- **Cost:** zero per-request cost regardless of volume.
+- **Reliability:** works even if external services are unavailable.
 
 **Model details:**
 - Algorithm: RandomForestClassifier (50 estimators, max depth 6)
@@ -161,9 +174,9 @@ Rather than calling a hosted inference API on every request (slow + paid), I tra
 
 ---
 
-## The AI Agent (ReAct Pattern)
+## The AI Analyst — ReAct Agent
 
-Instead of stuffing raw data into a single prompt, the agent decides what it needs and fetches it through typed Python tool functions. This was the most interesting part to build.
+The agent runs a multi-step loop until it has sufficient context, then produces a structured JSON response: `{"bullish_probability": int, "reason": "..."}`.
 
 **Agent Tools:**
 
@@ -175,7 +188,19 @@ Instead of stuffing raw data into a single prompt, the agent decides what it nee
 | `get_user_alerts` | Retrieves the user's active price alert thresholds |
 | `create_price_alert` | Creates a new price alert for a given ticker |
 
-The agent runs a multi-step loop until it has enough context, then produces a structured JSON response: `{"bullish_probability": int, "reason": "..."}`.
+---
+
+## The AI Advisor — Contextual Chat
+
+On every message, the system prompt is dynamically constructed with the live ticker price, active indicators, user-drawn price markers, the real-time ONNX probability score, and the last 30 turns of conversation history. This allows the Advisor to cross-reference its own prior recommendations when evaluating the user's current chart markers, rather than treating each message as an independent request.
+
+---
+
+## MLOps Feedback Loop
+
+Every Analyst prediction is logged to `prediction_logs`. A Celery periodic task runs every two minutes, fetches the current price, calculates outcome and PnL, and marks the record as completed.
+
+The strategy tracker extends this to user-defined levels. When a user locks in a strategy through the Advisor, both the AI recommended levels and the user's custom levels are stored in `strategy_logs`. The worker evaluates both configurations independently on each cycle, enabling a direct AI vs. user performance comparison over time.
 
 ---
 
@@ -187,7 +212,7 @@ All metrics are exposed at `/metrics` and scraped by Grafana Cloud every minute.
 - Request rate by endpoint and status code
 - p50 / p95 / p99 response latency histograms
 
-**AI Strategy Engine** (custom collectors in `metrics.py`):
+**AI Strategy Engine** (custom collectors):
 - `quantiq_llm_tokens_total` — input/output token counts by user tier
 - `quantiq_agent_steps_total` — ReAct reasoning turns per session
 - `quantiq_agent_latency_seconds` — end-to-end agent report generation time
@@ -200,7 +225,7 @@ All metrics are exposed at `/metrics` and scraped by Grafana Cloud every minute.
 
 **Application Core** (custom collectors):
 - `quantiq_payment_callbacks_total` — Razorpay webhook events by package and status
-- `quantiq_db_pool_connections_active` — SQLAlchemy connection pool utilisation (live, via `set_function`)
+- `quantiq_db_pool_connections_active` — SQLAlchemy connection pool utilisation
 
 ---
 
@@ -208,12 +233,12 @@ All metrics are exposed at `/metrics` and scraped by Grafana Cloud every minute.
 
 | Plan | Price | AI Credits | Refresh |
 |---|---|---|---|
-| Free | ₹0 | 3 (lifetime) | No |
-| Analyst | ₹500 | 10 (one-time) | No |
-| Trader | ₹1,500 | 50 (one-time) | No |
-| Pro | ₹10,000 | 100/month | Monthly |
+| Free | Rs.0 | 3 (lifetime) | No |
+| Analyst | Rs.500 | 10 (one-time) | No |
+| Trader | Rs.1,500 | 50 (one-time) | No |
+| Pro | Rs.10,000 | 100/month | Monthly |
 
-New users see a 3-day discount offer (evaluated client-side from `created_at`). Payments go through Razorpay with HMAC webhook verification before any tier or credit update happens server-side.
+Payments go through Razorpay with HMAC webhook verification before any tier or credit update happens server-side. New users see a 3-day discount offer evaluated from the account creation timestamp.
 
 ---
 
@@ -226,20 +251,22 @@ QuantIQ/
 |   +-- app/
 |       |-- main.py                 # App entrypoint, ONNX loader, Prometheus init
 |       |-- api/
-|       |   +-- endpoints.py        # REST routes: auth, watchlist, alerts, payments
+|       |   +-- endpoints.py        # REST routes: auth, watchlist, alerts, payments, metrics
 |       |-- config/
 |       |   |-- settings.py         # Pydantic Settings: all env vars
 |       |   +-- metrics.py          # Custom Prometheus collector definitions
 |       |-- database/
 |       |   |-- session.py          # SQLAlchemy async engine + session factory
-|       |   |-- models.py           # ORM models: User, Watchlist, StockHistory, Alert
+|       |   |-- models.py           # ORM models: User, Watchlist, StockHistory,
+|       |   |                       #   Alert, PredictionLog, StrategyLog
 |       |   +-- crud.py             # Database query functions
 |       |-- graphql/
 |       |   +-- schema.py           # Strawberry GraphQL: queries, mutations, subscriptions
 |       |-- schemas/
 |       |   +-- schemas.py          # Pydantic request/response models
 |       +-- services/
-|           +-- gemini.py           # Gemini ReAct agent, tool definitions, ONNX inference
+|           |-- gemini.py           # Gemini ReAct agent, ONNX inference helper
+|           +-- celery_app.py       # Celery worker: prediction + strategy outcome labeling
 |
 |-- worker/
 |   +-- worker.py                   # yfinance polling, AIOKafkaProducer, OHLCV aggregation
@@ -247,7 +274,8 @@ QuantIQ/
 |-- frontend/                       # React 19 + Vite + TypeScript
 |   +-- src/
 |       |-- pages/                  # LandingPage, Dashboard, UpgradePage
-|       |-- components/             # StockChart, AIAnalyst, WatchlistSidebar, PriceAlerts...
+|       |-- components/             # StockChart, AIAnalyst, AdvisorChat,
+|       |                           #   WatchlistSidebar, PriceAlerts
 |       +-- App.tsx                 # Router, auth state, Google OAuth
 |
 |-- alembic/                        # Alembic migration scripts
@@ -322,7 +350,10 @@ uv run uvicorn backend.app.main:app --reload
 # 7. Start the ingestion worker
 uv run python worker/worker.py
 
-# 8. Start the frontend
+# 8. Start the Celery worker (for MLOps background tasks)
+uv run celery -A backend.app.services.celery_app worker --beat --loglevel=info
+
+# 9. Start the frontend
 cd frontend && npm install && npm run dev
 ```
 
@@ -342,11 +373,11 @@ This fetches 2 years of daily OHLCV data, computes RSI/MACD/EMA features, trains
 
 | Component | Platform | Cost |
 |---|---|---|
-| Backend + Worker | Hugging Face Spaces (Docker) | **Free** |
-| Frontend | Vercel | **Free** |
-| Database | NeonDB | **Free tier** |
-| Message Broker | Redpanda Cloud | **Free tier** |
-| Monitoring | Grafana Cloud | **Free tier** |
+| Backend + Worker | Hugging Face Spaces (Docker) | Free |
+| Frontend | Vercel | Free |
+| Database | NeonDB | Free tier |
+| Message Broker | Redpanda Cloud | Free tier |
+| Monitoring | Grafana Cloud | Free tier |
 | AI Analysis | Google Gemini API | Pay-per-use (very small) |
 
 ---
