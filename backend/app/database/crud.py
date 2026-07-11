@@ -445,3 +445,34 @@ async def get_all_strategy_logs(db: AsyncSession, limit: int = 1000) -> List[mod
         .limit(limit)
     )
     return list(result.scalars().all())
+
+
+async def get_recently_analyzed_tickers(db: AsyncSession, user_id: uuid.UUID, limit: int = 5) -> List[str]:
+    """
+    Retrieves the unique tickers that the specified user has analyzed recently.
+    """
+    from sqlalchemy import func
+    result = await db.execute(
+        select(models.PredictionLog.ticker, func.max(models.PredictionLog.timestamp).label("latest"))
+        .where(models.PredictionLog.user_id == user_id)
+        .group_by(models.PredictionLog.ticker)
+        .order_by(func.max(models.PredictionLog.timestamp).desc())
+        .limit(limit)
+    )
+    return [row.ticker for row in result]
+
+
+async def get_trending_tickers(db: AsyncSession, limit: int = 5) -> List[dict]:
+    """
+    Retrieves the globally trending tickers based on analysis query count in the last 7 days.
+    """
+    from sqlalchemy import func
+    cutoff = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=7)
+    result = await db.execute(
+        select(models.PredictionLog.ticker, func.count(models.PredictionLog.id).label("count"))
+        .where(models.PredictionLog.timestamp >= cutoff)
+        .group_by(models.PredictionLog.ticker)
+        .order_by(func.count(models.PredictionLog.id).desc())
+        .limit(limit)
+    )
+    return [{"ticker": row.ticker, "count": row.count} for row in result]

@@ -99,6 +99,11 @@ class SavedStrategyType:
     created_at: datetime.datetime
 
 @strawberry.type
+class TrendingTickerType:
+    ticker: str
+    count: int
+
+@strawberry.type
 class AuthTokenType:
     access_token: str
     token_type: str = "bearer"
@@ -346,6 +351,20 @@ class Query:
                     volume=h.volume
                 ) for h in local_data
             ]
+
+    @strawberry.field
+    async def recently_analyzed(self, info: Info, limit: Optional[int] = 5) -> List[str]:
+        """Fetch the unique tickers the authenticated user has recently analyzed."""
+        user = get_authenticated_user(info)
+        db = info.context["db"]
+        return await crud.get_recently_analyzed_tickers(db, user_id=user.id, limit=limit or 5)
+
+    @strawberry.field
+    async def trending_tickers(self, info: Info, limit: Optional[int] = 5) -> List[TrendingTickerType]:
+        """Fetch the globally trending tickers based on analysis query count in the last 7 days."""
+        db = info.context["db"]
+        results = await crud.get_trending_tickers(db, limit=limit or 5)
+        return [TrendingTickerType(ticker=r["ticker"], count=r["count"]) for r in results]
 
 
 
