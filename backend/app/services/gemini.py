@@ -96,22 +96,44 @@ def extract_json_payload(text: str) -> dict:
     raise ValueError(f"Could not extract JSON from: {text}")
 
 
-def compute_atr_levels(
+# Initialize Redis Cache client on logical DB 1
+redis_cache_client = None
+if settings.REDIS_URL:
+    try:
+        import redis
+        # Switch DB index from 0 to 1 for Cache to isolate from Celery Broker on DB 0
+        redis_cache_url = settings.REDIS_URL
+        if redis_cache_url.endswith("/0"):
+            redis_cache_url = redis_cache_url[:-2] + "/1"
+        elif not any(redis_cache_url.endswith(f"/{i}") for i in range(16)):
+            redis_cache_url = redis_cache_url.rstrip("/") + "/1"
+            
+        redis_cache_client = redis.from_url(redis_cache_url, decode_responses=True)
+        redis_cache_client.ping()
+        print(f"Redis Cache client connected successfully to DB 1 (URL: {redis_cache_url})")
+    except Exception as redis_err:
+        print(f"Warning: Failed to initialize Redis Cache client: {redis_err}")
+        redis_cache_client = None
+
+
+async def compute_atr_levels(
     history: list,
     close_price: float,
     action: str,
+    ticker: str = None,
+    db: AsyncSession = None,
     atr_multiplier: float = 1.5
 ) -> tuple:
     """
     Computes ATR-14 volatility-adjusted target and stop-loss price levels.
-
-    Uses a 1.5× ATR stop and 2:1 risk-reward target by default. Falls back
-    to fixed ±1%/±2% percentages when fewer than 14 candles are available.
+    Utilizes Redis logical DB 1 for caching and on-demand daily yfinance fallback.
 
     Args:
         history: List of StockHistory ORM objects (oldest → newest).
         close_price: The current closing price (entry price).
         action: "BUY", "SELL", or "HOLD".
+        ticker: The stock ticker (optional, for caching and daily fallback).
+        db: Async database session (optional).
         atr_multiplier: Multiplier applied to ATR for stop distance.
 
     Returns:
@@ -120,10 +142,70 @@ def compute_atr_levels(
     if action == "HOLD":
         return None, None
 
+    ticker_upper = ticker.upper() if ticker else ""
+    
+    # 1. Determine Asset Class & Smart Category Defaults (volatility parameters)
+    asset_class = "tech"
+    if ticker_upper.endswith("-USD") or ticker_upper.endswith("-BTC"):
+        asset_class = "crypto"
+    elif ticker_upper.startswith("^") or ticker_upper in ("SPY", "QQQ", "IWM", "DIA"):
+        asset_class = "index"
+
+    if asset_class == "crypto":
+        default_stop_pct = 0.04   # 4%
+        default_target_pct = 0.08 # 8%
+    elif asset_class == "index":
+        default_stop_pct = 0.0075 # 0.75%
+        default_target_pct = 0.015 # 1.5%
+    else:
+        default_stop_pct = 0.02   # 2%
+        default_target_pct = 0.04 # 4%
+
+    # 2. Redis Cache Lookup (DB 1)
+    cache_key = f"quantiq:atr:{ticker_upper}:{action}"
+    if redis_cache_client and ticker_upper:
+        try:
+            cached_data = redis_cache_client.get(cache_key)
+            if cached_data:
+                data = json.loads(cached_data)
+                return float(data["target"]), float(data["stop"])
+        except Exception as cache_err:
+            print(f"[Cache] Lookup failed for {ticker_upper}: {cache_err}")
+
+    # 3. yfinance Daily Candle Fallback (Stage 1 Fallback)
+    # If the local database backfill has failed or has under 14 candles, we actively
+    # download a lightweight 1-month daily yfinance history to calculate volatility.
+    if len(history) < 14 and ticker_upper:
+        import yfinance as yf
+        try:
+            yf_ticker = yf.Ticker(ticker_upper)
+            loop = asyncio.get_event_loop()
+            df = await loop.run_in_executor(
+                None,
+                lambda: yf_ticker.history(period="1mo", interval="1d")
+            )
+            if not df.empty:
+                history = []
+                for _, row in df.iterrows():
+                    history.append(models.StockHistory(
+                        ticker=ticker_upper,
+                        high=float(row["High"]),
+                        low=float(row["Low"]),
+                        close=float(row["Close"]),
+                        open=float(row["Open"]),
+                        volume=int(row["Volume"]) if "Volume" in row else 0
+                    ))
+        except Exception as yf_err:
+            print(f"[ATR Fallback] Failed to fetch daily yfinance candles: {yf_err}")
+
+    # 4. ATR Calculation
+    target_price = None
+    stop_loss = None
+
     if len(history) >= 14:
         try:
             import pandas as pd
-            import pandas_ta as _pta  # noqa: F401 — side-effect registers .ta accessor
+            import pandas_ta as _pta  # noqa: F401
 
             df = pd.DataFrame([{
                 "high":  float(h.high),
@@ -133,25 +215,46 @@ def compute_atr_levels(
 
             df.ta.atr(length=14, append=True)
 
-            # pandas-ta names the ATR column "ATRr_14" regardless of percent flag
             atr_col = next((c for c in df.columns if c.startswith("ATRr_")), None)
             if atr_col:
                 atr = float(df[atr_col].iloc[-1])
                 if atr > 0:
                     if action == "BUY":
                         stop_loss    = close_price - (atr_multiplier * atr)
-                        target_price = close_price + (2.0 * atr_multiplier * atr)  # 2:1 R:R
+                        target_price = close_price + (2.0 * atr_multiplier * atr)
                     else:  # SELL
                         stop_loss    = close_price + (atr_multiplier * atr)
                         target_price = close_price - (2.0 * atr_multiplier * atr)
-                    return round(target_price, 4), round(stop_loss, 4)
+                    
+                    target_price = round(target_price, 4)
+                    stop_loss = round(stop_loss, 4)
         except Exception as atr_err:
-            print(f"[ATR] Computation failed, using fixed %: {atr_err}")
+            print(f"[ATR] Computation error: {atr_err}")
 
-    # Fallback: fixed percentage when not enough candle data
-    if action == "BUY":
-        return round(close_price * 1.02, 4), round(close_price * 0.99, 4)
-    return round(close_price * 0.98, 4), round(close_price * 1.01, 4)
+    # 5. Smart Category Default Fallback (Stage 2 Fallback)
+    # If the ticker is completely new/IPO and lacks 14 days of history, we assign volatility
+    # target/stops using the specific asset class defaults instead of global hardcoded values.
+    if target_price is None or stop_loss is None:
+        if action == "BUY":
+            target_price = round(close_price * (1.0 + default_target_pct), 4)
+            stop_loss    = round(close_price * (1.0 - default_stop_pct), 4)
+        else: # SELL
+            target_price = round(close_price * (1.0 - default_target_pct), 4)
+            stop_loss    = round(close_price * (1.0 + default_stop_pct), 4)
+
+    # 6. Save to Redis Cache (10 minutes TTL)
+    if redis_cache_client and ticker_upper:
+        try:
+            redis_cache_client.setex(
+                cache_key,
+                600,  # 10 minutes
+                json.dumps({"target": target_price, "stop": stop_loss})
+            )
+        except Exception as cache_err:
+            print(f"[Cache] Save failed for {ticker_upper}: {cache_err}")
+
+    return target_price, stop_loss
+
 
 async def get_onnx_prediction(db: AsyncSession, ticker: str) -> int:
     """
@@ -316,8 +419,11 @@ async def run_agent_chat(db: AsyncSession, user_id: uuid.UUID, prompt: str) -> d
                 close_price = float(history[-1].close) if history else 0.0
 
                 predicted_action = "BUY" if bullish_prob >= 55 else "SELL" if bullish_prob <= 45 else "HOLD"
-                # ATR-adjusted levels replace the old hardcoded ±1%/±2% math
-                target_price, stop_loss = compute_atr_levels(history, close_price, predicted_action)
+                
+                # Run the async ATR calculation thread-safely
+                atr_coro = compute_atr_levels(history, close_price, predicted_action, ticker=ticker, db=db)
+                atr_future = asyncio.run_coroutine_threadsafe(atr_coro, main_loop)
+                target_price, stop_loss = atr_future.result()
                 
                 is_mock = (onnx_session is None)
                 model_ver = "mock_v1.0" if is_mock else "v1.0"

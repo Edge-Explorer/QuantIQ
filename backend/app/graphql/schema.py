@@ -577,7 +577,7 @@ class Mutation:
             predicted_action = "BUY" if probability_score >= 55 else "SELL" if probability_score <= 45 else "HOLD"
             
             # ATR-14 volatility-adjusted levels (1.5× ATR stop, 2:1 R:R target)
-            ai_target, ai_stop_loss = compute_atr_levels(history, close_price, predicted_action)
+            ai_target, ai_stop_loss = await compute_atr_levels(history, close_price, predicted_action, ticker=ticker, db=db)
             ai_entry = close_price
             # For HOLD the helper returns (None, None) — fall back to entry price
             if ai_target is None:
