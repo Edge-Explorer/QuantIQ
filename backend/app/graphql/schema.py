@@ -559,32 +559,28 @@ class Mutation:
         db = info.context["db"]
         
         # 1. Fetch latest price history to get close price and run ONNX model
-        from backend.app.services.gemini import get_onnx_prediction, onnx_session
+        from backend.app.services.gemini import get_onnx_prediction, onnx_session, compute_atr_levels
         
         try:
             # Run the real ONNX prediction helper
             probability_score = await get_onnx_prediction(db, ticker)
             
-            # Fetch latest candle to determine entry price
-            history = await crud.get_stock_history(db, ticker.upper(), limit=1)
+            # Fetch 20 candles so ATR-14 has enough lookback depth for stop-loss calculation
+            history = await crud.get_stock_history(db, ticker.upper(), limit=20)
             if not history:
                 return LockInStrategyResultType(success=False, message=f"No stock history available for {ticker}.")
             
-            close_price = float(history[0].close)
+            # History is returned oldest→newest; [-1] is the most recent candle
+            close_price = float(history[-1].close)
             
-            # Compute AI recommended levels (using same logic: +2% target, -1% stop loss for BUY)
+            # Determine signal direction from ML model confidence
             predicted_action = "BUY" if probability_score >= 55 else "SELL" if probability_score <= 45 else "HOLD"
             
-            if predicted_action == "BUY":
-                ai_entry = close_price
-                ai_target = close_price * 1.02
-                ai_stop_loss = close_price * 0.99
-            elif predicted_action == "SELL":
-                ai_entry = close_price
-                ai_target = close_price * 0.98
-                ai_stop_loss = close_price * 1.01
-            else:
-                ai_entry = close_price
+            # ATR-14 volatility-adjusted levels (1.5× ATR stop, 2:1 R:R target)
+            ai_target, ai_stop_loss = compute_atr_levels(history, close_price, predicted_action)
+            ai_entry = close_price
+            # For HOLD the helper returns (None, None) — fall back to entry price
+            if ai_target is None:
                 ai_target = close_price
                 ai_stop_loss = close_price
                 

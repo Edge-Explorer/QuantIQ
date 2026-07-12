@@ -95,6 +95,64 @@ def extract_json_payload(text: str) -> dict:
             
     raise ValueError(f"Could not extract JSON from: {text}")
 
+
+def compute_atr_levels(
+    history: list,
+    close_price: float,
+    action: str,
+    atr_multiplier: float = 1.5
+) -> tuple:
+    """
+    Computes ATR-14 volatility-adjusted target and stop-loss price levels.
+
+    Uses a 1.5× ATR stop and 2:1 risk-reward target by default. Falls back
+    to fixed ±1%/±2% percentages when fewer than 14 candles are available.
+
+    Args:
+        history: List of StockHistory ORM objects (oldest → newest).
+        close_price: The current closing price (entry price).
+        action: "BUY", "SELL", or "HOLD".
+        atr_multiplier: Multiplier applied to ATR for stop distance.
+
+    Returns:
+        (target_price, stop_loss) tuple of floats, or (None, None) for HOLD.
+    """
+    if action == "HOLD":
+        return None, None
+
+    if len(history) >= 14:
+        try:
+            import pandas as pd
+            import pandas_ta as _pta  # noqa: F401 — side-effect registers .ta accessor
+
+            df = pd.DataFrame([{
+                "high":  float(h.high),
+                "low":   float(h.low),
+                "close": float(h.close),
+            } for h in history])
+
+            df.ta.atr(length=14, append=True)
+
+            # pandas-ta names the ATR column "ATRr_14" regardless of percent flag
+            atr_col = next((c for c in df.columns if c.startswith("ATRr_")), None)
+            if atr_col:
+                atr = float(df[atr_col].iloc[-1])
+                if atr > 0:
+                    if action == "BUY":
+                        stop_loss    = close_price - (atr_multiplier * atr)
+                        target_price = close_price + (2.0 * atr_multiplier * atr)  # 2:1 R:R
+                    else:  # SELL
+                        stop_loss    = close_price + (atr_multiplier * atr)
+                        target_price = close_price - (2.0 * atr_multiplier * atr)
+                    return round(target_price, 4), round(stop_loss, 4)
+        except Exception as atr_err:
+            print(f"[ATR] Computation failed, using fixed %: {atr_err}")
+
+    # Fallback: fixed percentage when not enough candle data
+    if action == "BUY":
+        return round(close_price * 1.02, 4), round(close_price * 0.99, 4)
+    return round(close_price * 0.98, 4), round(close_price * 1.01, 4)
+
 async def get_onnx_prediction(db: AsyncSession, ticker: str) -> int:
     """
     Computes the ONNX model prediction for a given ticker.
@@ -250,14 +308,16 @@ async def run_agent_chat(db: AsyncSession, user_id: uuid.UUID, prompt: str) -> d
             
             # Log prediction to database (MLOps loop)
             try:
-                history_coro = crud.get_stock_history(db, ticker.upper(), limit=1)
+                # Fetch 20 candles so ATR-14 has enough lookback depth
+                history_coro = crud.get_stock_history(db, ticker.upper(), limit=20)
                 history_future = asyncio.run_coroutine_threadsafe(history_coro, main_loop)
                 history = history_future.result()
-                close_price = float(history[0].close) if history else 0.0
-                
+                # History is returned oldest→newest; [-1] is the most recent candle
+                close_price = float(history[-1].close) if history else 0.0
+
                 predicted_action = "BUY" if bullish_prob >= 55 else "SELL" if bullish_prob <= 45 else "HOLD"
-                target_price = close_price * 1.02 if predicted_action == "BUY" else close_price * 0.98 if predicted_action == "SELL" else None
-                stop_loss = close_price * 0.99 if predicted_action == "BUY" else close_price * 1.01 if predicted_action == "SELL" else None
+                # ATR-adjusted levels replace the old hardcoded ±1%/±2% math
+                target_price, stop_loss = compute_atr_levels(history, close_price, predicted_action)
                 
                 is_mock = (onnx_session is None)
                 model_ver = "mock_v1.0" if is_mock else "v1.0"

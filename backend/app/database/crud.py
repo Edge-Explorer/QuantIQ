@@ -1,7 +1,7 @@
 import uuid
 import datetime
 from typing import List, Optional
-from sqlalchemy import select, update, delete, and_
+from sqlalchemy import select, update, delete, and_, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from backend.app.database import models
@@ -92,28 +92,26 @@ async def deduct_user_credit(db: AsyncSession, user_id: uuid.UUID) -> bool:
 # ==========================================
 
 async def get_user_watchlist(db: AsyncSession, user_id: uuid.UUID) -> List[models.Watchlist]:
+    # Single query ordered by creation time (oldest first so sidebar shows consistent ordering)
     result = await db.execute(
         select(models.Watchlist)
         .where(models.Watchlist.user_id == user_id)
-        .order_by(models.Watchlist.created_at.desc() if hasattr(models.Watchlist, 'order_index') else None)
-    )
-    # Simple order fallback if order_index doesn't apply
-    result = await db.execute(
-        select(models.Watchlist)
-        .where(models.Watchlist.user_id == user_id)
-        .order_by(models.Watchlist.created_at.desc())
+        .order_by(models.Watchlist.created_at.asc())
     )
     return list(result.scalars().all())
 
 async def add_to_watchlist(db: AsyncSession, user_id: uuid.UUID, ticker: str) -> models.Watchlist:
     # Check if already exists to prevent duplicate entries
-    existing = await db.execute(
+    existing_result = await db.execute(
         select(models.Watchlist).where(
-            and_(models.Watchlist.user_id == user_id, models.Watchlist.ticker == ticker)
+            and_(models.Watchlist.user_id == user_id, models.Watchlist.ticker == ticker.upper())
         )
     )
-    if existing.scalars().first():
-        return existing.scalars().first()
+    # Store the scalar before the cursor is consumed; calling .first() twice on the
+    # same cursor always returns None on the second call (SQLAlchemy cursor exhaustion).
+    existing_item = existing_result.scalars().first()
+    if existing_item:
+        return existing_item
 
     db_watchlist = models.Watchlist(user_id=user_id, ticker=ticker.upper())
     db.add(db_watchlist)
