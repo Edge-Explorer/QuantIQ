@@ -6,6 +6,9 @@ import datetime
 from celery import Celery    # type: ignore
 from pathlib import Path
 from sqlalchemy import delete
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import NullPool
 
 # Add project root to Python path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
@@ -14,6 +17,24 @@ from backend.app.config.settings import settings
 from backend.app.database.session import SessionLocal
 from backend.app.database import crud, models
 from backend.app.services import gemini
+
+
+def _make_celery_session() -> AsyncSession:
+    """
+    Creates a fresh AsyncSession backed by a NullPool engine.
+    NullPool is mandatory for Celery fork workers: each asyncio.run() call
+    creates a new event loop and closes it when done. A standard connection pool
+    would try to reuse asyncpg connections that were created on the old (now closed)
+    event loop, causing 'RuntimeError: Event loop is closed'. NullPool ensures
+    every task gets a brand-new connection that lives and dies within a single
+    asyncio.run() call.
+    """
+    engine = create_async_engine(
+        settings.database_url_async,
+        poolclass=NullPool,
+    )
+    factory = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+    return factory()
 
 celery_app= Celery(
     "quantiq_tasks",
@@ -35,7 +56,7 @@ async def _async_generate_watchlist_report(user_uuid: uuid.UUID) -> str:
     Asynchronously queries the user's watchlist, pulls history,
     and calls Gemini to compile a unified portfolio report.
     """
-    async with SessionLocal() as db:
+    async with _make_celery_session() as db:
         user= await crud.get_user(db, user_uuid)
         if not user:
             return "User not found."
@@ -78,7 +99,7 @@ async def _async_cleanup_old_history(days_to_keep: int) -> str:
     """
     cutoff= datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days= days_to_keep)
     
-    async with SessionLocal() as db:
+    async with _make_celery_session() as db:
         stmt= delete(models.StockHistory).where(models.StockHistory.timestamp < cutoff)
         result= await db.execute(stmt)
         await db.commit()
@@ -109,7 +130,7 @@ async def _async_process_triggered_alerts() -> str:
     from sqlalchemy import select
     from backend.app.services.email_service import send_price_alert_email
     
-    async with SessionLocal() as db:
+    async with _make_celery_session() as db:
         stmt = (
             select(models.Alert)
             .where(models.Alert.is_active == True)
@@ -180,7 +201,7 @@ async def _async_update_prediction_outcomes() -> str:
     import yfinance as yf
     from sqlalchemy import select
     
-    async with SessionLocal() as db:
+    async with _make_celery_session() as db:
         # Fetch pending prediction logs
         stmt = select(models.PredictionLog).where(models.PredictionLog.status == "pending")
         result = await db.execute(stmt)
@@ -216,6 +237,17 @@ async def _async_update_prediction_outcomes() -> str:
                 pnl = 0.0
                 outcome = "neutral"
                 
+                # Guard: skip predictions with zero entry price (logged before
+                # history was available) to avoid ZeroDivisionError
+                if not pred.entry_price or pred.entry_price == 0.0:
+                    print(f"MLOps: Skipping prediction {pred.id} for {pred.ticker} — entry_price is 0")
+                    pred.status = "failed"
+                    pred.outcome = "failed"
+                    pred.pnl = 0.0
+                    db.add(pred)
+                    updated_count += 1
+                    continue
+
                 if pred.predicted_action == "BUY":
                     pnl = ((current_price - pred.entry_price) / pred.entry_price) * 100.0
                     outcome = "success" if current_price > pred.entry_price else "failed"
@@ -254,7 +286,7 @@ async def _async_update_strategy_outcomes() -> str:
     import yfinance as yf
     from sqlalchemy import select
     
-    async with SessionLocal() as db:
+    async with _make_celery_session() as db:
         # Fetch pending strategy logs
         stmt = select(models.StrategyLog).where(models.StrategyLog.status == "pending")
         result = await db.execute(stmt)
