@@ -153,13 +153,13 @@ async def main():
                             aggregation_buffer[t]= {"prices": [], "volumes": []}
                     
                     for ticker in dynamic_tickers:
-                        tick= await get_latest_stock_data(ticker)
+                        tick = await get_latest_stock_data(ticker)
                         
                         if tick:
                             aggregation_buffer[ticker]["prices"].append(tick["price"])
                             aggregation_buffer[ticker]["volumes"].append(tick["volume"])
                             
-                            payload= {
+                            payload = {
                                 "ticker": ticker,
                                 "price": tick["price"],
                                 "volume": tick["volume"],
@@ -168,18 +168,23 @@ async def main():
                             
                             await producer.send(KAFKA_TOPIC, payload)
                             print(f"Tick published: {ticker} = {tick['price']}")
+                        
                         if minute_changed:
                             await aggregate_and_save_candle(db, ticker, now)
+                            
+                        # Stagger calls to yfinance to prevent rate limiting
+                        await asyncio.sleep(1.5)
                 
                 if minute_changed:
                     last_minute = now.minute
             except Exception as loop_err:
                 print(f"Error in poll cycle (database/network drop): {str(loop_err)}")
 
-            # Sleep for 5 seconds (must run outside the loop and minute check)
+            # Sleep for 30 seconds (must run outside the loop and minute check)
             elapsed_time = asyncio.get_event_loop().time() - start_time
-            sleep_time = max(0.1, 5.0 - elapsed_time)
+            sleep_time = max(1.0, 30.0 - elapsed_time)
             await asyncio.sleep(sleep_time)
+
             
     except asyncio.CancelledError:
         print("Worker stopped.")
