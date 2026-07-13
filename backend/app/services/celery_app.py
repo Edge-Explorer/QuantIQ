@@ -385,7 +385,10 @@ async def _async_update_strategy_outcomes() -> str:
         if updated_count > 0:
             await db.commit()
             
-        return f"MLOps: Successfully updated {updated_count} pending strategy logs."@celery_app.task(name="tasks.update_prediction_outcomes")
+        return f"MLOps: Successfully updated {updated_count} pending strategy logs."
+
+
+@celery_app.task(name="tasks.update_prediction_outcomes")
 def update_prediction_outcomes() -> str:
     """
     Celery task run periodically (every 2 minutes) to update prediction and strategy outcomes.

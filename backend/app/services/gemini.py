@@ -345,11 +345,19 @@ async def get_onnx_prediction(db: AsyncSession, ticker: str) -> int:
         df.ta.ema(close="close", length=20, append=True)
         df["EMA_20_ratio"] = (df["close"] - df["EMA_20"]) / df["EMA_20"]
         
+        import math
+        
         latest = df.iloc[-1]
-        rsi_val = float(latest.get("RSI_14", 50.0))
-        macd_val = float(latest.get("MACD_12_26_9", 0.0))
-        macds_val = float(latest.get("MACDs_12_26_9", 0.0))
-        ema_ratio_val = float(latest.get("EMA_20_ratio", 0.0))
+        raw_rsi = latest.get("RSI_14")
+        raw_macd = latest.get("MACD_12_26_9")
+        raw_macds = latest.get("MACDs_12_26_9")
+        raw_ema_ratio = latest.get("EMA_20_ratio")
+        
+        # Clean NaN/None values to prevent ONNX session crashes or NaN output propagation
+        rsi_val = 50.0 if raw_rsi is None or math.isnan(float(raw_rsi)) else float(raw_rsi)
+        macd_val = 0.0 if raw_macd is None or math.isnan(float(raw_macd)) else float(raw_macd)
+        macds_val = 0.0 if raw_macds is None or math.isnan(float(raw_macds)) else float(raw_macds)
+        ema_ratio_val = 0.0 if raw_ema_ratio is None or math.isnan(float(raw_ema_ratio)) else float(raw_ema_ratio)
         
         input_data = np.array([[rsi_val, macd_val, macds_val, ema_ratio_val]], dtype=np.float32)
         input_name = session.get_inputs()[0].name
@@ -364,7 +372,11 @@ async def get_onnx_prediction(db: AsyncSession, ticker: str) -> int:
         else:
             p_val = prob[0][1]
             
-        p_val_clipped = min(max(float(p_val), 0.0), 1.0)
+        p_val_float = float(p_val)
+        if math.isnan(p_val_float):
+            p_val_float = 0.5
+            
+        p_val_clipped = min(max(p_val_float, 0.0), 1.0)
         return int(p_val_clipped * 100)
     except Exception as e:
         print(f"Error computing ONNX prediction helper for {ticker_upper} using '{model_type}': {e}")
