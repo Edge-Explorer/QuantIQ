@@ -268,6 +268,12 @@ class Query:
         if selected_range == "1d":
             try:
                 local_data = await crud.get_stock_history(db, ticker, limit=100)
+                
+                # Filter out flat closed candles (zero volume and zero movement) for non-crypto assets
+                is_crypto = ticker.upper().endswith("-USD") or ticker.upper().endswith("-BTC")
+                if not is_crypto:
+                    local_data = [h for h in local_data if not (h.open == h.close and h.volume == 0)]
+                
                 if len(local_data) > 10:
                     return [
                         StockHistoryType(
@@ -283,6 +289,7 @@ class Query:
                     ]
             except Exception as db_err:
                 print(f"Error querying local DB for ticker history: {db_err}")
+
 
         # Otherwise, dynamically fetch from Yahoo Finance in a thread pool
         try:

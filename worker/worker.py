@@ -98,6 +98,13 @@ async def aggregate_and_save_candle(db, ticker: str, timestamp: datetime.datetim
     else:
         volume_diff = volumes[0] if volumes else 0
 
+    # Skip flat, inactive candles when the market is closed (no price change and zero volume)
+    # This prevents the DB from filling with flat stale lines during closed hours.
+    # Crypto tickers are exempted as they trade 24/7.
+    is_crypto = ticker.endswith("-USD") or ticker.endswith("-BTC")
+    if not is_crypto and open_price == close_price == high_price == low_price and volume_diff == 0:
+        return
+
     candle = schemas.StockHistoryBase(
         ticker=ticker,
         timestamp=timestamp.replace(second=0, microsecond=0),  # Round to the minute
@@ -107,6 +114,7 @@ async def aggregate_and_save_candle(db, ticker: str, timestamp: datetime.datetim
         close=close_price,
         volume=volume_diff
     )
+
 
     try:
         await crud.insert_stock_candle(db, candle)
