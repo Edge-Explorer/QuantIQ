@@ -25,10 +25,21 @@ KAFKA_TOPIC = "stock-ticks"
 # In-memory buffer to aggregate ticks into 1-minute candles
 aggregation_buffer: Dict[str, Dict[str, List]] = {}
 
+# Global rate-limiting cooldown trackers
+COOLDOWN_UNTIL = None
+COOLDOWN_BACKOFF_SEC = 60
+
 async def get_latest_stock_data(ticker: str) -> Optional[dict]:
     """
     Fetch current stock price and cumulative volume using yfinance fast_info.
+    Respects global rate-limiting cooldown if Yahoo Finance blocks the IP.
     """
+    global COOLDOWN_UNTIL, COOLDOWN_BACKOFF_SEC
+    
+    now_utc = datetime.datetime.now(datetime.timezone.utc)
+    if COOLDOWN_UNTIL and now_utc < COOLDOWN_UNTIL:
+        return None
+
     try:
         # Run synchronous yfinance operations in a thread pool to avoid blocking the event loop
         loop = asyncio.get_event_loop()
@@ -43,14 +54,25 @@ async def get_latest_stock_data(ticker: str) -> Optional[dict]:
         if price is None or volume is None:
             return None
             
+        # Reset backoff on success
+        COOLDOWN_BACKOFF_SEC = 60
+        COOLDOWN_UNTIL = None
+        
         return {
             "price": float(price),
             "volume": int(volume),
-            "timestamp": datetime.datetime.now(datetime.timezone.utc)
+            "timestamp": now_utc
         }
     except Exception as e:
-        print(f"Error fetching data for {ticker}: {str(e)}")
+        err_str = str(e).lower()
+        if "too many requests" in err_str or "rate limit" in err_str or "429" in err_str:
+            COOLDOWN_UNTIL = now_utc + datetime.timedelta(seconds=COOLDOWN_BACKOFF_SEC)
+            print(f"Worker rate limited. Entering yfinance cooldown for {COOLDOWN_BACKOFF_SEC}s. Error: {e}")
+            COOLDOWN_BACKOFF_SEC = min(COOLDOWN_BACKOFF_SEC * 2, 900)  # Double backoff up to 15 mins
+        else:
+            print(f"Error fetching data for {ticker}: {str(e)}")
         return None
+
 
 async def aggregate_and_save_candle(db, ticker: str, timestamp: datetime.datetime):
     """
