@@ -201,69 +201,102 @@ async def get_stock_history(db: AsyncSession, ticker: str, limit: int = 100) -> 
     )
     history = list(result.scalars().all())
     
-    # If database has under 100 records for this ticker, dynamically backfill from yfinance
+    # If database has under 100 records for this ticker, dynamically backfill from yfinance.
+    # We use a 15-minute Redis-based lockout to avoid hammering yfinance when database is cold.
     if len(history) < 100:
-        import yfinance as yf
-        import asyncio
+        import redis
+        from backend.app.config.settings import settings
         
-        try:
-            # yfinance allows fetching 1m interval historical data up to 30 days. We fetch last 5 days.
-            yf_ticker = yf.Ticker(ticker.upper())
-            df = await asyncio.get_event_loop().run_in_executor(
-                None,
-                lambda: yf_ticker.history(period="5d", interval="1m")
-            )
+        # Connect to Redis logical DB 1 (same as service cache)
+        redis_client = None
+        if settings.REDIS_URL:
+            try:
+                redis_cache_url = settings.REDIS_URL
+                if redis_cache_url.endswith("/0"):
+                    redis_cache_url = redis_cache_url[:-2] + "/1"
+                elif not any(redis_cache_url.endswith(f"/{i}") for i in range(16)):
+                    redis_cache_url = redis_cache_url.rstrip("/") + "/1"
+                redis_client = redis.from_url(redis_cache_url, decode_responses=True)
+            except Exception:
+                pass
+
+        lock_key = f"quantiq:backfill_lock:{ticker.upper()}"
+        already_attempted = False
+        if redis_client:
+            try:
+                already_attempted = bool(redis_client.get(lock_key))
+            except Exception:
+                pass
+
+        if not already_attempted:
+            if redis_client:
+                try:
+                    redis_client.setex(lock_key, 900, "1")  # 15 minutes TTL
+                except Exception:
+                    pass
+
+            import yfinance as yf
+            import asyncio
             
-            if not df.empty:
-                df = df.reset_index()
+            try:
+                # yfinance allows fetching 1m interval historical data up to 30 days. We fetch last 5 days.
+                yf_ticker = yf.Ticker(ticker.upper())
+                df = await asyncio.get_event_loop().run_in_executor(
+                    None,
+                    lambda: yf_ticker.history(period="5d", interval="1m")
+                )
                 
-                # Identify timestamp column
-                time_col = None
-                for col in ['Date', 'Datetime', 'index', 'timestamp']:
-                    if col in df.columns:
-                        time_col = col
-                        break
-                        
-                if time_col:
-                    candles_to_insert = []
-                    for _, row in df.iterrows():
-                        ts = row[time_col]
-                        if hasattr(ts, 'to_pydatetime'):
-                            ts_dt = ts.to_pydatetime()
-                        elif isinstance(ts, str):
-                            ts_dt = datetime.datetime.fromisoformat(ts)
-                        else:
-                            ts_dt = ts
-                            
-                        if ts_dt.tzinfo is not None:
-                            ts_dt = ts_dt.replace(tzinfo=None)
-                            
-                        candles_to_insert.append({
-                            "ticker": ticker.upper(),
-                            "timestamp": ts_dt,
-                            "open": float(row["Open"]),
-                            "high": float(row["High"]),
-                            "low": float(row["Low"]),
-                            "close": float(row["Close"]),
-                            "volume": int(row["Volume"]) if "Volume" in row else 0
-                        })
+                if df is not None and not df.empty:
+                    df = df.reset_index()
                     
-                    if candles_to_insert:
-                        # Perform batch insert ignoring duplicates
-                        stmt = pg_insert(models.StockHistory).values(candles_to_insert)
-                        await db.execute(stmt.on_conflict_do_nothing(index_elements=["ticker", "timestamp"]))
-                        await db.commit()
+                    # Identify timestamp column
+                    time_col = None
+                    for col in ['Date', 'Datetime', 'index', 'timestamp']:
+                        if col in df.columns:
+                            time_col = col
+                            break
+                            
+                    if time_col:
+                        candles_to_insert = []
+                        for _, row in df.iterrows():
+                            ts = row[time_col]
+                            if hasattr(ts, 'to_pydatetime'):
+                                ts_dt = ts.to_pydatetime()
+                            elif isinstance(ts, str):
+                                ts_dt = datetime.datetime.fromisoformat(ts)
+                            else:
+                                ts_dt = ts
+                                
+                            if ts_dt.tzinfo is not None:
+                                ts_dt = ts_dt.replace(tzinfo=None)
+                                
+                            candles_to_insert.append({
+                                "ticker": ticker.upper(),
+                                "timestamp": ts_dt,
+                                "open": float(row["Open"]),
+                                "high": float(row["High"]),
+                                "low": float(row["Low"]),
+                                "close": float(row["Close"]),
+                                "volume": int(row["Volume"]) if "Volume" in row else 0
+                            })
                         
-                        # Re-query the database with the fully backfilled candles
-                        result = await db.execute(
-                            select(models.StockHistory)
-                            .where(models.StockHistory.ticker == ticker.upper())
-                            .order_by(models.StockHistory.timestamp.desc())
-                            .limit(limit)
-                        )
-                        history = list(result.scalars().all())
-        except Exception as e:
-            print(f"MLOps Dynamic Backfill: Failed to populate history for {ticker}: {e}")
+                        if candles_to_insert:
+                            # Perform batch insert ignoring duplicates
+                            stmt = pg_insert(models.StockHistory).values(candles_to_insert)
+                            await db.execute(stmt.on_conflict_do_nothing(index_elements=["ticker", "timestamp"]))
+                            await db.commit()
+                            
+                            # Re-query the database with the fully backfilled candles
+                            result = await db.execute(
+                                select(models.StockHistory)
+                                .where(models.StockHistory.ticker == ticker.upper())
+                                .order_by(models.StockHistory.timestamp.desc())
+                                .limit(limit)
+                            )
+                            history = list(result.scalars().all())
+            except Exception as e:
+                print(f"MLOps Dynamic Backfill: Failed to populate history for {ticker}: {e}")
+
             
     # Return in chronological order (oldest to newest) for indicators
     history.reverse()
