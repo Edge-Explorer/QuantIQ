@@ -109,13 +109,14 @@ def extract_json_payload(text: str) -> dict:
     """
     Extracts and parses a JSON payload from text.
     Handles raw JSON, markdown-wrapped JSON, and loose curly-braced substrings.
+    Allows control characters like raw newlines by passing strict=False.
     """
     import re
     cleaned = text.strip()
     
     # 1. Try direct loading
     try:
-        return json.loads(cleaned)
+        return json.loads(cleaned, strict=False)
     except json.JSONDecodeError:
         pass
         
@@ -123,7 +124,7 @@ def extract_json_payload(text: str) -> dict:
     match = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", cleaned, re.DOTALL)
     if match:
         try:
-            return json.loads(match.group(1).strip())
+            return json.loads(match.group(1).strip(), strict=False)
         except json.JSONDecodeError:
             pass
             
@@ -132,11 +133,12 @@ def extract_json_payload(text: str) -> dict:
     end_idx = cleaned.rfind("}")
     if start_idx != -1 and end_idx != -1 and end_idx > start_idx:
         try:
-            return json.loads(cleaned[start_idx:end_idx+1].strip())
+            return json.loads(cleaned[start_idx:end_idx+1].strip(), strict=False)
         except json.JSONDecodeError:
             pass
             
     raise ValueError(f"Could not extract JSON from: {text}")
+
 
 
 # Initialize Redis Cache client on logical DB 1
