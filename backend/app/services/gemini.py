@@ -605,7 +605,7 @@ async def run_agent_chat(db: AsyncSession, user_id: uuid.UUID, prompt: str) -> d
 
             agent_tool_calls_total.labels(tool_name="get_ml_prediction", status="success").inc()
             
-            is_mock = (onnx_session is None)
+            is_mock = len(onnx_sessions) == 0
             status_str = "dev_mock_mode" if is_mock else "onnx_inference"
             
             return json.dumps({
