@@ -319,27 +319,46 @@ async def get_onnx_prediction(db: AsyncSession, ticker: str) -> int:
     
     try:
         history = await crud.get_stock_history(db, ticker_upper, limit=100)
-        if not history or len(history) < 26 or session is None:
-            # Fallback mockup calculation if not enough data or session is missing
-            if history:
-                df = pd.DataFrame([{"close": h.close} for h in history])
-                if len(df) >= 14:
-                    df.ta.rsi(close="close", length=14, append=True)
-                    rsi = df.iloc[-1].get("RSI_14", 50.0)
+
+        # Build initial dataframe
+        if history and len(history) >= 26:
+            df = pd.DataFrame([{
+                "open": h.open, "high": h.high, "low": h.low,
+                "close": h.close, "volume": h.volume
+            } for h in history])
+        else:
+            # ── yfinance daily fallback for ONNX features ──
+            try:
+                import yfinance as yf
+                yf_df = yf.Ticker(ticker_upper).history(period="60d", interval="1d")
+                if yf_df is not None and len(yf_df) >= 26:
+                    df = yf_df.rename(columns={
+                        "Open": "open", "High": "high", "Low": "low",
+                        "Close": "close", "Volume": "volume"
+                    })[["open", "high", "low", "close", "volume"]].reset_index(drop=True)
+                    print(f"[ONNX] Using yfinance daily fallback for {ticker_upper} ({len(df)} rows).")
+                else:
+                    raise ValueError("yfinance returned insufficient data")
+            except Exception as yf_err:
+                print(f"[ONNX] yfinance fallback failed for {ticker_upper}: {yf_err}. Using RSI mock.")
+                if history:
+                    df_mock = pd.DataFrame([{"close": h.close} for h in history])
+                    if len(df_mock) >= 14:
+                        df_mock.ta.rsi(close="close", length=14, append=True)
+                        rsi = float(df_mock.iloc[-1].get("RSI_14", 50.0) or 50.0)
+                    else:
+                        rsi = 50.0
                 else:
                     rsi = 50.0
-            else:
-                rsi = 50.0
+                return int(min(max(rsi * 1.1, 10.0), 90.0))
+
+        # ── If session is not available, run a mock RSI-based score ──
+        if session is None:
+            df_rsi = df.copy()
+            df_rsi.ta.rsi(close="close", length=14, append=True)
+            rsi = float(df_rsi.iloc[-1].get("RSI_14", 50.0) or 50.0)
             return int(min(max(rsi * 1.1, 10.0), 90.0))
-            
-        df = pd.DataFrame([{
-            "open": h.open,
-            "high": h.high,
-            "low": h.low,
-            "close": h.close,
-            "volume": h.volume
-        } for h in history])
-        
+
         df.ta.rsi(close="close", length=14, append=True)
         df.ta.macd(close="close", fast=12, slow=26, signal=9, append=True)
         df.ta.ema(close="close", length=20, append=True)
@@ -421,6 +440,7 @@ async def run_agent_chat(db: AsyncSession, user_id: uuid.UUID, prompt: str) -> d
         """
         Retrieves the previous 100 historical stock candles for a ticker and
         calculates technical indicators (RSI, MACD, EMAs) using pandas-ta.
+        Falls back to yfinance daily data when local DB has insufficient history.
         """
         import pandas as pd
         import pandas_ta as ta
@@ -430,34 +450,69 @@ async def run_agent_chat(db: AsyncSession, user_id: uuid.UUID, prompt: str) -> d
             future = asyncio.run_coroutine_threadsafe(coro, main_loop)
             history = future.result()
 
-            if not history:
-                agent_tool_calls_total.labels(tool_name="get_stock_history_and_indicators", status="success").inc()
-                return json.dumps({"error": f"No stock history found for ticker {ticker}."})
+            ticker_upper = ticker.upper()
 
-            # Convert to DataFrame
-            df = pd.DataFrame([{
-                "open": h.open,
-                "high": h.high,
-                "low": h.low,
-                "close": h.close,
-                "volume": h.volume,
-                "timestamp": h.timestamp.isoformat()
-            } for h in history])
+            # Build dataframe from local DB rows
+            if history:
+                df = pd.DataFrame([{
+                    "open": h.open,
+                    "high": h.high,
+                    "low": h.low,
+                    "close": h.close,
+                    "volume": h.volume,
+                    "timestamp": h.timestamp.isoformat()
+                } for h in history])
+            else:
+                df = pd.DataFrame()
 
+            # ── Fallback: not enough local candles → fetch yfinance daily data ──
             if len(df) < 26:
-                # Not enough candles to compute MACD
-                latest = df.iloc[-1].to_dict()
-                latest["note"] = "Not enough candles to compute full technical indicators (minimum 26 required)."
-                agent_tool_calls_total.labels(tool_name="get_stock_history_and_indicators", status="success").inc()
-                return json.dumps(latest)
+                try:
+                    import yfinance as yf
+                    yf_ticker = yf.Ticker(ticker_upper)
+                    yf_df = yf_ticker.history(period="60d", interval="1d")
+                    if yf_df is not None and len(yf_df) >= 26:
+                        yf_df = yf_df.rename(columns={
+                            "Open": "open", "High": "high",
+                            "Low": "low", "Close": "close", "Volume": "volume"
+                        })
+                        yf_df["timestamp"] = yf_df.index.astype(str)
+                        yf_df = yf_df[["open", "high", "low", "close", "volume", "timestamp"]].reset_index(drop=True)
+                        df = yf_df
+                        data_source = "yfinance_daily_fallback"
+                        print(f"[Indicators] DB had {len(history) if history else 0} candles for {ticker_upper}, using yfinance daily fallback ({len(df)} rows).")
+                    else:
+                        if len(df) > 0:
+                            latest = df.iloc[-1].to_dict()
+                            latest["note"] = "Insufficient data from both local DB and yfinance (minimum 26 candles required)."
+                            latest["data_source"] = "local_db_partial"
+                            agent_tool_calls_total.labels(tool_name="get_stock_history_and_indicators", status="success").inc()
+                            return json.dumps(latest)
+                        else:
+                            agent_tool_calls_total.labels(tool_name="get_stock_history_and_indicators", status="success").inc()
+                            return json.dumps({"error": f"No stock history found for ticker {ticker_upper} in DB or yfinance."})
+                except Exception as yf_err:
+                    print(f"[Indicators] yfinance fallback failed for {ticker_upper}: {yf_err}")
+                    if len(df) > 0:
+                        latest = df.iloc[-1].to_dict()
+                        latest["note"] = f"Insufficient local data and yfinance fallback failed: {yf_err}"
+                        latest["data_source"] = "local_db_partial"
+                        agent_tool_calls_total.labels(tool_name="get_stock_history_and_indicators", status="success").inc()
+                        return json.dumps(latest)
+                    else:
+                        agent_tool_calls_total.labels(tool_name="get_stock_history_and_indicators", status="success").inc()
+                        return json.dumps({"error": f"No stock history found for ticker {ticker_upper}."})
+            else:
+                data_source = "local_db"
 
-            # Compute indicators
+            # ── Compute indicators on the full dataframe ──
             df.ta.rsi(close="close", length=14, append=True)
             df.ta.macd(close="close", fast=12, slow=26, signal=9, append=True)
             df.ta.ema(close="close", length=20, append=True)
-            df.ta.ema(close="close", length=20, append=True)
 
             latest = df.iloc[-1].to_dict()
+            latest["data_source"] = data_source
+            latest["candle_count"] = len(df)
             agent_tool_calls_total.labels(tool_name="get_stock_history_and_indicators", status="success").inc()
             return json.dumps(latest)
         except Exception as e:
