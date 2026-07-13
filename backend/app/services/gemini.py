@@ -600,8 +600,11 @@ async def run_agent_chat(db: AsyncSession, user_id: uuid.UUID, prompt: str) -> d
                 "Examine the requested stock and gather all necessary details using your tools. "
                 "You must refer to your machine learning predictions tool as the 'QuantIQ ML Signal Engine' "
                 "and your technical indicators tool as 'QuantIQ Technical Indicators' in your reasoning. "
-                "You must return your response in JSON format matching this schema: "
-                '{"bullish_probability": int, "reason": "string"}. '
+                "ABSOLUTE RULE: You MUST ALWAYS return your final response as a raw JSON object — "
+                "no markdown fences, no prose, no preamble. ONLY valid JSON. "
+                "Even if tools fail or data is limited, you MUST still return a JSON object. "
+                'The schema is: {"bullish_probability": int, "reason": "string"}. '
+                "If tools failed, estimate bullish_probability as 50 and explain the limitation in the reason field. "
                 "Ensure 'bullish_probability' is between 0 and 100 representing the upward price probability. "
                 "The 'reason' should be a detailed, structured, and comprehensive quantitative analysis. "
                 "Explain the technical metrics, crossover directions, and the ML Signal Engine predictions clearly. "
@@ -648,6 +651,18 @@ async def run_agent_chat(db: AsyncSession, user_id: uuid.UUID, prompt: str) -> d
         return {
             "bullish_probability": data.get("bullish_probability", 50),
             "reason": data.get("reason", "No analysis summary could be generated.")
+        }
+    except ValueError as json_err:
+        # The model returned plain text instead of JSON (can happen when tools fail)
+        # Gracefully capture the model's text and wrap it into a valid response dict
+        duration = asyncio.get_event_loop().time() - start_time
+        agent_latency_seconds.observe(duration)
+        agent_steps_total.labels(status="failed").inc(1)
+        raw_text = str(json_err).replace("Could not extract JSON from: ", "", 1)
+        print(f"Gemini returned plain text instead of JSON — wrapping gracefully. Preview: {raw_text[:120]}")
+        return {
+            "bullish_probability": 50,
+            "reason": raw_text
         }
     except Exception as e:
         duration = asyncio.get_event_loop().time() - start_time
