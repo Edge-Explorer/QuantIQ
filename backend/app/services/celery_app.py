@@ -233,18 +233,15 @@ async def _async_update_prediction_outcomes() -> str:
                 continue
                 
             try:
-                # Fetch current price via yfinance
-                yf_ticker = yf.Ticker(pred.ticker)
-                # Run history to get the latest close price
-                df = await asyncio.get_event_loop().run_in_executor(
-                    None,
-                    lambda: yf_ticker.history(period="1d")
+                # Fetch current price via shared Redis-cached yfinance helper
+                yf_df = await asyncio.get_event_loop().run_in_executor(
+                    None, gemini._fetch_yf_daily_cached, pred.ticker.upper()
                 )
-                if df.empty or "Close" not in df.columns:
+                if yf_df is None or yf_df.empty or "close" not in yf_df.columns:
                     print(f"MLOps: Could not retrieve price for {pred.ticker}")
                     continue
-                    
-                current_price = float(df["Close"].iloc[-1])
+
+                current_price = float(yf_df["close"].iloc[-1])
                 
                 # Calculate PnL and outcome
                 pnl = 0.0
@@ -318,17 +315,15 @@ async def _async_update_strategy_outcomes() -> str:
                 continue
                 
             try:
-                # Fetch current price via yfinance
-                yf_ticker = yf.Ticker(strat.ticker)
-                df = await asyncio.get_event_loop().run_in_executor(
-                    None,
-                    lambda: yf_ticker.history(period="1d")
+                # Fetch current price via shared Redis-cached yfinance helper
+                yf_df = await asyncio.get_event_loop().run_in_executor(
+                    None, gemini._fetch_yf_daily_cached, strat.ticker.upper()
                 )
-                if df.empty or "Close" not in df.columns:
+                if yf_df is None or yf_df.empty or "close" not in yf_df.columns:
                     print(f"MLOps: Could not retrieve price for {strat.ticker}")
                     continue
-                    
-                current_price = float(df["Close"].iloc[-1])
+
+                current_price = float(yf_df["close"].iloc[-1])
                 
                 # Determine action based on probability score
                 predicted_action = "BUY" if strat.bullish_probability >= 55 else "SELL" if strat.bullish_probability <= 45 else "HOLD"

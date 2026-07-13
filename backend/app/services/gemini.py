@@ -183,30 +183,40 @@ def _fetch_yf_daily_cached(ticker_upper: str, period: str = "60d") -> "pd.DataFr
         except Exception as cache_err:
             print(f"[yfinance cache] Redis read failed for {ticker_upper}: {cache_err}")
 
-    # 2. Fetch from yfinance
-    try:
-        raw = yf.Ticker(ticker_upper).history(period=period, interval="1d")
-        if raw is None or len(raw) < 26:
-            return None
-
-        raw = raw.rename(columns={
-            "Open": "open", "High": "high", "Low": "low",
-            "Close": "close", "Volume": "volume"
-        })
-        raw["timestamp"] = raw.index.astype(str)
-        df = raw[["open", "high", "low", "close", "volume", "timestamp"]].reset_index(drop=True)
-
-        # 3. Cache the result for 1 hour
-        if redis_cache_client:
-            try:
-                redis_cache_client.setex(cache_key, 3600, json.dumps(df.to_dict(orient="list")))
-            except Exception as cache_err:
-                print(f"[yfinance cache] Redis write failed for {ticker_upper}: {cache_err}")
-
-        return df
-    except Exception as e:
-        print(f"[yfinance] Failed to fetch daily data for {ticker_upper}: {e}")
+    # 2. Fetch from yfinance — retry up to 3 times on rate-limit errors
+    import time
+    raw = None
+    for attempt in range(3):
+        try:
+            raw = yf.Ticker(ticker_upper).history(period=period, interval="1d")
+            break  # success
+        except Exception as fetch_err:
+            err_str = str(fetch_err).lower()
+            if "too many requests" in err_str or "rate" in err_str or "429" in err_str:
+                wait_sec = 2 ** attempt  # 1s, 2s, 4s
+                print(f"[yfinance] Rate limited for {ticker_upper} (attempt {attempt+1}/3). Retrying in {wait_sec}s...")
+                time.sleep(wait_sec)
+            else:
+                print(f"[yfinance] Failed to fetch daily data for {ticker_upper}: {fetch_err}")
+                return None
+    if raw is None or len(raw) < 26:
         return None
+
+    raw = raw.rename(columns={
+        "Open": "open", "High": "high", "Low": "low",
+        "Close": "close", "Volume": "volume"
+    })
+    raw["timestamp"] = raw.index.astype(str)
+    df = raw[["open", "high", "low", "close", "volume", "timestamp"]].reset_index(drop=True)
+
+    # 3. Cache the result for 1 hour
+    if redis_cache_client:
+        try:
+            redis_cache_client.setex(cache_key, 3600, json.dumps(df.to_dict(orient="list")))
+        except Exception as cache_err:
+            print(f"[yfinance cache] Redis write failed for {ticker_upper}: {cache_err}")
+
+    return df
 
 
 async def compute_atr_levels(
