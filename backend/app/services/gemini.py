@@ -20,19 +20,62 @@ from backend.app.config.metrics import (
     agent_tool_calls_total
 )
 
-# Global variable to hold the ONNX inference session
-onnx_session= None
+# Global variables for ONNX inference sessions and hot-reloading metadata
+onnx_sessions = {
+    "tech": None,
+    "crypto": None,
+    "index": None
+}
+loaded_models_metadata = {}
 
-def init_onnx_session(model_path: str):
+def init_onnx_session(model_path: str, model_type: str = "tech"):
     """
-    Initializes the global ONNX runtime inference session.
+    Initializes a specific ONNX runtime inference session.
     """
-    global onnx_session
+    global onnx_sessions, loaded_models_metadata
     try:
-        onnx_session= ort.InferenceSession(model_path)
-        print(f"ONNX Model successfully loaded from {model_path}")
+        session = ort.InferenceSession(model_path)
+        onnx_sessions[model_type] = session
+        mtime = os.path.getmtime(model_path) if os.path.exists(model_path) else 0
+        loaded_models_metadata[model_type] = {
+            "path": model_path,
+            "mtime": mtime
+        }
+        print(f"ONNX model '{model_type}' successfully loaded from {model_path}")
     except Exception as e:
-        print(f"Error loading ONNX session from {model_path}: {str(e)}")
+        print(f"Error loading ONNX model '{model_type}' from {model_path}: {str(e)}")
+
+
+def get_onnx_session_for_type(model_type: str):
+    """
+    Returns the loaded ONNX session for the given model type.
+    Checks if the local model file has changed and hot-reloads it.
+    """
+    global onnx_sessions, loaded_models_metadata
+    filename = f"model_{model_type}.onnx"
+    # Look for the specialized file, or fallback to general model.onnx
+    model_path = filename if os.path.exists(filename) else "model.onnx"
+    
+    if not os.path.exists(model_path):
+        # Return whatever we loaded on startup via main.py hf_hub_download
+        return onnx_sessions.get(model_type)
+
+    try:
+        current_mtime = os.path.getmtime(model_path)
+        meta = loaded_models_metadata.get(model_type)
+        
+        if not meta or meta["path"] != model_path or meta["mtime"] != current_mtime:
+            print(f"Hot-reloading model '{model_type}' from {model_path} (mtime changed)...")
+            session = ort.InferenceSession(model_path)
+            onnx_sessions[model_type] = session
+            loaded_models_metadata[model_type] = {
+                "path": model_path,
+                "mtime": current_mtime
+            }
+    except Exception as e:
+        print(f"Error hot-reloading model '{model_type}': {e}")
+        
+    return onnx_sessions.get(model_type)
 
 # Initialize Google GenAI Client
 client = None
@@ -259,14 +302,24 @@ async def compute_atr_levels(
 async def get_onnx_prediction(db: AsyncSession, ticker: str) -> int:
     """
     Computes the ONNX model prediction for a given ticker.
+    Routes to specialized models based on asset class.
     Returns a probability score between 0 and 100.
     """
     import pandas as pd
     import pandas_ta as ta
     
+    ticker_upper = ticker.upper()
+    model_type = "tech"
+    if ticker_upper.endswith("-USD") or ticker_upper.endswith("-BTC"):
+        model_type = "crypto"
+    elif ticker_upper.startswith("^") or ticker_upper in ("SPY", "QQQ", "IWM", "DIA"):
+        model_type = "index"
+
+    session = get_onnx_session_for_type(model_type)
+    
     try:
-        history = await crud.get_stock_history(db, ticker.upper(), limit=100)
-        if not history or len(history) < 26 or onnx_session is None:
+        history = await crud.get_stock_history(db, ticker_upper, limit=100)
+        if not history or len(history) < 26 or session is None:
             # Fallback mockup calculation if not enough data or session is missing
             if history:
                 df = pd.DataFrame([{"close": h.close} for h in history])
@@ -299,8 +352,8 @@ async def get_onnx_prediction(db: AsyncSession, ticker: str) -> int:
         ema_ratio_val = float(latest.get("EMA_20_ratio", 0.0))
         
         input_data = np.array([[rsi_val, macd_val, macds_val, ema_ratio_val]], dtype=np.float32)
-        input_name = onnx_session.get_inputs()[0].name
-        label, prob = onnx_session.run(None, {input_name: input_data})
+        input_name = session.get_inputs()[0].name
+        label, prob = session.run(None, {input_name: input_data})
         
         if isinstance(prob, list) and len(prob) > 0:
             p_dict = prob[0]
@@ -314,7 +367,7 @@ async def get_onnx_prediction(db: AsyncSession, ticker: str) -> int:
         p_val_clipped = min(max(float(p_val), 0.0), 1.0)
         return int(p_val_clipped * 100)
     except Exception as e:
-        print(f"Error computing ONNX prediction helper: {e}")
+        print(f"Error computing ONNX prediction helper for {ticker_upper} using '{model_type}': {e}")
         return 50
 
 async def run_agent_chat(db: AsyncSession, user_id: uuid.UUID, prompt: str) -> dict:
@@ -425,19 +478,28 @@ async def run_agent_chat(db: AsyncSession, user_id: uuid.UUID, prompt: str) -> d
                 atr_future = asyncio.run_coroutine_threadsafe(atr_coro, main_loop)
                 target_price, stop_loss = atr_future.result()
                 
-                is_mock = (onnx_session is None)
-                model_ver = "mock_v1.0" if is_mock else "v1.0"
+                ticker_upper = ticker.upper()
+                model_type = "tech"
+                if ticker_upper.endswith("-USD") or ticker_upper.endswith("-BTC"):
+                    model_type = "crypto"
+                elif ticker_upper.startswith("^") or ticker_upper in ("SPY", "QQQ", "IWM", "DIA"):
+                    model_type = "index"
+                
+                session = get_onnx_session_for_type(model_type)
+                is_mock = (session is None)
+                model_ver = f"mock_{model_type}_v1.0" if is_mock else f"{model_type}_v1.0"
                 
                 log_coro = crud.create_prediction_log(
                     db=db,
                     user_id=user_id,
-                    ticker=ticker.upper(),
+                    ticker=ticker_upper,
                     model_version=model_ver,
                     confidence=float(bullish_prob) / 100.0,
                     predicted_action=predicted_action,
                     entry_price=close_price,
                     target_price=target_price,
-                    stop_loss=stop_loss
+                    stop_loss=stop_loss,
+                    asset_class=model_type
                 )
                 log_future = asyncio.run_coroutine_threadsafe(log_coro, main_loop)
                 log_future.result()

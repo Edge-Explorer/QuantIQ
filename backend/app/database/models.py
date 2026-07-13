@@ -175,6 +175,7 @@ class PredictionLog(Base):
     status: Mapped[str] = mapped_column(String(20), default="pending", index=True) # "pending", "completed"
     outcome: Mapped[Optional[str]] = mapped_column(String(20), nullable=True) # "success", "failed", "neutral"
     pnl: Mapped[Optional[float]] = mapped_column(Float, nullable=True) # percent return
+    asset_class: Mapped[Optional[str]] = mapped_column(String(50), nullable=True) # "crypto", "index", "tech"
     
     # Relationship
     user: Mapped["User"] = relationship(back_populates="prediction_logs")
@@ -205,6 +206,7 @@ class StrategyLog(Base):
     ai_outcome: Mapped[Optional[str]] = mapped_column(String(20), nullable=True) # "success", "failed"
     user_outcome: Mapped[Optional[str]] = mapped_column(String(20), nullable=True) # "success", "failed"
     actual_exit_price: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    asset_class: Mapped[Optional[str]] = mapped_column(String(50), nullable=True) # "crypto", "index", "tech"
 
     # Relationship
     user: Mapped["User"] = relationship(back_populates="strategy_logs")

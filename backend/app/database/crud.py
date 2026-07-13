@@ -423,7 +423,8 @@ async def create_prediction_log(
     predicted_action: str,
     entry_price: float,
     target_price: Optional[float] = None,
-    stop_loss: Optional[float] = None
+    stop_loss: Optional[float] = None,
+    asset_class: Optional[str] = None
 ) -> models.PredictionLog:
     db_log = models.PredictionLog(
         user_id=user_id,
@@ -434,6 +435,7 @@ async def create_prediction_log(
         entry_price=entry_price,
         target_price=target_price,
         stop_loss=stop_loss,
+        asset_class=asset_class,
         status="pending"
     )
     db.add(db_log)
@@ -473,7 +475,8 @@ async def create_strategy_log(
     ai_stop_loss: float,
     user_entry: float,
     user_target: float,
-    user_stop_loss: float
+    user_stop_loss: float,
+    asset_class: Optional[str] = None
 ) -> models.StrategyLog:
     db_strategy = models.StrategyLog(
         user_id=user_id,
@@ -486,6 +489,7 @@ async def create_strategy_log(
         user_entry=user_entry,
         user_target=user_target,
         user_stop_loss=user_stop_loss,
+        asset_class=asset_class,
         status="pending"
     )
     db.add(db_strategy)

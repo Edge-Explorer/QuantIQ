@@ -559,7 +559,7 @@ class Mutation:
         db = info.context["db"]
         
         # 1. Fetch latest price history to get close price and run ONNX model
-        from backend.app.services.gemini import get_onnx_prediction, onnx_session, compute_atr_levels
+        from backend.app.services.gemini import get_onnx_prediction, get_onnx_session_for_type, compute_atr_levels
         
         try:
             # Run the real ONNX prediction helper
@@ -585,13 +585,21 @@ class Mutation:
                 ai_stop_loss = close_price
                 
             # Log to DB
-            is_mock = (onnx_session is None)
-            model_ver = "mock_v1.0" if is_mock else "v1.0"
+            ticker_upper = ticker.upper()
+            model_type = "tech"
+            if ticker_upper.endswith("-USD") or ticker_upper.endswith("-BTC"):
+                model_type = "crypto"
+            elif ticker_upper.startswith("^") or ticker_upper in ("SPY", "QQQ", "IWM", "DIA"):
+                model_type = "index"
+                
+            session = get_onnx_session_for_type(model_type)
+            is_mock = (session is None)
+            model_ver = f"mock_{model_type}_v1.0" if is_mock else f"{model_type}_v1.0"
             
             await crud.create_strategy_log(
                 db=db,
                 user_id=user.id,
-                ticker=ticker.upper(),
+                ticker=ticker_upper,
                 model_version=model_ver,
                 bullish_probability=probability_score,
                 ai_entry=ai_entry,
@@ -599,7 +607,8 @@ class Mutation:
                 ai_stop_loss=ai_stop_loss,
                 user_entry=entry,
                 user_target=target,
-                user_stop_loss=stop_loss
+                user_stop_loss=stop_loss,
+                asset_class=model_type
             )
             
             return LockInStrategyResultType(

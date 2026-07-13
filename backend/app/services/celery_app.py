@@ -4,11 +4,24 @@ import uuid
 import asyncio
 import datetime
 from celery import Celery    # type: ignore
+from celery.schedules import crontab  # type: ignore
 from pathlib import Path
 from sqlalchemy import delete
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import NullPool
+
+# ML Training & Hugging Face Hub Imports
+import numpy as np
+import pandas as pd
+import pandas_ta as ta  # noqa: F401
+import yfinance as yf
+from sklearn.ensemble import RandomForestClassifier  # type: ignore
+from sklearn.model_selection import train_test_split  # type: ignore
+from skl2onnx import to_onnx  # type: ignore
+from skl2onnx.common.data_types import FloatTensorType  # type: ignore
+import onnxruntime as ort
+from huggingface_hub import HfApi  # type: ignore
 
 # Add project root to Python path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
@@ -372,10 +385,7 @@ async def _async_update_strategy_outcomes() -> str:
         if updated_count > 0:
             await db.commit()
             
-        return f"MLOps: Successfully updated {updated_count} pending strategy logs."
-
-
-@celery_app.task(name="tasks.update_prediction_outcomes")
+        return f"MLOps: Successfully updated {updated_count} pending strategy logs."@celery_app.task(name="tasks.update_prediction_outcomes")
 def update_prediction_outcomes() -> str:
     """
     Celery task run periodically (every 2 minutes) to update prediction and strategy outcomes.
@@ -383,6 +393,180 @@ def update_prediction_outcomes() -> str:
     pred_summary = asyncio.run(_async_update_prediction_outcomes())
     strat_summary = asyncio.run(_async_update_strategy_outcomes())
     return f"{pred_summary} | {strat_summary}"
+
+
+# ==========================================
+# MLOPS RETRAINING TASK & ROUTER ENGINE
+# ==========================================
+
+async def _prepare_training_data_for_tickers(tickers: list) -> pd.DataFrame:
+    """
+    Fetches 2 years of daily stock candles via yfinance and computes features.
+    """
+    all_data = []
+    for ticker in tickers:
+        try:
+            print(f"MLOps Retraining: Fetching daily data for {ticker}...")
+            yf_ticker = yf.Ticker(ticker)
+            df = await asyncio.get_event_loop().run_in_executor(
+                None,
+                lambda: yf_ticker.history(period="2y", interval="1d")
+            )
+            if df.empty or len(df) < 30:
+                continue
+                
+            if isinstance(df.columns, pd.MultiIndex):
+                df.columns = df.columns.get_level_values(0)
+                
+            df = df.copy()
+            df.ta.rsi(close="Close", length=14, append=True)
+            df.ta.macd(close="Close", fast=12, slow=26, signal=9, append=True)
+            df.ta.ema(close="Close", length=20, append=True)
+            df["EMA_20_ratio"] = (df["Close"] - df["EMA_20"]) / df["EMA_20"]
+            df["target"] = (df["Close"].shift(-1) > df["Close"]).astype(int)
+            
+            feature_cols = ["RSI_14", "MACD_12_26_9", "MACDs_12_26_9", "EMA_20_ratio"]
+            df = df.dropna(subset=feature_cols + ["target"])
+            all_data.append(df[feature_cols + ["target"]])
+        except Exception as e:
+            print(f"MLOps Retraining: Failed preparing data for {ticker}: {e}")
+            
+    if not all_data:
+        return pd.DataFrame()
+    return pd.concat(all_data, ignore_index=True)
+
+
+def _evaluate_champion_model(model_path: str, X_test, y_test) -> float:
+    """
+    Evaluates the accuracy of the current champion model on the test split.
+    """
+    if not os.path.exists(model_path):
+        return 0.0
+    try:
+        sess = ort.InferenceSession(model_path)
+        input_name = sess.get_inputs()[0].name
+        correct = 0
+        for i in range(len(X_test)):
+            sample = np.array([X_test[i]], dtype=np.float32)
+            label, prob = sess.run(None, {input_name: sample})
+            pred_label = int(label[0])
+            if pred_label == y_test[i]:
+                correct += 1
+        return float(correct) / len(X_test)
+    except Exception as e:
+        print(f"MLOps Retraining: Failed to evaluate champion model at {model_path}: {e}")
+        return 0.0
+
+
+async def _async_retrain_models() -> str:
+    """
+    Gathers tickers, classifies by asset class, fetches training data,
+    compares Champion vs Challenger model accuracy, and uploads to Hugging Face Hub.
+    """
+    from sqlalchemy import select
+    
+    print("MLOps Retraining: Querying DB for watchlisted/logged tickers...")
+    async with _make_celery_session() as db:
+        stmt_pred = select(models.PredictionLog.ticker).distinct()
+        pred_res = await db.execute(stmt_pred)
+        tickers = {row[0] for row in pred_res if row[0]}
+        
+        stmt_watch = select(models.Watchlist.ticker).distinct()
+        watch_res = await db.execute(stmt_watch)
+        tickers.update({row[0] for row in watch_res if row[0]})
+        
+    print(f"MLOps Retraining: Discovered tickers in system: {tickers}")
+    
+    # Categorize and populate default tickers to guarantee adequate training samples
+    categories = {
+        "crypto": {"BTC-USD", "ETH-USD", "SOL-USD", "ADA-USD", "DOGE-USD"},
+        "index": {"^GSPC", "^IXIC", "^NSEI", "SPY", "QQQ"},
+        "tech": {"AAPL", "TSLA", "MSFT", "GOOGL", "RELIANCE.NS", "TCS.NS", "ADANIPOWER.NS"}
+    }
+    
+    for t in tickers:
+        t_upper = t.upper()
+        if t_upper.endswith("-USD") or t_upper.endswith("-BTC"):
+            categories["crypto"].add(t_upper)
+        elif t_upper.startswith("^") or t_upper in ("SPY", "QQQ", "IWM", "DIA"):
+            categories["index"].add(t_upper)
+        else:
+            categories["tech"].add(t_upper)
+            
+    summary_results = []
+    
+    for cat, ticker_list in categories.items():
+        print(f"MLOps Retraining: Preparing '{cat}' dataset...")
+        data = await _prepare_training_data_for_tickers(list(ticker_list))
+        if data.empty:
+            summary_results.append(f"{cat}: Skipped (No training data)")
+            continue
+            
+        feature_cols = ["RSI_14", "MACD_12_26_9", "MACDs_12_26_9", "EMA_20_ratio"]
+        X = data[feature_cols].values.astype(np.float32)
+        y = data["target"].values.astype(np.int64)
+        
+        print(f"MLOps Retraining: Gathered {len(X)} total samples for '{cat}'")
+        if len(X) < 100:
+            summary_results.append(f"{cat}: Skipped (Insufficient samples: {len(X)})")
+            continue
+            
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+        
+        # 1. Evaluate Active Champion Model
+        filename = f"model_{cat}.onnx"
+        champion_path = filename if os.path.exists(filename) else "model.onnx"
+        champion_acc = _evaluate_champion_model(champion_path, X_test, y_test)
+        print(f"MLOps Retraining: Active Champion model accuracy for '{cat}': {champion_acc:.4f}")
+        
+        # 2. Train New Challenger Model
+        challenger = RandomForestClassifier(n_estimators=50, max_depth=6, random_state=42)
+        challenger.fit(X_train, y_train)
+        challenger_acc = challenger.score(X_test, y_test)
+        print(f"MLOps Retraining: New Challenger model accuracy for '{cat}': {challenger_acc:.4f}")
+        
+        # 3. Champion-Challenger Validation Check
+        # Challenger must beat Champion and be at least 50% accurate (better than coin toss)
+        if challenger_acc >= champion_acc and challenger_acc >= 0.50:
+            # Challenger wins: export to ONNX format
+            initial_type = [('float_input', FloatTensorType([None, 4]))]
+            onx = to_onnx(challenger, initial_types=initial_type, target_opset=15)
+            
+            with open(filename, "wb") as f:
+                f.write(onx.SerializeToString())
+            print(f"MLOps Retraining: Saved new Challenger model to {filename}")
+            
+            # Persist to Hugging Face Hub (survives container restarts)
+            token = os.getenv("HF_TOKEN")
+            repo_id = os.getenv("HF_MODEL_REPO", "Karan6124/quantiq-model")
+            if token:
+                try:
+                    print(f"MLOps Retraining: Uploading {filename} to HF Hub repo '{repo_id}'...")
+                    api = HfApi()
+                    api.upload_file(
+                        path_or_fileobj=filename,
+                        path_in_repo=filename,
+                        repo_id=repo_id,
+                        token=token
+                    )
+                    summary_results.append(f"{cat}: Promoted (Challenger: {challenger_acc:.4f} >= Champion: {champion_acc:.4f})")
+                except Exception as upload_err:
+                    summary_results.append(f"{cat}: Promoted Local Only (Upload failed: {upload_err})")
+            else:
+                summary_results.append(f"{cat}: Promoted Local Only (HF_TOKEN missing)")
+        else:
+            summary_results.append(f"{cat}: Kept Champion (Challenger: {challenger_acc:.4f} < Champion: {champion_acc:.4f})")
+            
+    return " | ".join(summary_results)
+
+
+@celery_app.task(name="tasks.retrain_models")
+def retrain_models() -> str:
+    """
+    Celery task run weekly (or manually) to retrain specialized models
+    on historical performance & yfinance datasets.
+    """
+    return asyncio.run(_async_retrain_models())
 
 
 # Configure Celery Beat Schedule
@@ -394,5 +578,9 @@ celery_app.conf.beat_schedule = {
     "update-prediction-outcomes-every-2-min": {
         "task": "tasks.update_prediction_outcomes",
         "schedule": 120.0,  # 120 seconds = 2 minutes
+    },
+    "retrain-models-weekly": {
+        "task": "tasks.retrain_models",
+        "schedule": crontab(minute=0, hour=0, day_of_week=0),  # Sunday midnight
     }
 }

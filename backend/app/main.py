@@ -56,26 +56,35 @@ async def metrics(username: str = Depends(authenticate_metrics)):
 
 @app.on_event("startup")
 async def startup_event():
-    repo_id= os.getenv("HF_MODEL_REPO", "Karan6124/quantiq-model")
-    filename= "model.onnx"
+    repo_id = os.getenv("HF_MODEL_REPO", "Karan6124/quantiq-model")
+    model_types = ["tech", "crypto", "index"]
     
-    print(f"Starting application: checking for ONNX model...")
-    try:
-        local_path= "model.onnx"
-        if os.path.exists(local_path):
-            print(f"Using local model found at {local_path}")
-            model_path= local_path
-        else:
-            print(f"Downloading model from Hugging Face Hub: {repo_id}...")
-            # hf_hub_download downloads the file and returns its local path
-            model_path= hf_hub_download(repo_id= repo_id, filename= filename)
-            print(f"Model download and cached at {model_path}")
-        
-        # Load model session
-        init_onnx_session(model_path)
-    except Exception as e:
-        print(f"Error loading ONNX model during startup: {str(e)}")
-        print("Backend running in dev mock fallback mode.")
+    print(f"Starting application: checking for ONNX models...")
+    for m_type in model_types:
+        filename = f"model_{m_type}.onnx"
+        try:
+            local_path = filename
+            if os.path.exists(local_path):
+                print(f"Using local model found at {local_path} for '{m_type}'")
+                init_onnx_session(local_path, m_type)
+            else:
+                print(f"Downloading model '{filename}' from Hugging Face Hub: {repo_id}...")
+                model_path = hf_hub_download(repo_id=repo_id, filename=filename)
+                init_onnx_session(model_path, m_type)
+        except Exception as e:
+            print(f"Could not load specialized model '{filename}' from HF Hub: {e}")
+            # Try to fall back to general model.onnx
+            fallback_filename = "model.onnx"
+            try:
+                if os.path.exists(fallback_filename):
+                    print(f"Falling back to local {fallback_filename} for '{m_type}'")
+                    init_onnx_session(fallback_filename, m_type)
+                else:
+                    print(f"Downloading fallback model.onnx from HF Hub for '{m_type}'...")
+                    model_path = hf_hub_download(repo_id=repo_id, filename=fallback_filename)
+                    init_onnx_session(model_path, m_type)
+            except Exception as fb_err:
+                print(f"Error loading fallback model for '{m_type}': {fb_err}")
         
 # Custom GraphQL Context Getter to inject AsyncSession and User from JWT
 async def get_graphql_context(db: AsyncSession= Depends(get_db), authorization: Optional[str]= Header(None)):
