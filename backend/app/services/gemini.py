@@ -159,6 +159,56 @@ if settings.REDIS_URL:
         redis_cache_client = None
 
 
+def _fetch_yf_daily_cached(ticker_upper: str, period: str = "60d") -> "pd.DataFrame | None":
+    """
+    Fetches daily OHLCV data for a ticker with a 1-hour Redis cache.
+    Sync-safe: call directly from sync code, or via run_in_executor from async contexts.
+    Returns a DataFrame with lowercase columns (open/high/low/close/volume/timestamp),
+    or None if yfinance fails or returns fewer than 26 rows.
+    """
+    import pandas as pd
+    import yfinance as yf
+
+    cache_key = f"quantiq:yf_daily:{ticker_upper}"
+
+    # 1. Redis cache hit (TTL = 1 hour)
+    if redis_cache_client:
+        try:
+            cached = redis_cache_client.get(cache_key)
+            if cached:
+                data = json.loads(cached)
+                df = pd.DataFrame(data)
+                if len(df) >= 26:
+                    return df
+        except Exception as cache_err:
+            print(f"[yfinance cache] Redis read failed for {ticker_upper}: {cache_err}")
+
+    # 2. Fetch from yfinance
+    try:
+        raw = yf.Ticker(ticker_upper).history(period=period, interval="1d")
+        if raw is None or len(raw) < 26:
+            return None
+
+        raw = raw.rename(columns={
+            "Open": "open", "High": "high", "Low": "low",
+            "Close": "close", "Volume": "volume"
+        })
+        raw["timestamp"] = raw.index.astype(str)
+        df = raw[["open", "high", "low", "close", "volume", "timestamp"]].reset_index(drop=True)
+
+        # 3. Cache the result for 1 hour
+        if redis_cache_client:
+            try:
+                redis_cache_client.setex(cache_key, 3600, json.dumps(df.to_dict(orient="list")))
+            except Exception as cache_err:
+                print(f"[yfinance cache] Redis write failed for {ticker_upper}: {cache_err}")
+
+        return df
+    except Exception as e:
+        print(f"[yfinance] Failed to fetch daily data for {ticker_upper}: {e}")
+        return None
+
+
 async def compute_atr_levels(
     history: list,
     close_price: float,
@@ -215,31 +265,25 @@ async def compute_atr_levels(
         except Exception as cache_err:
             print(f"[Cache] Lookup failed for {ticker_upper}: {cache_err}")
 
-    # 3. yfinance Daily Candle Fallback (Stage 1 Fallback)
-    # If the local database backfill has failed or has under 14 candles, we actively
-    # download a lightweight 1-month daily yfinance history to calculate volatility.
+    # 3. yfinance Daily Candle Fallback (Stage 1 Fallback) — uses shared Redis-cached helper
     if len(history) < 14 and ticker_upper:
-        import yfinance as yf
         try:
-            yf_ticker = yf.Ticker(ticker_upper)
             loop = asyncio.get_event_loop()
-            df = await loop.run_in_executor(
-                None,
-                lambda: yf_ticker.history(period="1mo", interval="1d")
-            )
-            if not df.empty:
+            yf_df = await loop.run_in_executor(None, _fetch_yf_daily_cached, ticker_upper)
+            if yf_df is not None and not yf_df.empty:
                 history = []
-                for _, row in df.iterrows():
+                for _, row in yf_df.iterrows():
                     history.append(models.StockHistory(
                         ticker=ticker_upper,
-                        high=float(row["High"]),
-                        low=float(row["Low"]),
-                        close=float(row["Close"]),
-                        open=float(row["Open"]),
-                        volume=int(row["Volume"]) if "Volume" in row else 0
+                        high=float(row["high"]),
+                        low=float(row["low"]),
+                        close=float(row["close"]),
+                        open=float(row["open"]),
+                        volume=int(row["volume"]) if "volume" in row else 0
                     ))
         except Exception as yf_err:
             print(f"[ATR Fallback] Failed to fetch daily yfinance candles: {yf_err}")
+
 
     # 4. ATR Calculation
     target_price = None
@@ -327,16 +371,13 @@ async def get_onnx_prediction(db: AsyncSession, ticker: str) -> int:
                 "close": h.close, "volume": h.volume
             } for h in history])
         else:
-            # ── yfinance daily fallback for ONNX features ──
+            # ── yfinance daily fallback for ONNX features — non-blocking via executor ──
             try:
-                import yfinance as yf
-                yf_df = yf.Ticker(ticker_upper).history(period="60d", interval="1d")
+                loop = asyncio.get_event_loop()
+                yf_df = await loop.run_in_executor(None, _fetch_yf_daily_cached, ticker_upper)
                 if yf_df is not None and len(yf_df) >= 26:
-                    df = yf_df.rename(columns={
-                        "Open": "open", "High": "high", "Low": "low",
-                        "Close": "close", "Volume": "volume"
-                    })[["open", "high", "low", "close", "volume"]].reset_index(drop=True)
-                    print(f"[ONNX] Using yfinance daily fallback for {ticker_upper} ({len(df)} rows).")
+                    df = yf_df[["open", "high", "low", "close", "volume"]].copy()
+                    print(f"[ONNX] Using cached yfinance daily fallback for {ticker_upper} ({len(df)} rows).")
                 else:
                     raise ValueError("yfinance returned insufficient data")
             except Exception as yf_err:
@@ -351,6 +392,7 @@ async def get_onnx_prediction(db: AsyncSession, ticker: str) -> int:
                 else:
                     rsi = 50.0
                 return int(min(max(rsi * 1.1, 10.0), 90.0))
+
 
         # ── If session is not available, run a mock RSI-based score ──
         if session is None:
@@ -465,37 +507,25 @@ async def run_agent_chat(db: AsyncSession, user_id: uuid.UUID, prompt: str) -> d
             else:
                 df = pd.DataFrame()
 
-            # ── Fallback: not enough local candles → fetch yfinance daily data ──
+            # ── Fallback: not enough local candles → use shared Redis-cached yfinance helper ──
             if len(df) < 26:
-                try:
-                    import yfinance as yf
-                    yf_ticker = yf.Ticker(ticker_upper)
-                    yf_df = yf_ticker.history(period="60d", interval="1d")
-                    if yf_df is not None and len(yf_df) >= 26:
-                        yf_df = yf_df.rename(columns={
-                            "Open": "open", "High": "high",
-                            "Low": "low", "Close": "close", "Volume": "volume"
-                        })
-                        yf_df["timestamp"] = yf_df.index.astype(str)
-                        yf_df = yf_df[["open", "high", "low", "close", "volume", "timestamp"]].reset_index(drop=True)
-                        df = yf_df
-                        data_source = "yfinance_daily_fallback"
-                        print(f"[Indicators] DB had {len(history) if history else 0} candles for {ticker_upper}, using yfinance daily fallback ({len(df)} rows).")
-                    else:
-                        if len(df) > 0:
-                            latest = df.iloc[-1].to_dict()
-                            latest["note"] = "Insufficient data from both local DB and yfinance (minimum 26 candles required)."
-                            latest["data_source"] = "local_db_partial"
-                            agent_tool_calls_total.labels(tool_name="get_stock_history_and_indicators", status="success").inc()
-                            return json.dumps(latest)
-                        else:
-                            agent_tool_calls_total.labels(tool_name="get_stock_history_and_indicators", status="success").inc()
-                            return json.dumps({"error": f"No stock history found for ticker {ticker_upper} in DB or yfinance."})
-                except Exception as yf_err:
-                    print(f"[Indicators] yfinance fallback failed for {ticker_upper}: {yf_err}")
+                yf_df = _fetch_yf_daily_cached(ticker_upper)
+                if yf_df is not None and len(yf_df) >= 26:
+                    df = yf_df
+                    data_source = "yfinance_daily_fallback"
+                    print(f"[Indicators] DB had {len(history) if history else 0} candles for {ticker_upper}, using yfinance daily fallback ({len(df)} rows).")
+                else:
+                    # Last resort: return whatever local data we have with partial indicators
                     if len(df) > 0:
+                        # Compute what we can even from sparse data
+                        if len(df) >= 14:
+                            df.ta.rsi(close="close", length=14, append=True)
+                        if len(df) >= 26:
+                            df.ta.macd(close="close", fast=12, slow=26, signal=9, append=True)
+                        if len(df) >= 2:
+                            df.ta.ema(close="close", length=min(len(df), 20), append=True)
                         latest = df.iloc[-1].to_dict()
-                        latest["note"] = f"Insufficient local data and yfinance fallback failed: {yf_err}"
+                        latest["note"] = "Limited local data; yfinance unavailable (possible rate limit). Partial indicators only."
                         latest["data_source"] = "local_db_partial"
                         agent_tool_calls_total.labels(tool_name="get_stock_history_and_indicators", status="success").inc()
                         return json.dumps(latest)
