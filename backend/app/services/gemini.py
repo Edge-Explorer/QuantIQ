@@ -375,12 +375,19 @@ async def get_onnx_prediction(db: AsyncSession, ticker: str) -> int:
         history = await crud.get_stock_history(db, ticker_upper, limit=100)
 
         # Build initial dataframe
+        has_movement = False
         if history and len(history) >= 26:
             df = pd.DataFrame([{
                 "open": h.open, "high": h.high, "low": h.low,
                 "close": h.close, "volume": h.volume
             } for h in history])
+            if df["close"].nunique() > 1:
+                has_movement = True
+
+        if history and len(history) >= 26 and has_movement:
+            pass
         else:
+
             # ── yfinance daily fallback for ONNX features — non-blocking via executor ──
             try:
                 loop = asyncio.get_event_loop()
@@ -517,8 +524,10 @@ async def run_agent_chat(db: AsyncSession, user_id: uuid.UUID, prompt: str) -> d
             else:
                 df = pd.DataFrame()
 
-            # ── Fallback: not enough local candles → use shared Redis-cached yfinance helper ──
-            if len(df) < 26:
+            # ── Fallback: not enough local candles OR flat price movement (e.g. market closed) ──
+            has_movement = len(df) > 0 and df["close"].nunique() > 1
+            if len(df) < 26 or not has_movement:
+
                 yf_df = _fetch_yf_daily_cached(ticker_upper)
                 if yf_df is not None and len(yf_df) >= 26:
                     df = yf_df
