@@ -819,9 +819,6 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
               onClick={handleOpenBook}
               title="Click to open the Book of QuantIQ"
             >
-              {/* Floating label above the stack */}
-              <span className="book-stack-label">— CLICK TO OPEN —</span>
-
               {/* Volumetric 3D stacked books pile */}
               <div className="book-pile">
 
