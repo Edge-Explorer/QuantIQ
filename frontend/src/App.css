@@ -2135,13 +2135,12 @@ input[type=number] {
   transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* Individual Book Placements (Vertical Stack along Z-axis) */
-/* Thicker books (35px to 40px) stacked sequentially */
-.book-3d.book-bottom { transform: translateZ(0px) rotateZ(-2.5deg); }
-.book-3d.book-4      { transform: translateZ(38px) rotateZ(1.8deg) translateX(-4px); }
-.book-3d.book-3      { transform: translateZ(74px) rotateZ(-1deg) translateX(3px) translateY(2px); }
-.book-3d.book-2      { transform: translateZ(109px) rotateZ(3deg) translateX(-2px) translateY(-2px); }
-.book-3d.book-top    { transform: translateZ(147px) rotateZ(-0.5deg); }
+/* Individual Book Placements (Vertical Stack along Z-axis) with Z-indexing */
+.book-3d.book-bottom { transform: translateZ(0px) rotateZ(-2.5deg); z-index: 10; }
+.book-3d.book-4      { transform: translateZ(38px) rotateZ(1.8deg) translateX(-4px); z-index: 20; }
+.book-3d.book-3      { transform: translateZ(74px) rotateZ(-1deg) translateX(3px) translateY(2px); z-index: 30; }
+.book-3d.book-2      { transform: translateZ(109px) rotateZ(3deg) translateX(-2px) translateY(-2px); z-index: 40; }
+.book-3d.book-top    { transform: translateZ(147px) rotateZ(-0.5deg); z-index: 50; }
 
 /* Hover effects (fanning out in Z-space & sliding slightly) */
 .book-stack-wrapper:hover .book-3d.book-bottom { transform: translateZ(0px) rotateZ(-4.5deg) translateX(-3px); }
@@ -2153,7 +2152,7 @@ input[type=number] {
 /* Top book flies upward + rotates open on click */
 .book-3d.book-top.is-opening {
   animation: bookFlyOpen3D 0.75s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  z-index: 50;
+  z-index: 100;
 }
 
 /* Volumetric Faces */
@@ -2170,13 +2169,41 @@ input[type=number] {
     inset -4px 0 8px rgba(0,0,0,0.5);
 }
 
-.book-face-top {
-  transform: translateZ(var(--book-thickness, 36px));
-}
-
 .book-face-bottom {
   transform: translateZ(0);
 }
+
+/* ────────── Specific Thickness Specs per Book Class ────────── */
+/* Book 5 (Bottom): 38px thick */
+.book-bottom .book-face-top { transform: translateZ(38px); }
+.book-bottom .book-face-spine { width: 38px; }
+.book-bottom .book-face-front-pages { height: 38px; }
+.book-bottom .book-face-right-pages { width: 38px; }
+
+/* Book 4: 36px thick */
+.book-4 .book-face-top { transform: translateZ(36px); }
+.book-4 .book-face-spine { width: 36px; }
+.book-4 .book-face-front-pages { height: 36px; }
+.book-4 .book-face-right-pages { width: 36px; }
+
+/* Book 3: 35px thick */
+.book-3 .book-face-top { transform: translateZ(35px); }
+.book-3 .book-face-spine { width: 35px; }
+.book-3 .book-face-front-pages { height: 35px; }
+.book-3 .book-face-right-pages { width: 35px; }
+
+/* Book 2: 38px thick */
+.book-2 .book-face-top { transform: translateZ(38px); }
+.book-2 .book-face-spine { width: 38px; }
+.book-2 .book-face-front-pages { height: 38px; }
+.book-2 .book-face-right-pages { width: 38px; }
+
+/* Book 1 (Top): 36px thick */
+.book-top .book-face-top { transform: translateZ(36px); }
+.book-top .book-face-spine { width: 36px; }
+.book-top .book-face-front-pages { height: 36px; }
+.book-top .book-face-right-pages { width: 36px; }
+/* ───────────────────────────────────────────────────────────── */
 
 /* Gold ornamental borders on top cover */
 .book-face-top::before {
@@ -2191,7 +2218,6 @@ input[type=number] {
 /* Antique leather spine */
 .book-face-spine {
   position: absolute;
-  width: var(--book-thickness, 36px);
   height: 100%;
   left: 0;
   top: 0;

@@ -828,7 +828,6 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
                   style={{
                     '--book-width': '250px',
                     '--book-height': '190px',
-                    '--book-thickness': '28px',
                     '--cover-gradient': 'linear-gradient(135deg, #18181b 0%, #27272a 45%, #09090b 100%)',
                     '--spine-gradient': 'linear-gradient(180deg, #111113 0%, #3f3f46 50%, #09090b 100%)'
                   } as React.CSSProperties}
@@ -856,7 +855,6 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
                   style={{
                     '--book-width': '242px',
                     '--book-height': '182px',
-                    '--book-thickness': '26px',
                     '--cover-gradient': 'linear-gradient(135deg, #5f2d0a 0%, #85400f 45%, #3e1b03 100%)',
                     '--spine-gradient': 'linear-gradient(180deg, #4c2204 0%, #a16207 50%, #3e1b03 100%)'
                   } as React.CSSProperties}
@@ -884,7 +882,6 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
                   style={{
                     '--book-width': '246px',
                     '--book-height': '186px',
-                    '--book-thickness': '27px',
                     '--cover-gradient': 'linear-gradient(135deg, #04382a 0%, #065f46 45%, #02241b 100%)',
                     '--spine-gradient': 'linear-gradient(180deg, #022b20 0%, #0f766e 50%, #02241b 100%)'
                   } as React.CSSProperties}
@@ -912,7 +909,6 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
                   style={{
                     '--book-width': '238px',
                     '--book-height': '178px',
-                    '--book-thickness': '30px',
                     '--cover-gradient': 'linear-gradient(135deg, #380707 0%, #7f1d1d 45%, #200303 100%)',
                     '--spine-gradient': 'linear-gradient(180deg, #2d0505 0%, #991b1b 50%, #200303 100%)'
                   } as React.CSSProperties}
@@ -940,7 +936,6 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
                   style={{
                     '--book-width': '232px',
                     '--book-height': '172px',
-                    '--book-thickness': '28px',
                     '--cover-gradient': 'linear-gradient(135deg, #090d16 0%, #1e293b 45%, #080c14 100%)',
                     '--spine-gradient': 'linear-gradient(180deg, #05080f 0%, #334155 50%, #080c14 100%)'
                   } as React.CSSProperties}
