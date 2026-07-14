@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Button } from '../components/ui/button';
-import { X, Eye, EyeOff, Lock, Mail, User, Globe } from 'lucide-react';
+import { X, Eye, EyeOff, Lock, Mail, User, Globe, BookOpen, ArrowRight, ArrowLeft } from 'lucide-react';
 import Logo from '../components/Logo';
 import LogoLoop from '../components/LogoLoop';
 import Sparkline from '../components/Sparkline';
@@ -40,6 +40,120 @@ function GithubIcon({ size = 14, className = "" }) {
 
 export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSuccess, apiUrl, user, onGoToDashboard }: LandingPageProps) {
   const [showAuthModal, setShowAuthModal] = useState(false);
+  
+  // 3D CSS Book Stack Widget States
+  const [isBookOpen, setIsBookOpen] = useState(false);
+  const [bookPage, setBookPage] = useState(1);
+  const [hoveredNode, setHoveredNode] = useState<string | null>(null);
+  
+  // Book Form States
+  const [bookName, setBookName] = useState('');
+  const [bookEmail, setBookEmail] = useState('');
+  const [bookMessage, setBookMessage] = useState('');
+  const [bookFormLoading, setBookFormLoading] = useState(false);
+  const [bookFormSuccess, setBookFormSuccess] = useState<string | null>(null);
+  const [bookFormError, setBookFormError] = useState<string | null>(null);
+
+  // Programmatic Page Turn Sound Synthesizer (Web Audio API)
+  const playPageTurnSound = () => {
+    try {
+      const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const bufferSize = audioCtx.sampleRate * 0.35; // 0.35 seconds
+      const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+      const data = buffer.getChannelData(0);
+      
+      // Fill buffer with white noise (paper texture rustle)
+      for (let i = 0; i < bufferSize; i++) {
+        data[i] = Math.random() * 2 - 1;
+      }
+      
+      const noiseSource = audioCtx.createBufferSource();
+      noiseSource.buffer = buffer;
+      
+      // Filter out high/low frequencies (bandpass around 900Hz to sound like paper rustling)
+      const filter = audioCtx.createBiquadFilter();
+      filter.type = 'bandpass';
+      filter.frequency.setValueAtTime(900, audioCtx.currentTime);
+      filter.Q.setValueAtTime(1.2, audioCtx.currentTime);
+      // Sweep the frequency down to mimic a page turning over
+      filter.frequency.exponentialRampToValueAtTime(250, audioCtx.currentTime + 0.3);
+      
+      // Volume envelope (fade-in quickly, fade-out smoothly)
+      const gainNode = audioCtx.createGain();
+      gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
+      gainNode.gain.linearRampToValueAtTime(0.06, audioCtx.currentTime + 0.04);
+      gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.33);
+      
+      // Connect nodes
+      noiseSource.connect(filter);
+      filter.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+      
+      noiseSource.start();
+      noiseSource.stop(audioCtx.currentTime + 0.35);
+    } catch (err) {
+      console.warn("Web Audio API is not supported or blocked by browser: ", err);
+    }
+  };
+
+  const handleNextPage = () => {
+    playPageTurnSound();
+    setBookPage(prev => Math.min(prev + 1, 4));
+  };
+
+  const handlePrevPage = () => {
+    playPageTurnSound();
+    setBookPage(prev => Math.max(prev - 1, 1));
+  };
+
+  const handleOpenBook = () => {
+    playPageTurnSound();
+    setIsBookOpen(true);
+    setBookPage(1);
+  };
+
+  const handleCloseBook = () => {
+    playPageTurnSound();
+    setIsBookOpen(false);
+  };
+
+  const handleBookContactSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setBookFormError(null);
+    setBookFormSuccess(null);
+    
+    if (!bookName || !bookEmail || !bookMessage) {
+      setBookFormError("All fields are required.");
+      return;
+    }
+    
+    setBookFormLoading(true);
+    try {
+      const response = await fetch(`${apiUrl}/api/v1/contact`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: bookName.trim(),
+          email: bookEmail.trim(),
+          message: bookMessage.trim()
+        })
+      });
+      
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.detail || "Message dispatch failed.");
+      }
+      
+      setBookFormSuccess("Your message was dispatched successfully!");
+      setBookName('');
+      setBookEmail('');
+      setBookMessage('');
+    } catch (err: any) {
+      setBookFormError(err.message || "Could not dispatch message.");
+    } finally {
+      setBookFormLoading(false);
+    }
+  };
   const [showReachUs, setShowReachUs] = useState(false);
   const [authMode, setAuthMode] = useState<AuthMode>('signin');
   
@@ -653,8 +767,10 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
       <main className="relative z-10 w-full flex flex-col items-center">
         
         {/* HERO SECTION */}
-        <section id="hero" className="flex flex-col justify-center items-center px-6 text-center max-w-7xl mx-auto w-full min-h-[85vh]">
-          <div className="flex flex-col items-center max-w-5xl pt-12">
+        <section id="hero" className="flex flex-col lg:flex-row justify-between items-center px-6 gap-12 max-w-7xl mx-auto w-full min-h-[90vh] py-16">
+          
+          {/* Left Column (Content) */}
+          <div className="flex flex-col items-center lg:items-start text-center lg:text-left max-w-2xl pt-8">
             {/* Heading H1 */}
             <h1 
               className="text-5xl sm:text-7xl md:text-8xl font-normal leading-[0.95] tracking-[-2.46px] text-foreground animate-fade-rise"
@@ -665,7 +781,7 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
             </h1>
 
             {/* Subtext */}
-            <p className="text-muted-foreground text-base sm:text-lg max-w-2xl mt-8 leading-relaxed animate-fade-rise-delay font-normal">
+            <p className="text-muted-foreground text-base sm:text-lg mt-8 leading-relaxed animate-fade-rise-delay font-normal">
               We're designing tools for quantitative traders, market analysts, and strategic investors. 
               Amid market noise, we build high-fidelity spaces for sharp focus and outperforming strategy.
             </p>
@@ -686,6 +802,53 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
                 Unlock Alpha
               </button>
             )}
+          </div>
+
+          {/* Right Column (3D Interactive Book Stack) */}
+          <div className="flex justify-center items-center relative w-full max-w-md lg:max-w-none pt-4 lg:pt-0 animate-fade-rise-delay">
+            <div 
+              className="book-stack-wrapper" 
+              onClick={handleOpenBook}
+              title="Click to open the Book of QuantIQ"
+            >
+              <div className="book-stack-3d">
+                {/* Book 1: Top (ML Engine - Dark Blue Theme) */}
+                <div className="book-item-3d top-book" style={{ '--cover-color': '#0d3b66' } as React.CSSProperties}>
+                  <div className="book-side-face cover-top">
+                    <div className="book-cover-badge">
+                      <span className="book-cover-title">ML Signal</span>
+                      <BookOpen className="book-cover-icon" size={24} />
+                    </div>
+                  </div>
+                  <div className="book-side-face spine"></div>
+                  <div className="book-side-face right-pages"></div>
+                </div>
+
+                {/* Book 2: Middle (Architecture Sketch - Blue Theme) */}
+                <div className="book-item-3d middle-book" style={{ '--cover-color': '#1a5f7a' } as React.CSSProperties}>
+                  <div className="book-side-face cover-top">
+                    <div className="book-cover-badge">
+                      <span className="book-cover-title">System Graph</span>
+                      <BookOpen className="book-cover-icon" style={{ color: '#00f2fe' }} size={24} />
+                    </div>
+                  </div>
+                  <div className="book-side-face spine"></div>
+                  <div className="book-side-face right-pages"></div>
+                </div>
+
+                {/* Book 3: Bottom (Developer Log - Crimson Theme) */}
+                <div className="book-item-3d bottom-book" style={{ '--cover-color': '#571818' } as React.CSSProperties}>
+                  <div className="book-side-face cover-top">
+                    <div className="book-cover-badge">
+                      <span className="book-cover-title">Dev Ledger</span>
+                      <BookOpen className="book-cover-icon" style={{ color: '#ff4d4d' }} size={24} />
+                    </div>
+                  </div>
+                  <div className="book-side-face spine"></div>
+                  <div className="book-side-face right-pages"></div>
+                </div>
+              </div>
+            </div>
           </div>
 
         </section>
@@ -1074,6 +1237,335 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
             </div>
           </div>
         </footer>
+
+      {/* 5. Aged Parchment Book Reader Modal */}
+      {isBookOpen && (
+        <div className="book-overlay-backdrop">
+          <div className="book-reader-container">
+            {/* Close button */}
+            <button className="book-close-x" onClick={handleCloseBook} aria-label="Close book">
+              <X size={28} />
+            </button>
+
+            <div className="book-pages-spread">
+              
+              {/* LEFT PAGE (Context/Chapter Title) */}
+              <div className="parchment-page-half left-page">
+                {bookPage === 1 && (
+                  <>
+                    <h3 className="ink-heading">Chapter I: The QuantIQ Saga</h3>
+                    <p className="ink-paragraph">
+                      In the silent deeps of the financial oceans, most traders get lost in the deafening roar of the market. QuantIQ was born to carve out a sanctuary of sharp focus—a premium intelligence terminal that operates on pure mathematical logic.
+                    </p>
+                    <p className="ink-paragraph">
+                      We have laid down a resilient infrastructure built to query and process stock movements with extreme accuracy. By utilizing advanced local ONNX model routing and dynamic caching, we ensure traders get high-fidelity indicators without delay or limit.
+                    </p>
+                    <p className="ink-paragraph italic mt-6" style={{ fontFamily: "'EB Garamond', serif" }}>
+                      "Amidst the chaos and noise of the market tick, truth is revealed through the silent logic of the code."
+                    </p>
+                  </>
+                )}
+
+                {bookPage === 2 && (
+                  <>
+                    <h3 className="ink-heading">Chapter II: The Horizon</h3>
+                    <p className="ink-paragraph">
+                      The roadmap ahead is carved with precision. We are expanding our tactical scope to incorporate fundamental catalysts and real-time news sentiment.
+                    </p>
+                    <p className="ink-paragraph">
+                      Our target is to build an advisor that merges macro news cycles with technical charts, providing a comprehensive, time-aware analysis for swing trading setups.
+                    </p>
+                    <div className="w-24 h-0.5 bg-[#8c2020]/20 my-6 mx-auto"></div>
+                    <p className="ink-paragraph text-center text-sm font-semibold text-[#8c2020]">
+                      Turn the page to study our core architectural engine.
+                    </p>
+                  </>
+                )}
+
+                {bookPage === 3 && (
+                  <>
+                    <h3 className="ink-heading">Chapter III: The Graph</h3>
+                    <p className="ink-paragraph">
+                      The core engine of QuantIQ is designed as an interconnected web of specialized nodes.
+                    </p>
+                    <p className="ink-paragraph">
+                      Every credit transaction, price update, indicator calculation, and LLM reasoning step flows through this diagram.
+                    </p>
+                    <p className="ink-paragraph font-semibold text-sm mt-4 text-[#8c2020]">
+                      👉 Hover over the nodes on the right page to study each component's role in the architecture.
+                    </p>
+                  </>
+                )}
+
+                {bookPage === 4 && (
+                  <>
+                    <h3 className="ink-heading">Chapter IV: The Developer's Ledger</h3>
+                    <p className="ink-paragraph">
+                      Thank you for reading the story of QuantIQ. This platform is actively maintained by Karan Shelar.
+                    </p>
+                    <p className="ink-paragraph">
+                      If you have questions about the architecture, want to collaborate on quantitative models, or have design inquiries, drop a message in the ledger on the right page.
+                    </p>
+                    <p className="ink-paragraph">
+                      The form is connected to our SMTP email dispatch server and will send a notification straight to my desk.
+                    </p>
+                  </>
+                )}
+              </div>
+
+              {/* RIGHT PAGE (Interactive Content) */}
+              <div className="parchment-page-half right-page">
+                {bookPage === 1 && (
+                  <>
+                    <h4 className="ink-subheading">Completed Achievements</h4>
+                    <div className="ink-bullet-list">
+                      <div className="ink-bullet-item">
+                        <span className="ink-bullet-bullet">✦</span>
+                        <span><strong>Dynamic Volatility Fallback</strong>: Smart category-based ATR target calculations cached inside isolated Redis DB 1.</span>
+                      </div>
+                      <div className="ink-bullet-item">
+                        <span className="ink-bullet-bullet">✦</span>
+                        <span><strong>Multi-Model ONNX Router</strong>: Specialized RandomForest classifier models for tech equities, cryptos, and market indices.</span>
+                      </div>
+                      <div className="ink-bullet-item">
+                        <span className="ink-bullet-bullet">✦</span>
+                        <span><strong>MLOps Retraining Cron</strong>: Automated weekly retraining tasks pushing challenger ONNX models directly to Hugging Face Hub.</span>
+                      </div>
+                      <div className="ink-bullet-item">
+                        <span className="ink-bullet-bullet">✦</span>
+                        <span><strong>Closed-Market safeguards</strong>: Real-time tick filters that detect flat sessions and fallback to historical trading candles.</span>
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {bookPage === 2 && (
+                  <>
+                    <h4 className="ink-subheading">Roadmap & Future Features</h4>
+                    <div className="ink-bullet-list">
+                      <div className="ink-bullet-item">
+                        <span className="ink-bullet-bullet">✓</span>
+                        <span><strong>Contextual News Sentiment</strong>: Feed Yahoo Finance news feeds to the Gemini agent to cross-reference market headlines.</span>
+                      </div>
+                      <div className="ink-bullet-item">
+                        <span className="ink-bullet-bullet">✓</span>
+                        <span><strong>Catalyst Watch</strong>: Sync next scheduled earnings dates, EPS Estimates, and Revenue consensuses.</span>
+                      </div>
+                      <div className="ink-bullet-item">
+                        <span className="ink-bullet-bullet">☐</span>
+                        <span><strong>Razorpay Subscription tiers</strong>: Commercial tier upgrades enabling unlimited strategy locks.</span>
+                      </div>
+                      <div className="ink-bullet-item">
+                        <span className="ink-bullet-bullet">☐</span>
+                        <span><strong>SMS & WhatsApp Alerts</strong>: Trigger dynamic price alert notifications straight to your phone.</span>
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {bookPage === 3 && (
+                  <div className="blueprint-container">
+                    <div className="blueprint-grid-nodes">
+                      {/* Row 1: Frontend */}
+                      <div className="blueprint-row">
+                        <div 
+                          className="sketch-node-circle"
+                          onMouseEnter={() => setHoveredNode('vercel')}
+                          onMouseLeave={() => setHoveredNode(null)}
+                        >
+                          <Globe size={22} className="text-[#204060]" />
+                          <span className="sketch-node-label">Vercel UI</span>
+                          {hoveredNode === 'vercel' && (
+                            <div className="sketch-node-desc-bubble">
+                              <strong>Vercel Client</strong>: React/TS web interface. Fetches user data, watchlist items, and renders active price candles.
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="text-[#5a5246] text-[10px] font-bold">⬇ (GraphQL HTTP & WS)</div>
+
+                      {/* Row 2: API Gateway */}
+                      <div className="blueprint-row">
+                        <div 
+                          className="sketch-node-circle"
+                          onMouseEnter={() => setHoveredNode('fastapi')}
+                          onMouseLeave={() => setHoveredNode(null)}
+                        >
+                          <span className="font-bold text-lg text-[#204060] font-serif">API</span>
+                          <span className="sketch-node-label">FastAPI</span>
+                          {hoveredNode === 'fastapi' && (
+                            <div className="sketch-node-desc-bubble">
+                              <strong>FastAPI Server</strong>: Deployed on HF Spaces. Validates credits, opens WebSocket tickers, and initiates agent requests.
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="text-[#5a5246] text-[10px] font-bold">⬇ (Orchestration)</div>
+
+                      {/* Row 3: Central Processing */}
+                      <div className="blueprint-row gap-4">
+                        <div 
+                          className="sketch-node-circle"
+                          onMouseEnter={() => setHoveredNode('gemini')}
+                          onMouseLeave={() => setHoveredNode(null)}
+                        >
+                          <span className="font-bold text-lg text-[#204060] font-serif">AI</span>
+                          <span className="sketch-node-label">Gemini ReAct</span>
+                          {hoveredNode === 'gemini' && (
+                            <div className="sketch-node-desc-bubble">
+                              <strong>Gemini ReAct Agent</strong>: Coordinates analysis using tool calling (news, indicators, and ML forecasts) to write swing strategy guides.
+                            </div>
+                          )}
+                        </div>
+
+                        <div 
+                          className="sketch-node-circle"
+                          onMouseEnter={() => setHoveredNode('onnx')}
+                          onMouseLeave={() => setHoveredNode(null)}
+                        >
+                          <span className="font-bold text-lg text-[#204060] font-serif">ML</span>
+                          <span className="sketch-node-label">ONNX Engine</span>
+                          {hoveredNode === 'onnx' && (
+                            <div className="sketch-node-desc-bubble">
+                              <strong>ONNX Model Router</strong>: Evaluates target indicators against Random Forest models to yield live upward probabilities.
+                            </div>
+                          )}
+                        </div>
+
+                        <div 
+                          className="sketch-node-circle"
+                          onMouseEnter={() => setHoveredNode('redis')}
+                          onMouseLeave={() => setHoveredNode(null)}
+                        >
+                          <span className="font-bold text-lg text-[#204060] font-serif">Cache</span>
+                          <span className="sketch-node-label">Redis DB</span>
+                          {hoveredNode === 'redis' && (
+                            <div className="sketch-node-desc-bubble">
+                              <strong>Redis Cache</strong>: DB 1 isolates yfinance daily indicator caches. DB 0 manages Celery tasks.
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="text-[#5a5246] text-[10px] font-bold">⬇ (Database)</div>
+
+                      {/* Row 4: Database */}
+                      <div className="blueprint-row">
+                        <div 
+                          className="sketch-node-circle"
+                          onMouseEnter={() => setHoveredNode('postgres')}
+                          onMouseLeave={() => setHoveredNode(null)}
+                        >
+                          <SiPostgresql size={22} className="text-[#204060]" />
+                          <span className="sketch-node-label">Neon DB</span>
+                          {hoveredNode === 'postgres' && (
+                            <div className="sketch-node-desc-bubble">
+                              <strong>Neon DB</strong>: Cloud Postgres database hosting user account data, watchlists, triggers, and prediction outcomes.
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {bookPage === 4 && (
+                  <div className="flex flex-col h-full justify-between">
+                    <form onSubmit={handleBookContactSubmit} className="ink-form">
+                      {bookFormError && (
+                        <div className="text-red-600 text-xs font-semibold text-center bg-red-100 p-2 rounded">
+                          {bookFormError}
+                        </div>
+                      )}
+                      {bookFormSuccess && (
+                        <div className="text-emerald-700 text-xs font-semibold text-center bg-emerald-100 p-2 rounded">
+                          {bookFormSuccess}
+                        </div>
+                      )}
+                      
+                      <div className="ink-form-group">
+                        <label className="ink-form-label">Your Name</label>
+                        <input 
+                          type="text" 
+                          className="ink-form-input" 
+                          value={bookName}
+                          onChange={(e) => setBookName(e.target.value)}
+                          required 
+                        />
+                      </div>
+                      
+                      <div className="ink-form-group">
+                        <label className="ink-form-label">Email Address</label>
+                        <input 
+                          type="email" 
+                          className="ink-form-input" 
+                          value={bookEmail}
+                          onChange={(e) => setBookEmail(e.target.value)}
+                          required 
+                        />
+                      </div>
+                      
+                      <div className="ink-form-group">
+                        <label className="ink-form-label">Ledger Entry (Message)</label>
+                        <textarea 
+                          className="ink-form-textarea" 
+                          value={bookMessage}
+                          onChange={(e) => setBookMessage(e.target.value)}
+                          required
+                        />
+                      </div>
+                      
+                      <button type="submit" className="ink-submit-button" disabled={bookFormLoading}>
+                        {bookFormLoading ? "Writing to Ledger..." : "Sign the Ledger"}
+                      </button>
+                    </form>
+
+                    <div className="flex flex-col gap-2 mt-4">
+                      <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Connect directly:</span>
+                      <div className="ink-socials-grid">
+                        <a 
+                          href="https://www.linkedin.com/in/karan-shelar-779381343/" 
+                          target="_blank" 
+                          rel="noopener noreferrer" 
+                          className="ink-social-btn"
+                        >
+                          <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style={{ width: '16px', height: '16px' }}>
+                            <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/>
+                          </svg>
+                          LinkedIn
+                        </a>
+                        <a 
+                          href="https://github.com/Edge-Explorer" 
+                          target="_blank" 
+                          rel="noopener noreferrer" 
+                          className="ink-social-btn"
+                        >
+                          <GithubIcon size={16} />
+                          GitHub
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* BOOK NAVIGATION BUTTONS */}
+              {bookPage > 1 && (
+                <button className="book-page-turn-btn prev-btn" onClick={handlePrevPage}>
+                  <ArrowLeft size={18} /> Prev Chapter
+                </button>
+              )}
+              {bookPage < 4 && (
+                <button className="book-page-turn-btn next-btn" onClick={handleNextPage}>
+                  Next Chapter <ArrowRight size={18} />
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       </main>
 

@@ -2086,3 +2086,532 @@ input[type=number] {
     transform: translateY(0);
   }
 }
+
+/* ==========================================
+   3D BOOK STACK & PARCHMENT WIDGET STYLES
+   ========================================== */
+
+/* ─── 3D Closed Stack ─────────────────────── */
+.book-stack-wrapper {
+  position: relative;
+  width: 280px;
+  height: 320px;
+  perspective: 1200px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.book-stack-3d {
+  position: relative;
+  width: 220px;
+  height: 280px;
+  transform-style: preserve-3d;
+  transform: rotateX(50deg) rotateY(0deg) rotateZ(-35deg);
+  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.book-stack-wrapper:hover .book-stack-3d {
+  transform: rotateX(45deg) rotateY(0deg) rotateZ(-25deg) translateY(-15px);
+}
+
+.book-item-3d {
+  position: absolute;
+  width: 100%;
+  height: 45px;
+  transform-style: preserve-3d;
+  transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Book 1 (Top) */
+.book-item-3d.top-book {
+  bottom: 80px;
+  z-index: 3;
+}
+.book-stack-wrapper:hover .book-item-3d.top-book {
+  transform: translateZ(25px) translateY(-10px);
+}
+
+/* Book 2 (Middle) */
+.book-item-3d.middle-book {
+  bottom: 40px;
+  z-index: 2;
+}
+.book-stack-wrapper:hover .book-item-3d.middle-book {
+  transform: translateZ(10px) rotateZ(-5deg);
+}
+
+/* Book 3 (Bottom) */
+.book-item-3d.bottom-book {
+  bottom: 0px;
+  z-index: 1;
+}
+.book-stack-wrapper:hover .book-item-3d.bottom-book {
+  transform: translateZ(-5px) rotateZ(3deg);
+}
+
+/* Book sheets 3D mapping */
+.book-side-face {
+  position: absolute;
+  background-color: var(--cover-color);
+  border-radius: 3px;
+  box-shadow: inset 0 0 10px rgba(0,0,0,0.4);
+}
+
+.book-side-face.cover-top {
+  width: 200px;
+  height: 260px;
+  transform: rotateX(0deg) translateZ(22.5px);
+  background: linear-gradient(135deg, var(--cover-color), rgba(0,0,0,0.2) 80%);
+  border: 1px solid rgba(255,255,255,0.1);
+  box-shadow: 5px 10px 20px rgba(0,0,0,0.5), inset 0 0 8px rgba(255,255,255,0.2);
+}
+
+.book-side-face.spine {
+  width: 200px;
+  height: 45px;
+  transform: rotateX(-90deg) translateZ(130px);
+  background: linear-gradient(90deg, var(--cover-color) 85%, rgba(255,255,255,0.1) 95%);
+  box-shadow: inset 0 2px 5px rgba(255,255,255,0.2), inset 0 -2px 5px rgba(0,0,0,0.4);
+}
+
+.book-side-face.right-pages {
+  width: 45px;
+  height: 260px;
+  transform: rotateY(90deg) translateZ(177.5px) rotateX(90deg);
+  background: repeating-linear-gradient(90deg, #f4ecd8 0px, #f4ecd8 2px, #e8dfc7 3px, #f4ecd8 4px);
+  border: 1px solid #dcd3b8;
+  box-shadow: inset 10px 0 10px rgba(0,0,0,0.2);
+}
+
+/* Book cover badge sketch */
+.book-cover-badge {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 110px;
+  height: 140px;
+  border: 2px solid rgba(255,255,255,0.15);
+  background: rgba(0,0,0,0.2);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  padding: 10px;
+  text-align: center;
+}
+
+.book-cover-title {
+  color: rgba(255,255,255,0.85);
+  font-size: 14px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  line-height: 1.2;
+}
+
+.book-cover-icon {
+  margin-top: 15px;
+  color: var(--neon-cyan);
+  filter: drop-shadow(0 0 5px var(--neon-cyan));
+}
+
+/* ─── 2. Parchment Open Book Overlay ──────── */
+.book-overlay-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(8, 10, 16, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: fadeIn 0.4s ease forwards;
+}
+
+.book-reader-container {
+  position: relative;
+  width: 1050px;
+  max-width: 95%;
+  height: 680px;
+  max-height: 90vh;
+  background: #2b1f13; /* Book outer cover leather border */
+  border-radius: 12px;
+  box-shadow: 0 30px 60px rgba(0,0,0,0.8), inset 0 0 15px rgba(0,0,0,0.8);
+  border: 3px solid #1c140c;
+  display: flex;
+  padding: 15px;
+  animation: bookOpenScale 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.book-pages-spread {
+  flex: 1;
+  background: radial-gradient(circle at center, #f5ecd8 40%, #e0ceae 90%, #cca97e 100%);
+  border-radius: 4px;
+  display: flex;
+  position: relative;
+  box-shadow: 0 0 8px rgba(0,0,0,0.4);
+  overflow: hidden;
+}
+
+/* Middle Spine Gutter Shadow */
+.book-pages-spread::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: 40px;
+  height: 100%;
+  transform: translateX(-50%);
+  background: linear-gradient(90deg, rgba(0,0,0,0.25) 0%, rgba(0,0,0,0.5) 50%, rgba(0,0,0,0.25) 100%);
+  z-index: 5;
+  pointer-events: none;
+}
+
+.parchment-page-half {
+  flex: 1;
+  padding: 40px 50px;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow-y: auto;
+  font-family: 'EB Garamond', serif;
+  color: #1a1a1a;
+  z-index: 2;
+}
+
+/* Inner Page shadows to look folded */
+.parchment-page-half.left-page {
+  border-right: 1px solid rgba(0,0,0,0.15);
+  box-shadow: inset -15px 0 20px rgba(0,0,0,0.06);
+}
+
+.parchment-page-half.right-page {
+  box-shadow: inset 15px 0 20px rgba(0,0,0,0.06);
+}
+
+/* Custom Scrollbar for parchment pages */
+.parchment-page-half::-webkit-scrollbar {
+  width: 6px;
+}
+.parchment-page-half::-webkit-scrollbar-track {
+  background: rgba(0,0,0,0.05);
+}
+.parchment-page-half::-webkit-scrollbar-thumb {
+  background: rgba(0,0,0,0.2);
+  border-radius: 3px;
+}
+
+/* ─── Ink Typography ──────────────────────── */
+.ink-heading {
+  font-size: 32px;
+  font-weight: 500;
+  font-style: italic;
+  color: #0b0c0b;
+  margin-bottom: 24px;
+  border-bottom: 1px dashed rgba(0,0,0,0.15);
+  padding-bottom: 12px;
+  letter-spacing: -0.5px;
+  text-shadow: 0.5px 0.5px 0px rgba(0,0,0,0.1);
+}
+
+.ink-subheading {
+  font-size: 20px;
+  font-weight: 600;
+  color: #121212;
+  margin-top: 15px;
+  margin-bottom: 10px;
+}
+
+.ink-paragraph {
+  font-size: 16px;
+  line-height: 1.6;
+  color: #262626;
+  margin-bottom: 18px;
+  text-align: justify;
+}
+
+.ink-bullet-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.ink-bullet-item {
+  display: flex;
+  gap: 10px;
+  font-size: 15px;
+  line-height: 1.4;
+  color: #2c2c2c;
+}
+
+.ink-bullet-bullet {
+  color: #8c2020;
+  font-weight: bold;
+}
+
+/* ─── Sketched Node Map (Page 3) ──────────── */
+.blueprint-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  width: 100%;
+}
+
+.blueprint-grid-nodes {
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+  width: 100%;
+  align-items: center;
+  position: relative;
+}
+
+.blueprint-row {
+  display: flex;
+  justify-content: space-around;
+  width: 100%;
+  position: relative;
+  z-index: 2;
+}
+
+.sketch-node-circle {
+  width: 65px;
+  height: 65px;
+  border: 2px solid #204060;
+  /* Imperfect hand-drawn borders */
+  border-radius: 48% 52% 50% 50% / 50% 52% 48% 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(245, 236, 216, 0.8);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  box-shadow: 2px 4px 8px rgba(0,0,0,0.1);
+}
+
+.sketch-node-circle:hover {
+  transform: scale(1.1) rotate(3deg);
+  border-color: #8c2020;
+  box-shadow: 3px 6px 12px rgba(140,32,32,0.15);
+}
+
+.sketch-node-label {
+  font-size: 10px;
+  font-weight: bold;
+  text-transform: uppercase;
+  color: #204060;
+  letter-spacing: 0.5px;
+  margin-top: 2px;
+}
+
+.sketch-node-circle:hover .sketch-node-label {
+  color: #8c2020;
+}
+
+.sketch-node-desc-bubble {
+  position: absolute;
+  top: 75px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 180px;
+  background: #fdfaf2;
+  border: 1px solid #c2b29c;
+  padding: 10px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: #333333;
+  z-index: 10;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+  pointer-events: none;
+  animation: tooltipFadeIn 0.25s ease forwards;
+}
+
+/* ─── Hand-drawn Contact Form (Page 4) ────── */
+.ink-form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  width: 100%;
+}
+
+.ink-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.ink-form-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #0b0c0b;
+}
+
+.ink-form-input {
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid #5a5246;
+  padding: 8px 5px;
+  font-family: 'EB Garamond', serif;
+  font-size: 16px;
+  color: #121212;
+  outline: none;
+  width: 100%;
+}
+
+.ink-form-input:focus {
+  border-bottom-color: #8c2020;
+}
+
+.ink-form-textarea {
+  background: transparent;
+  border: 2px solid #5a5246;
+  border-radius: 4px;
+  padding: 10px;
+  font-family: 'EB Garamond', serif;
+  font-size: 16px;
+  color: #121212;
+  outline: none;
+  resize: none;
+  min-height: 100px;
+}
+
+.ink-form-textarea:focus {
+  border-color: #8c2020;
+}
+
+.ink-submit-button {
+  background: #8c2020;
+  color: #fdfaf2;
+  border: none;
+  border-radius: 4px;
+  padding: 12px;
+  font-family: 'EB Garamond', serif;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  margin-top: 10px;
+}
+
+.ink-submit-button:hover {
+  background: #701919;
+}
+
+/* Social Buttons */
+.ink-socials-grid {
+  display: flex;
+  gap: 15px;
+  margin-top: 20px;
+}
+
+.ink-social-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid #5a5246;
+  border-radius: 4px;
+  font-family: 'EB Garamond', serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: #2c2c2c;
+  transition: all 0.2s ease;
+}
+
+.ink-social-btn:hover {
+  border-color: #8c2020;
+  color: #8c2020;
+  background: rgba(140, 32, 32, 0.03);
+}
+
+/* ─── Navigation Buttons ───────────────────── */
+.book-close-x {
+  position: absolute;
+  top: -45px;
+  right: -5px;
+  background: transparent;
+  border: none;
+  color: rgba(255,255,255,0.6);
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+.book-close-x:hover {
+  color: white;
+}
+
+.book-page-turn-btn {
+  position: absolute;
+  bottom: 25px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  border: none;
+  font-family: 'EB Garamond', serif;
+  font-size: 16px;
+  font-weight: bold;
+  color: #8c2020;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.book-page-turn-btn.prev-btn {
+  left: 50px;
+}
+.book-page-turn-btn.prev-btn:hover {
+  transform: translateX(-4px);
+}
+
+.book-page-turn-btn.next-btn {
+  right: 50px;
+}
+.book-page-turn-btn.next-btn:hover {
+  transform: translateX(4px);
+}
+
+/* ─── Animations ──────────────────────────── */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes bookOpenScale {
+  from {
+    opacity: 0;
+    transform: scale(0.85) rotate(-3deg);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+@keyframes tooltipFadeIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 8px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
