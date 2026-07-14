@@ -961,9 +961,9 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
                   <div className="book-face-right-pages" />
                   <div className="book-face-top flex items-center justify-center">
                     {/* Gold Foil Celestial Ornament */}
-                    <div className="w-16 h-16 rounded-full border border-amber-500/30 flex items-center justify-center relative animate-pulse">
-                      <div className="absolute inset-1 rounded-full border border-dashed border-amber-500/20" />
-                      <Globe className="text-amber-400/60" size={24} />
+                    <div className="w-20 h-20 rounded-full border border-amber-500/35 flex items-center justify-center relative shadow-[0_0_15px_rgba(191,149,63,0.15)]">
+                      <div className="absolute inset-1.5 rounded-full border border-dashed border-amber-500/25 animate-[spin_40s_linear_infinite]" />
+                      <Logo size={36} className="relative z-10 opacity-80 filter drop-shadow-[0_0_6px_rgba(0,242,254,0.4)]" />
                     </div>
                   </div>
                 </div>

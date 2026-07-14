@@ -2107,63 +2107,48 @@ input[type=number] {
   position: relative;
   width: 220px;
   height: 280px;
+  perspective: 1500px;
+  user-select: none;
+}
+
+/* The pile container tilted in 3D space */
+.book-pile {
+  position: relative;
+  width: 250px;
+  height: 180px;
   transform-style: preserve-3d;
-  transform: rotateX(50deg) rotateY(0deg) rotateZ(-35deg);
+  /* Steeper tilt to show covers and page thicknesses clearly */
+  transform: rotateX(62deg) rotateY(-5deg) rotateZ(-32deg);
   transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.book-stack-wrapper:hover .book-stack-3d {
-  transform: rotateX(45deg) rotateY(0deg) rotateZ(-25deg) translateY(-15px);
-}
-
-.book-item-3d {
-  position: absolute;
-  width: 100%;
-  height: 45px;
-  transform-style: preserve-3d;
-  transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-/* Book 1 (Top) */
-.book-item-3d.top-book {
-  bottom: 80px;
-  z-index: 3;
-}
-.book-stack-wrapper:hover .book-item-3d.top-book {
-  transform: translateZ(25px) translateY(-10px);
-}
-
-/* Book 2 (Middle) */
-.book-item-3d.middle-book {
-  bottom: 40px;
-  z-index: 2;
-}
 .book-stack-wrapper:hover .book-pile {
-  transform: rotateX(48deg) rotateY(-4deg) rotateZ(-28deg) translateY(-10px);
+  transform: rotateX(54deg) rotateY(-2deg) rotateZ(-22deg) translateY(-10px);
 }
 
 /* Volumetric 3D Book Container */
 .book-3d {
   position: absolute;
-  width: var(--book-width);
-  height: var(--book-height);
+  width: var(--book-width, 240px);
+  height: var(--book-height, 180px);
   transform-style: preserve-3d;
   transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* Individual Book Placements & Fan-out Hover Speeds */
+/* Individual Book Placements (Vertical Stack along Z-axis) */
+/* Thicker books (35px to 40px) stacked sequentially */
 .book-3d.book-bottom { transform: translateZ(0px) rotateZ(-2.5deg); }
-.book-3d.book-4 { transform: translateZ(28px) rotateZ(1.8deg) translateX(-4px); }
-.book-3d.book-3 { transform: translateZ(58px) rotateZ(-1deg) translateX(3px) translateY(2px); }
-.book-3d.book-2 { transform: translateZ(84px) rotateZ(3deg) translateX(-2px) translateY(-2px); }
-.book-3d.book-top { transform: translateZ(116px) rotateZ(-0.5deg); }
+.book-3d.book-4      { transform: translateZ(38px) rotateZ(1.8deg) translateX(-4px); }
+.book-3d.book-3      { transform: translateZ(74px) rotateZ(-1deg) translateX(3px) translateY(2px); }
+.book-3d.book-2      { transform: translateZ(109px) rotateZ(3deg) translateX(-2px) translateY(-2px); }
+.book-3d.book-top    { transform: translateZ(147px) rotateZ(-0.5deg); }
 
-/* Hover effects (fanning out in 3D stack) */
+/* Hover effects (fanning out in Z-space & sliding slightly) */
 .book-stack-wrapper:hover .book-3d.book-bottom { transform: translateZ(0px) rotateZ(-4.5deg) translateX(-3px); }
-.book-stack-wrapper:hover .book-3d.book-4 { transform: translateZ(35px) rotateZ(0deg) translateX(-8px) translateY(3px); }
-.book-stack-wrapper:hover .book-3d.book-3 { transform: translateZ(70px) rotateZ(-2deg) translateX(2px) translateY(5px); }
-.book-stack-wrapper:hover .book-3d.book-2 { transform: translateZ(105px) rotateZ(5deg) translateX(6px) translateY(-2px); }
-.book-stack-wrapper:hover .book-3d.book-top { transform: translateZ(145px) rotateZ(-1.5deg) translateX(-4px) translateY(-8px); }
+.book-stack-wrapper:hover .book-3d.book-4      { transform: translateZ(44px) rotateZ(0deg) translateX(-8px) translateY(3px); }
+.book-stack-wrapper:hover .book-3d.book-3      { transform: translateZ(88px) rotateZ(-2deg) translateX(2px) translateY(5px); }
+.book-stack-wrapper:hover .book-3d.book-2      { transform: translateZ(132px) rotateZ(5deg) translateX(6px) translateY(-2px); }
+.book-stack-wrapper:hover .book-3d.book-top    { transform: translateZ(182px) rotateZ(-1.5deg) translateX(-4px) translateY(-8px); }
 
 /* Top book flies upward + rotates open on click */
 .book-3d.book-top.is-opening {
@@ -2179,14 +2164,14 @@ input[type=number] {
   left: 0;
   top: 0;
   background: var(--cover-gradient);
-  border-radius: 2px 5px 5px 2px;
+  border-radius: 3px 6px 6px 3px;
   box-shadow:
     inset 4px 0 8px rgba(255,255,255,0.08),
     inset -4px 0 8px rgba(0,0,0,0.5);
 }
 
 .book-face-top {
-  transform: translateZ(var(--book-thickness));
+  transform: translateZ(var(--book-thickness, 36px));
 }
 
 .book-face-bottom {
@@ -2198,7 +2183,7 @@ input[type=number] {
   content: "";
   position: absolute;
   inset: 6px;
-  border: 1px solid rgba(191, 149, 63, 0.3);
+  border: 1px solid rgba(191, 149, 63, 0.35);
   border-radius: 2px;
   pointer-events: none;
 }
@@ -2206,7 +2191,7 @@ input[type=number] {
 /* Antique leather spine */
 .book-face-spine {
   position: absolute;
-  width: var(--book-thickness);
+  width: var(--book-thickness, 36px);
   height: 100%;
   left: 0;
   top: 0;
@@ -2219,6 +2204,29 @@ input[type=number] {
   justify-content: space-around;
   align-items: center;
   overflow: hidden;
+}
+
+/* Spine text styling */
+.book-spine-text {
+  font-family: 'EB Garamond', serif;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: #fcebc4;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.9);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* Ground shadow shelf under books */
+.book-shelf-shadow {
+  width: 325px;
+  height: 25px;
+  background: radial-gradient(ellipse at 50% 0%, rgba(0,0,0,0.65) 0%, transparent 80%);
+  margin-top: 15px;
+  transform: rotateX(75deg);
+  pointer-events: none;
 }
 
 /* Spine ridges (raised bands on antique volumes) */
@@ -2240,29 +2248,66 @@ input[type=number] {
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-/* Spine text styling */
-.book-spine-text {
-  font-family: 'EB Garamond', serif;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  color: rgba(255,255,255,0.82);
-  text-shadow: 0 1px 3px rgba(0,0,0,0.5);
-  flex: 1;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+/* Golden star details on spines */
+.book-spine-star {
+  font-size: 8px;
+  color: #bf953f;
+  text-shadow: 0 0 5px rgba(191, 149, 63, 0.6);
+  z-index: 2;
 }
 
-/* Shadow shelf under books */
-.book-shelf-shadow {
-  width: 300px;
-  height: 12px;
-  background: radial-gradient(ellipse at 50% 0%, rgba(0,0,0,0.55) 0%, transparent 75%);
-  margin-top: 0;
-  flex-shrink: 0;
+/* High-density horizontal page lines texture (representing 200-300 pages) */
+/* Inset by 3px from covers to create the cover lip (overhang) */
+.book-face-front-pages {
+  position: absolute;
+  width: calc(100% - 6px);
+  height: var(--book-thickness, 36px);
+  left: 3px;
+  bottom: 3px;
+  transform-origin: bottom;
+  transform: rotateX(90deg);
+  background:
+    linear-gradient(180deg, rgba(0,0,0,0.2) 0%, transparent 15%, transparent 85%, rgba(0,0,0,0.4) 100%),
+    repeating-linear-gradient(
+      180deg,
+      #f5ecd8 0px,
+      #f5ecd8 0.7px,
+      #d4c39c 1px,
+      #e8dfc7 1.5px,
+      #f5ecd8 2px
+    );
+  box-shadow: inset 0 6px 12px rgba(0,0,0,0.2);
 }
+
+.book-face-right-pages {
+  position: absolute;
+  width: var(--book-thickness, 36px);
+  height: calc(100% - 6px);
+  right: 3px;
+  top: 3px;
+  transform-origin: right;
+  transform: rotateY(90deg);
+  background:
+    linear-gradient(90deg, rgba(0,0,0,0.2) 0%, transparent 15%, transparent 85%, rgba(0,0,0,0.4) 100%),
+    repeating-linear-gradient(
+      90deg,
+      #f5ecd8 0px,
+      #f5ecd8 0.7px,
+      #d4c39c 1px,
+      #e8dfc7 1.5px,
+      #f5ecd8 2px
+    );
+  box-shadow: inset 6px 0 12px rgba(0,0,0,0.2);
+}
+
+/* 3D opening animation */
+@keyframes bookFlyOpen3D {
+  0%   { transform: translateZ(147px) rotateZ(-0.5deg) rotateX(0deg); opacity: 1; }
+  35%  { transform: translateZ(240px) rotateZ(-12deg) rotateX(-20deg) translateY(-30px); opacity: 1; }
+  65%  { transform: translateZ(380px) rotateZ(8deg) rotateX(-45deg) translateY(-80px) scale(1.1); opacity: 0.85; }
+  100% { transform: translateZ(520px) rotateZ(0deg) rotateX(-90deg) translateY(-150px) scale(1.3); opacity: 0; }
+}
+
 
 /* ─── 2. Parchment Open Book Overlay ──────── */
 .book-overlay-backdrop {
