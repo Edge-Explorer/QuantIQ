@@ -2138,166 +2138,112 @@ input[type=number] {
   bottom: 40px;
   z-index: 2;
 }
-.book-stack-wrapper:hover .book-item-3d.middle-book {
-  transform: translateZ(10px) rotateZ(-5deg);
-}
-
-/* Book 3 (Bottom) */
-.book-item-3d.bottom-book {
-  bottom: 0px;
-  z-index: 1;
-}
-.book-stack-wrapper:hover .book-item-3d.bottom-book {
-  transform: translateZ(-5px) rotateZ(3deg);
-}
-
-/* Book sheets 3D mapping */
-.book-side-face {
-  position: absolute;
-  background-color: var(--cover-color);
-  border-radius: 3px;
-  box-shadow: inset 0 0 10px rgba(0,0,0,0.4);
-}
-
-.book-side-face.cover-top {
-  width: 200px;
-  height: 260px;
-  transform: rotateX(0deg) translateZ(22.5px);
-  background: linear-gradient(135deg, var(--cover-color), rgba(0,0,0,0.2) 80%);
-  border: 1px solid rgba(255,255,255,0.1);
-  box-shadow: 5px 10px 20px rgba(0,0,0,0.5), inset 0 0 8px rgba(255,255,255,0.2);
-}
-
-.book-side-face.spine {
-  width: 200px;
-  height: 45px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  transform-style: preserve-3d;
-  transform: rotateX(12deg);
-  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
 .book-stack-wrapper:hover .book-pile {
-  transform: rotateX(18deg);
+  transform: rotateX(48deg) rotateY(-4deg) rotateZ(-28deg) translateY(-10px);
 }
 
-/* Individual book in the pile (flat/horizontal stack view) */
-.stacked-book {
-  position: relative;
-  width: 260px;
-  border-radius: 3px 8px 8px 3px;
-  box-shadow:
-    0 4px 8px rgba(0,0,0,0.5),
-    2px 0 0 rgba(0,0,0,0.3),
-    inset 0 1px 0 rgba(255,255,255,0.1),
-    inset 0 -1px 0 rgba(0,0,0,0.3);
-  transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1),
-              box-shadow 0.45s ease;
+/* Volumetric 3D Book Container */
+.book-3d {
+  position: absolute;
+  width: var(--book-width);
+  height: var(--book-height);
   transform-style: preserve-3d;
-  overflow: hidden;
+  transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* Hover: Fan books slightly */
-.book-stack-wrapper:hover .stacked-book:nth-child(1) {
-  transform: translateX(8px) rotate(-1.5deg) translateY(-4px);
-}
-.book-stack-wrapper:hover .stacked-book:nth-child(2) {
-  transform: translateX(4px) rotate(0.5deg);
-}
-.book-stack-wrapper:hover .stacked-book:nth-child(3) {
-  transform: translateX(-4px) rotate(-0.5deg);
-}
-.book-stack-wrapper:hover .stacked-book:nth-child(4) {
-  transform: translateX(-8px) rotate(1deg) translateY(2px);
-}
-.book-stack-wrapper:hover .stacked-book:nth-child(5) {
-  transform: translateX(-10px) rotate(2deg) translateY(4px);
-}
+/* Individual Book Placements & Fan-out Hover Speeds */
+.book-3d.book-bottom { transform: translateZ(0px) rotateZ(-2.5deg); }
+.book-3d.book-4 { transform: translateZ(28px) rotateZ(1.8deg) translateX(-4px); }
+.book-3d.book-3 { transform: translateZ(58px) rotateZ(-1deg) translateX(3px) translateY(2px); }
+.book-3d.book-2 { transform: translateZ(84px) rotateZ(3deg) translateX(-2px) translateY(-2px); }
+.book-3d.book-top { transform: translateZ(116px) rotateZ(-0.5deg); }
+
+/* Hover effects (fanning out in 3D stack) */
+.book-stack-wrapper:hover .book-3d.book-bottom { transform: translateZ(0px) rotateZ(-4.5deg) translateX(-3px); }
+.book-stack-wrapper:hover .book-3d.book-4 { transform: translateZ(35px) rotateZ(0deg) translateX(-8px) translateY(3px); }
+.book-stack-wrapper:hover .book-3d.book-3 { transform: translateZ(70px) rotateZ(-2deg) translateX(2px) translateY(5px); }
+.book-stack-wrapper:hover .book-3d.book-2 { transform: translateZ(105px) rotateZ(5deg) translateX(6px) translateY(-2px); }
+.book-stack-wrapper:hover .book-3d.book-top { transform: translateZ(145px) rotateZ(-1.5deg) translateX(-4px) translateY(-8px); }
 
 /* Top book flies upward + rotates open on click */
-.stacked-book.is-opening {
-  animation: bookFlyOpen 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+.book-3d.book-top.is-opening {
+  animation: bookFlyOpen3D 0.75s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   z-index: 50;
 }
 
-/* Book thickness bar (the pages side) */
-.book-thickness {
-  height: 42px;
-  display: flex;
-  align-items: stretch;
-}
-
-/* Spine strip on left */
-.book-spine-strip {
-  width: 18px;
-  flex-shrink: 0;
-  background: var(--spine-color);
-  border-radius: 3px 0 0 3px;
-  position: relative;
-  box-shadow: inset -3px 0 5px rgba(0,0,0,0.3), inset 2px 0 4px rgba(255,255,255,0.08);
-}
-
-/* Page edge texture on right */
-.book-pages-edge {
-  flex: 1;
-  background: repeating-linear-gradient(
-    180deg,
-    #f0e6cc 0px,
-    #f0e6cc 1.5px,
-    #ddd0b0 2px,
-    #e8dcc0 3px,
-    #f0e6cc 4px
-  );
-  border-radius: 0 6px 6px 0;
-  box-shadow: inset 2px 0 6px rgba(0,0,0,0.15);
-}
-
-/* Cover face shown on top of each stacked book */
-.book-cover-face {
+/* Volumetric Faces */
+.book-face-top, .book-face-bottom {
   position: absolute;
-  inset: 0;
+  width: 100%;
+  height: 100%;
+  left: 0;
+  top: 0;
   background: var(--cover-gradient);
-  border-radius: 3px 8px 8px 3px;
-  padding: 0 14px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  overflow: hidden;
+  border-radius: 2px 5px 5px 2px;
+  box-shadow:
+    inset 4px 0 8px rgba(255,255,255,0.08),
+    inset -4px 0 8px rgba(0,0,0,0.5);
 }
 
-/* Embossed ornamental border lines on cover */
-.book-cover-face::before {
+.book-face-top {
+  transform: translateZ(var(--book-thickness));
+}
+
+.book-face-bottom {
+  transform: translateZ(0);
+}
+
+/* Gold ornamental borders on top cover */
+.book-face-top::before {
   content: "";
   position: absolute;
-  inset: 4px 18px 4px 22px;
-  border: 1px solid rgba(255,255,255,0.12);
+  inset: 6px;
+  border: 1px solid rgba(191, 149, 63, 0.3);
   border-radius: 2px;
   pointer-events: none;
 }
 
-.book-cover-face::after {
-  content: "";
+/* Antique leather spine */
+.book-face-spine {
   position: absolute;
-  inset: 7px 21px 7px 25px;
-  border: 1px solid rgba(255,255,255,0.06);
-  border-radius: 1px;
+  width: var(--book-thickness);
+  height: 100%;
+  left: 0;
+  top: 0;
+  transform-origin: left;
+  transform: rotateY(90deg);
+  background: var(--spine-gradient);
+  box-shadow: inset 0 20px 40px rgba(0,0,0,0.6);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  align-items: center;
+  overflow: hidden;
+}
+
+/* Spine ridges (raised bands on antique volumes) */
+.book-spine-ridges {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 15px 0;
   pointer-events: none;
 }
 
-.book-cover-spine-line {
-  width: 2px;
-  height: 28px;
-  background: rgba(255,255,255,0.18);
-  flex-shrink: 0;
-  margin-left: 4px;
+.book-spine-ridge {
+  width: 100%;
+  height: 3px;
+  background: rgba(0, 0, 0, 0.4);
+  border-top: 1px solid rgba(191, 149, 63, 0.45);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-.book-cover-text {
+/* Spine text styling */
+.book-spine-text {
   font-family: 'EB Garamond', serif;
   font-size: 11px;
-  font-style: italic;
   font-weight: 600;
   letter-spacing: 2px;
   text-transform: uppercase;

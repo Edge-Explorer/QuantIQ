@@ -812,7 +812,7 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
             )}
           </div>
 
-          {/* Right Column — Vintage Leather Book Stack */}
+          {/* Right Column — Volumetric 3D CSS Book Stack */}
           <div className="flex justify-center items-center relative w-full max-w-md lg:max-w-none pt-4 lg:pt-0 animate-fade-rise-delay">
             <div
               className="book-stack-wrapper"
@@ -820,92 +820,164 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
               title="Click to open the Book of QuantIQ"
             >
               {/* Floating label above the stack */}
-              <span className="book-stack-label">— click to open —</span>
+              <span className="book-stack-label">— CLICK TO OPEN —</span>
 
-              {/* Flat stacked books pile */}
+              {/* Volumetric 3D stacked books pile */}
               <div className="book-pile">
 
-                {/* Book 5 (Bottom) — burgundy */}
+                {/* Book 5 (Bottom) — Antique Black/Charcoal */}
                 <div
-                  className="stacked-book"
-                  style={{ '--spine-color': '#4a0e14', '--cover-gradient': 'linear-gradient(90deg, #5c1018 0%, #7a1a24 40%, #8a2030 60%, #6e1620 100%)' } as React.CSSProperties}
+                  className="book-3d book-bottom"
+                  style={{
+                    '--book-width': '250px',
+                    '--book-height': '190px',
+                    '--book-thickness': '28px',
+                    '--cover-gradient': 'linear-gradient(135deg, #18181b 0%, #27272a 45%, #09090b 100%)',
+                    '--spine-gradient': 'linear-gradient(180deg, #111113 0%, #3f3f46 50%, #09090b 100%)'
+                  } as React.CSSProperties}
                 >
-                  <div className="book-thickness">
-                    <div className="book-spine-strip" />
-                    <div className="book-pages-edge" />
+                  <div className="book-face-bottom" />
+                  <div className="book-face-spine">
+                    <div className="book-spine-ridges">
+                      <div className="book-spine-ridge" />
+                      <div className="book-spine-ridge" />
+                      <div className="book-spine-ridge" />
+                      <div className="book-spine-ridge" />
+                    </div>
+                    <span className="book-spine-star">✦</span>
+                    <span className="book-spine-text">Quant Research</span>
+                    <span className="book-spine-star">✦</span>
                   </div>
-                  <div className="book-cover-face">
-                    <div className="book-cover-spine-line" />
-                    <span className="book-cover-text">Quantitative Research</span>
-                  </div>
+                  <div className="book-face-front-pages" />
+                  <div className="book-face-right-pages" />
+                  <div className="book-face-top" />
                 </div>
 
-                {/* Book 4 — forest green */}
+                {/* Book 4 — Antique Amber/Brown */}
                 <div
-                  className="stacked-book"
-                  style={{ '--spine-color': '#1a3a20', '--cover-gradient': 'linear-gradient(90deg, #1e3a22 0%, #2d5230 40%, #355e38 60%, #274030 100%)' } as React.CSSProperties}
+                  className="book-3d book-4"
+                  style={{
+                    '--book-width': '242px',
+                    '--book-height': '182px',
+                    '--book-thickness': '26px',
+                    '--cover-gradient': 'linear-gradient(135deg, #5f2d0a 0%, #85400f 45%, #3e1b03 100%)',
+                    '--spine-gradient': 'linear-gradient(180deg, #4c2204 0%, #a16207 50%, #3e1b03 100%)'
+                  } as React.CSSProperties}
                 >
-                  <div className="book-thickness">
-                    <div className="book-spine-strip" />
-                    <div className="book-pages-edge" />
+                  <div className="book-face-bottom" />
+                  <div className="book-face-spine">
+                    <div className="book-spine-ridges">
+                      <div className="book-spine-ridge" />
+                      <div className="book-spine-ridge" />
+                      <div className="book-spine-ridge" />
+                      <div className="book-spine-ridge" />
+                    </div>
+                    <span className="book-spine-star">✦</span>
+                    <span className="book-spine-text">Microstructure</span>
+                    <span className="book-spine-star">✦</span>
                   </div>
-                  <div className="book-cover-face">
-                    <div className="book-cover-spine-line" />
-                    <span className="book-cover-text">Market Microstructure</span>
-                  </div>
+                  <div className="book-face-front-pages" />
+                  <div className="book-face-right-pages" />
+                  <div className="book-face-top" />
                 </div>
 
-                {/* Book 3 (Middle) — deep navy */}
+                {/* Book 3 — Antique Emerald/Forest Green */}
                 <div
-                  className="stacked-book"
-                  style={{ '--spine-color': '#0a1a38', '--cover-gradient': 'linear-gradient(90deg, #0c1e40 0%, #14306a 40%, #1a3d82 60%, #0e2555 100%)' } as React.CSSProperties}
+                  className="book-3d book-3"
+                  style={{
+                    '--book-width': '246px',
+                    '--book-height': '186px',
+                    '--book-thickness': '27px',
+                    '--cover-gradient': 'linear-gradient(135deg, #04382a 0%, #065f46 45%, #02241b 100%)',
+                    '--spine-gradient': 'linear-gradient(180deg, #022b20 0%, #0f766e 50%, #02241b 100%)'
+                  } as React.CSSProperties}
                 >
-                  <div className="book-thickness">
-                    <div className="book-spine-strip" />
-                    <div className="book-pages-edge" />
+                  <div className="book-face-bottom" />
+                  <div className="book-face-spine">
+                    <div className="book-spine-ridges">
+                      <div className="book-spine-ridge" />
+                      <div className="book-spine-ridge" />
+                      <div className="book-spine-ridge" />
+                      <div className="book-spine-ridge" />
+                    </div>
+                    <span className="book-spine-star">✦</span>
+                    <span className="book-spine-text">System Graph</span>
+                    <span className="book-spine-star">✦</span>
                   </div>
-                  <div className="book-cover-face">
-                    <div className="book-cover-spine-line" />
-                    <span className="book-cover-text">System Architecture</span>
-                  </div>
+                  <div className="book-face-front-pages" />
+                  <div className="book-face-right-pages" />
+                  <div className="book-face-top" />
                 </div>
 
-                {/* Book 2 — warm tan / sienna */}
+                {/* Book 2 — Antique Burgundy/Crimson */}
                 <div
-                  className="stacked-book"
-                  style={{ '--spine-color': '#5c3a14', '--cover-gradient': 'linear-gradient(90deg, #6b4218 0%, #8a5a24 40%, #9e6a30 60%, #76491e 100%)' } as React.CSSProperties}
+                  className="book-3d book-2"
+                  style={{
+                    '--book-width': '238px',
+                    '--book-height': '178px',
+                    '--book-thickness': '30px',
+                    '--cover-gradient': 'linear-gradient(135deg, #380707 0%, #7f1d1d 45%, #200303 100%)',
+                    '--spine-gradient': 'linear-gradient(180deg, #2d0505 0%, #991b1b 50%, #200303 100%)'
+                  } as React.CSSProperties}
                 >
-                  <div className="book-thickness">
-                    <div className="book-spine-strip" />
-                    <div className="book-pages-edge" />
+                  <div className="book-face-bottom" />
+                  <div className="book-face-spine">
+                    <div className="book-spine-ridges">
+                      <div className="book-spine-ridge" />
+                      <div className="book-spine-ridge" />
+                      <div className="book-spine-ridge" />
+                      <div className="book-spine-ridge" />
+                    </div>
+                    <span className="book-spine-star">✦</span>
+                    <span className="book-spine-text">ML Signal Engine</span>
+                    <span className="book-spine-star">✦</span>
                   </div>
-                  <div className="book-cover-face">
-                    <div className="book-cover-spine-line" />
-                    <span className="book-cover-text">ML Signal Engine</span>
-                  </div>
+                  <div className="book-face-front-pages" />
+                  <div className="book-face-right-pages" />
+                  <div className="book-face-top" />
                 </div>
 
-                {/* Book 1 (Top — the one that flies open) */}
+                {/* Book 1 (Top Book) — Astronomical Cosmic Blue */}
                 <div
-                  className={`stacked-book${isBookAnimating ? ' is-opening' : ''}`}
-                  style={{ '--spine-color': '#2a0a0a', '--cover-gradient': 'linear-gradient(90deg, #2e0c0c 0%, #4a1010 40%, #5c1414 60%, #3a0e0e 100%)' } as React.CSSProperties}
+                  className={`book-3d book-top${isBookAnimating ? ' is-opening' : ''}`}
+                  style={{
+                    '--book-width': '232px',
+                    '--book-height': '172px',
+                    '--book-thickness': '28px',
+                    '--cover-gradient': 'linear-gradient(135deg, #090d16 0%, #1e293b 45%, #080c14 100%)',
+                    '--spine-gradient': 'linear-gradient(180deg, #05080f 0%, #334155 50%, #080c14 100%)'
+                  } as React.CSSProperties}
                 >
-                  <div className="book-thickness">
-                    <div className="book-spine-strip" />
-                    <div className="book-pages-edge" />
+                  <div className="book-face-bottom" />
+                  <div className="book-face-spine">
+                    <div className="book-spine-ridges">
+                      <div className="book-spine-ridge" />
+                      <div className="book-spine-ridge" />
+                      <div className="book-spine-ridge" />
+                      <div className="book-spine-ridge" />
+                    </div>
+                    <span className="book-spine-star">✦</span>
+                    <span className="book-spine-text">QuantIQ Codex</span>
+                    <span className="book-spine-star">✦</span>
                   </div>
-                  <div className="book-cover-face">
-                    <div className="book-cover-spine-line" />
-                    <span className="book-cover-text">QuantIQ — Dev Codex</span>
+                  <div className="book-face-front-pages" />
+                  <div className="book-face-right-pages" />
+                  <div className="book-face-top flex items-center justify-center">
+                    {/* Gold Foil Celestial Ornament */}
+                    <div className="w-16 h-16 rounded-full border border-amber-500/30 flex items-center justify-center relative animate-pulse">
+                      <div className="absolute inset-1 rounded-full border border-dashed border-amber-500/20" />
+                      <Globe className="text-amber-400/60" size={24} />
+                    </div>
                   </div>
                 </div>
 
               </div>
 
-              {/* Ground shadow */}
+              {/* Ground shadow shelf */}
               <div className="book-shelf-shadow" />
             </div>
           </div>
+
 
         </section>
 
