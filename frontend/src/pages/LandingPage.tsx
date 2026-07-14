@@ -844,7 +844,7 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
                     <span className="book-spine-text">Quant Research</span>
                     <span className="book-spine-star">✦</span>
                   </div>
-                  <div className="book-face-front-pages" />
+
                   <div className="book-face-right-pages" />
                   <div className="book-face-top" />
                 </div>
@@ -871,7 +871,7 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
                     <span className="book-spine-text">Microstructure</span>
                     <span className="book-spine-star">✦</span>
                   </div>
-                  <div className="book-face-front-pages" />
+
                   <div className="book-face-right-pages" />
                   <div className="book-face-top" />
                 </div>
@@ -898,7 +898,7 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
                     <span className="book-spine-text">System Graph</span>
                     <span className="book-spine-star">✦</span>
                   </div>
-                  <div className="book-face-front-pages" />
+
                   <div className="book-face-right-pages" />
                   <div className="book-face-top" />
                 </div>
@@ -925,7 +925,7 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
                     <span className="book-spine-text">ML Signal Engine</span>
                     <span className="book-spine-star">✦</span>
                   </div>
-                  <div className="book-face-front-pages" />
+
                   <div className="book-face-right-pages" />
                   <div className="book-face-top" />
                 </div>
@@ -952,7 +952,7 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
                     <span className="book-spine-text">QuantIQ Codex</span>
                     <span className="book-spine-star">✦</span>
                   </div>
-                  <div className="book-face-front-pages" />
+
                   <div className="book-face-right-pages" />
                   <div className="book-face-top flex items-center justify-center">
                     {/* Gold Foil Celestial Ornament */}
