@@ -2235,6 +2235,31 @@ input[type=number] {
   box-shadow: inset 4px 0 10px rgba(0,0,0,0.25);
 }
 
+/* Bottom / fore-edge page block
+   rotateX(-90deg) with pivot at bottom edge:
+   top edge of face moves to Z=T (front cover level)
+   Creates the bottom wall showing page thickness. ✓ */
+.book-face-front-pages {
+  position: absolute;
+  width: 100%;
+  height: var(--t, 36px);
+  left: 0;
+  bottom: 0;
+  transform-origin: bottom center;
+  transform: rotateX(-90deg);
+  background:
+    linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, transparent 40%, transparent 60%, rgba(0,0,0,0.15) 100%),
+    repeating-linear-gradient(
+      to right,
+      #f7edda 0px,
+      #f7edda 0.6px,
+      #d8c9a3 0.9px,
+      #eee3c9 1.4px,
+      #f7edda 1.8px
+    );
+  box-shadow: inset 0 3px 8px rgba(0,0,0,0.2);
+}
+
 
 
 
@@ -2276,16 +2301,6 @@ input[type=number] {
   color: #bf953f;
   text-shadow: 0 0 6px rgba(191, 149, 63, 0.7);
   z-index: 2;
-}
-
-/* ─── Ground Shadow ──────────────────────────── */
-.book-shelf-shadow {
-  width: 340px;
-  height: 30px;
-  background: radial-gradient(ellipse at 50% 0%, rgba(0,0,0,0.7) 0%, transparent 75%);
-  margin-top: 12px;
-  transform: rotateX(75deg);
-  pointer-events: none;
 }
 
 /* ─── 3D Opening Keyframe ────────────────────── */

@@ -846,6 +846,7 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
                   </div>
 
                   <div className="book-face-right-pages" />
+                  <div className="book-face-front-pages" />
                   <div className="book-face-top" />
                 </div>
 
@@ -873,6 +874,7 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
                   </div>
 
                   <div className="book-face-right-pages" />
+                  <div className="book-face-front-pages" />
                   <div className="book-face-top" />
                 </div>
 
@@ -900,6 +902,7 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
                   </div>
 
                   <div className="book-face-right-pages" />
+                  <div className="book-face-front-pages" />
                   <div className="book-face-top" />
                 </div>
 
@@ -927,6 +930,7 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
                   </div>
 
                   <div className="book-face-right-pages" />
+                  <div className="book-face-front-pages" />
                   <div className="book-face-top" />
                 </div>
 
@@ -954,6 +958,7 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
                   </div>
 
                   <div className="book-face-right-pages" />
+                  <div className="book-face-front-pages" />
                   <div className="book-face-top flex items-center justify-center">
                     {/* Gold Foil Celestial Ornament */}
                     <div className="w-20 h-20 rounded-full border border-amber-500/35 flex items-center justify-center relative shadow-[0_0_15px_rgba(191,149,63,0.15)]">
@@ -965,8 +970,7 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
 
               </div>
 
-              {/* Ground shadow shelf */}
-              <div className="book-shelf-shadow" />
+
             </div>
           </div>
 
