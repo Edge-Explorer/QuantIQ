@@ -680,13 +680,98 @@ async def run_agent_chat(db: AsyncSession, user_id: uuid.UUID, prompt: str) -> d
             agent_tool_calls_total.labels(tool_name="create_price_alert", status="failed").inc()
             raise e
 
+    def get_financial_news(ticker: str) -> str:
+        """
+        Retrieves the latest financial news articles and headlines for a stock ticker.
+        Use this tool to evaluate market sentiment, catalysts, and recent announcements.
+        - ticker: The stock ticker (e.g. TSLA, RELIANCE.NS)
+        """
+        import yfinance as yf
+        try:
+            ticker_upper = ticker.upper()
+            yf_ticker = yf.Ticker(ticker_upper)
+            raw_news = yf_ticker.news
+            
+            if not raw_news:
+                return f"No news articles found for {ticker_upper}."
+                
+            formatted = []
+            for item in raw_news[:6]:  # Limit to 6 items to conserve context window
+                # Robust extraction for old vs new nested payload structures
+                content = item.get("content", item) if isinstance(item.get("content"), dict) else item
+                title = content.get("title", "No Title")
+                summary = content.get("summary", content.get("description", "No Summary"))
+                pub_date = content.get("pubDate", content.get("displayTime", ""))
+                if not pub_date and "providerPublishTime" in content:
+                    import datetime
+                    try:
+                        pub_date = datetime.datetime.fromtimestamp(
+                            content["providerPublishTime"], datetime.timezone.utc
+                        ).isoformat()
+                    except Exception:
+                        pass
+                
+                provider = content.get("provider", {})
+                provider_name = provider.get("displayName", content.get("publisher", "Unknown Source"))
+                link = content.get("canonicalUrl", {}).get("url", content.get("link", ""))
+                
+                article = (
+                    f"- **Title**: {title}\n"
+                    f"  **Source**: {provider_name} | **Published**: {pub_date}\n"
+                    f"  **Summary**: {summary}\n"
+                )
+                if link:
+                    article += f"  **Link**: {link}\n"
+                formatted.append(article)
+                
+            agent_tool_calls_total.labels(tool_name="get_financial_news", status="success").inc()
+            return f"Latest Financial News for {ticker_upper}:\n\n" + "\n".join(formatted)
+        except Exception as e:
+            agent_tool_calls_total.labels(tool_name="get_financial_news", status="failed").inc()
+            return f"Error fetching financial news for {ticker}: {str(e)}"
+
+
+    def get_earnings_calendar(ticker: str) -> str:
+        """
+        Retrieves the next scheduled earnings release date and consensus forecasts (EPS, Revenue) for a ticker.
+        Use this tool to track upcoming earnings calls and corporate event catalysts.
+        - ticker: The stock ticker (e.g. TSLA, RELIANCE.NS)
+        """
+        import yfinance as yf
+        import datetime
+        try:
+            ticker_upper = ticker.upper()
+            yf_ticker = yf.Ticker(ticker_upper)
+            cal = yf_ticker.calendar
+            
+            if not cal:
+                return f"No earnings calendar or upcoming corporate events found for {ticker_upper}."
+                
+            # Convert datetime.date objects to strings so it remains JSON friendly
+            serializable = {}
+            for k, v in cal.items():
+                if isinstance(v, list):
+                    serializable[k] = [x.isoformat() if isinstance(x, (datetime.date, datetime.datetime)) else x for x in v]
+                elif isinstance(v, (datetime.date, datetime.datetime)):
+                    serializable[k] = v.isoformat()
+                else:
+                    serializable[k] = v
+                    
+            agent_tool_calls_total.labels(tool_name="get_earnings_calendar", status="success").inc()
+            return f"Earnings Calendar and Consensus Forecasts for {ticker_upper}:\n" + json.dumps(serializable, indent=2)
+        except Exception as e:
+            agent_tool_calls_total.labels(tool_name="get_earnings_calendar", status="failed").inc()
+            return f"No upcoming earnings calendar or catalyst data available for {ticker} (Error: {str(e)})."
+
     # 2. Map tools and build the GenerativeModel config
     tools = [
         get_user_watchlist,
         get_stock_history_and_indicators,
         get_ml_prediction,
         get_user_alerts,
-        create_price_alert
+        create_price_alert,
+        get_financial_news,
+        get_earnings_calendar
     ]
 
     # If API key is not configured or client is none, return offline mock
@@ -704,16 +789,19 @@ async def run_agent_chat(db: AsyncSession, user_id: uuid.UUID, prompt: str) -> d
             system_instruction=(
                 "You are the QuantIQ AI Analyst. "
                 "Examine the requested stock and gather all necessary details using your tools. "
-                "You must refer to your machine learning predictions tool as the 'QuantIQ ML Signal Engine' "
-                "and your technical indicators tool as 'QuantIQ Technical Indicators' in your reasoning. "
+                "You must refer to your machine learning predictions tool as the 'QuantIQ ML Signal Engine', "
+                "your technical indicators tool as 'QuantIQ Technical Indicators', "
+                "your financial news tool as 'QuantIQ News Sentiment', "
+                "and your earnings calendar tool as 'QuantIQ Catalyst Watch' in your reasoning. "
+                "Always check the latest news and upcoming earnings to incorporate sentiment and catalysts. "
                 "ABSOLUTE RULE: You MUST ALWAYS return your final response as a raw JSON object — "
                 "no markdown fences, no prose, no preamble. ONLY valid JSON. "
                 "Even if tools fail or data is limited, you MUST still return a JSON object. "
                 'The schema is: {"bullish_probability": int, "reason": "string"}. '
                 "If tools failed, estimate bullish_probability as 50 and explain the limitation in the reason field. "
                 "Ensure 'bullish_probability' is between 0 and 100 representing the upward price probability. "
-                "The 'reason' should be a detailed, structured, and comprehensive quantitative analysis. "
-                "Explain the technical metrics, crossover directions, and the ML Signal Engine predictions clearly. "
+                "The 'reason' should be a detailed, structured, and comprehensive quantitative and qualitative analysis. "
+                "Explain the technical metrics, crossover directions, ML predictions, recent news sentiment, and earnings calendar catalysts clearly. "
                 "Highlight key indicators, specific values, and signal strengths using bold markdown formatting "
                 "to make the analysis clear and professional.\n"
                 "CRITICAL: If the bullish probability score is below 50% (e.g. 45%), you must explain it as a bearish bias or neutral-to-bearish outlook. "
@@ -722,6 +810,7 @@ async def run_agent_chat(db: AsyncSession, user_id: uuid.UUID, prompt: str) -> d
             )
         )
     )
+
     
     start_time = asyncio.get_event_loop().time()
     try:
