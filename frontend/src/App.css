@@ -2710,21 +2710,27 @@ input[type=number] {
 /* ─── Navigation Buttons ───────────────────── */
 .book-close-x {
   position: absolute;
-  top: -46px;
-  right: 0px;
-  background: rgba(255,255,255,0.08);
-  border: 1px solid rgba(255,255,255,0.15);
+  top: 18px;
+  right: 22px;
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 50%;
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: rgba(255,255,255,0.55);
+  color: rgba(255, 255, 255, 0.7);
   cursor: pointer;
+  z-index: 200;
   transition: all 0.2s ease;
 }
-.book-close-x:hover { background: rgba(255,255,255,0.15); color: white; }
+.book-close-x:hover {
+  background: #7a1515;
+  border-color: #9a1a1a;
+  color: white;
+  transform: rotate(90deg);
+}
 
 .book-page-turn-btn {
   position: absolute;
