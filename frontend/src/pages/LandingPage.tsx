@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Button } from '../components/ui/button';
-import { X, Eye, EyeOff, Lock, Mail, User, Globe, BookOpen, ArrowRight, ArrowLeft } from 'lucide-react';
+import { X, Eye, EyeOff, Lock, Mail, User, Globe, ArrowRight, ArrowLeft } from 'lucide-react';
+
 import Logo from '../components/Logo';
 import LogoLoop from '../components/LogoLoop';
 import Sparkline from '../components/Sparkline';
@@ -43,6 +44,7 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
   
   // 3D CSS Book Stack Widget States
   const [isBookOpen, setIsBookOpen] = useState(false);
+  const [isBookAnimating, setIsBookAnimating] = useState(false);
   const [bookPage, setBookPage] = useState(1);
   const [hoveredNode, setHoveredNode] = useState<string | null>(null);
   
@@ -107,9 +109,15 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
   };
 
   const handleOpenBook = () => {
+    if (isBookAnimating || isBookOpen) return;
     playPageTurnSound();
-    setIsBookOpen(true);
-    setBookPage(1);
+    setIsBookAnimating(true);
+    // Wait for fly-out animation to finish, then open the modal
+    setTimeout(() => {
+      setIsBookAnimating(false);
+      setIsBookOpen(true);
+      setBookPage(1);
+    }, 650);
   };
 
   const handleCloseBook = () => {
@@ -804,50 +812,98 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
             )}
           </div>
 
-          {/* Right Column (3D Interactive Book Stack) */}
+          {/* Right Column — Vintage Leather Book Stack */}
           <div className="flex justify-center items-center relative w-full max-w-md lg:max-w-none pt-4 lg:pt-0 animate-fade-rise-delay">
-            <div 
-              className="book-stack-wrapper" 
+            <div
+              className="book-stack-wrapper"
               onClick={handleOpenBook}
               title="Click to open the Book of QuantIQ"
             >
-              <div className="book-stack-3d">
-                {/* Book 1: Top (ML Engine - Dark Blue Theme) */}
-                <div className="book-item-3d top-book" style={{ '--cover-color': '#0d3b66' } as React.CSSProperties}>
-                  <div className="book-side-face cover-top">
-                    <div className="book-cover-badge">
-                      <span className="book-cover-title">ML Signal</span>
-                      <BookOpen className="book-cover-icon" size={24} />
-                    </div>
+              {/* Floating label above the stack */}
+              <span className="book-stack-label">— click to open —</span>
+
+              {/* Flat stacked books pile */}
+              <div className="book-pile">
+
+                {/* Book 5 (Bottom) — burgundy */}
+                <div
+                  className="stacked-book"
+                  style={{ '--spine-color': '#4a0e14', '--cover-gradient': 'linear-gradient(90deg, #5c1018 0%, #7a1a24 40%, #8a2030 60%, #6e1620 100%)' } as React.CSSProperties}
+                >
+                  <div className="book-thickness">
+                    <div className="book-spine-strip" />
+                    <div className="book-pages-edge" />
                   </div>
-                  <div className="book-side-face spine"></div>
-                  <div className="book-side-face right-pages"></div>
+                  <div className="book-cover-face">
+                    <div className="book-cover-spine-line" />
+                    <span className="book-cover-text">Quantitative Research</span>
+                  </div>
                 </div>
 
-                {/* Book 2: Middle (Architecture Sketch - Blue Theme) */}
-                <div className="book-item-3d middle-book" style={{ '--cover-color': '#1a5f7a' } as React.CSSProperties}>
-                  <div className="book-side-face cover-top">
-                    <div className="book-cover-badge">
-                      <span className="book-cover-title">System Graph</span>
-                      <BookOpen className="book-cover-icon" style={{ color: '#00f2fe' }} size={24} />
-                    </div>
+                {/* Book 4 — forest green */}
+                <div
+                  className="stacked-book"
+                  style={{ '--spine-color': '#1a3a20', '--cover-gradient': 'linear-gradient(90deg, #1e3a22 0%, #2d5230 40%, #355e38 60%, #274030 100%)' } as React.CSSProperties}
+                >
+                  <div className="book-thickness">
+                    <div className="book-spine-strip" />
+                    <div className="book-pages-edge" />
                   </div>
-                  <div className="book-side-face spine"></div>
-                  <div className="book-side-face right-pages"></div>
+                  <div className="book-cover-face">
+                    <div className="book-cover-spine-line" />
+                    <span className="book-cover-text">Market Microstructure</span>
+                  </div>
                 </div>
 
-                {/* Book 3: Bottom (Developer Log - Crimson Theme) */}
-                <div className="book-item-3d bottom-book" style={{ '--cover-color': '#571818' } as React.CSSProperties}>
-                  <div className="book-side-face cover-top">
-                    <div className="book-cover-badge">
-                      <span className="book-cover-title">Dev Ledger</span>
-                      <BookOpen className="book-cover-icon" style={{ color: '#ff4d4d' }} size={24} />
-                    </div>
+                {/* Book 3 (Middle) — deep navy */}
+                <div
+                  className="stacked-book"
+                  style={{ '--spine-color': '#0a1a38', '--cover-gradient': 'linear-gradient(90deg, #0c1e40 0%, #14306a 40%, #1a3d82 60%, #0e2555 100%)' } as React.CSSProperties}
+                >
+                  <div className="book-thickness">
+                    <div className="book-spine-strip" />
+                    <div className="book-pages-edge" />
                   </div>
-                  <div className="book-side-face spine"></div>
-                  <div className="book-side-face right-pages"></div>
+                  <div className="book-cover-face">
+                    <div className="book-cover-spine-line" />
+                    <span className="book-cover-text">System Architecture</span>
+                  </div>
                 </div>
+
+                {/* Book 2 — warm tan / sienna */}
+                <div
+                  className="stacked-book"
+                  style={{ '--spine-color': '#5c3a14', '--cover-gradient': 'linear-gradient(90deg, #6b4218 0%, #8a5a24 40%, #9e6a30 60%, #76491e 100%)' } as React.CSSProperties}
+                >
+                  <div className="book-thickness">
+                    <div className="book-spine-strip" />
+                    <div className="book-pages-edge" />
+                  </div>
+                  <div className="book-cover-face">
+                    <div className="book-cover-spine-line" />
+                    <span className="book-cover-text">ML Signal Engine</span>
+                  </div>
+                </div>
+
+                {/* Book 1 (Top — the one that flies open) */}
+                <div
+                  className={`stacked-book${isBookAnimating ? ' is-opening' : ''}`}
+                  style={{ '--spine-color': '#2a0a0a', '--cover-gradient': 'linear-gradient(90deg, #2e0c0c 0%, #4a1010 40%, #5c1414 60%, #3a0e0e 100%)' } as React.CSSProperties}
+                >
+                  <div className="book-thickness">
+                    <div className="book-spine-strip" />
+                    <div className="book-pages-edge" />
+                  </div>
+                  <div className="book-cover-face">
+                    <div className="book-cover-spine-line" />
+                    <span className="book-cover-text">QuantIQ — Dev Codex</span>
+                  </div>
+                </div>
+
               </div>
+
+              {/* Ground shadow */}
+              <div className="book-shelf-shadow" />
             </div>
           </div>
 
@@ -1554,14 +1610,19 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
               {/* BOOK NAVIGATION BUTTONS */}
               {bookPage > 1 && (
                 <button className="book-page-turn-btn prev-btn" onClick={handlePrevPage}>
-                  <ArrowLeft size={18} /> Prev Chapter
+                  <ArrowLeft size={16} /> Prev Chapter
                 </button>
               )}
+              {/* Page indicator */}
+              <span className="book-page-indicator">
+                {['—  I  —', '—  II  —', '—  III  —', '—  IV  —'][bookPage - 1]}
+              </span>
               {bookPage < 4 && (
                 <button className="book-page-turn-btn next-btn" onClick={handleNextPage}>
-                  Next Chapter <ArrowRight size={18} />
+                  Next Chapter <ArrowRight size={16} />
                 </button>
               )}
+
             </div>
           </div>
         </div>
