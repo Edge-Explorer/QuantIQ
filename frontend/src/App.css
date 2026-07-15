@@ -2151,13 +2151,10 @@ input[type=number] {
   /* Cinematic tilt angle showing covers and page blocks clearly */
   transform: rotateX(46deg) rotateY(-6deg) rotateZ(-16deg);
   transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-  /* Slight blur matching background video's camera lens blur */
-  filter: drop-shadow(0 15px 35px rgba(0, 0, 0, 0.65)) blur(0.3px);
 }
 
 .book-stack-wrapper:hover .book-pile {
   transform: rotateX(38deg) rotateY(-4deg) rotateZ(-8deg) translateY(-10px);
-  filter: drop-shadow(0 25px 45px rgba(0, 0, 0, 0.8)) blur(0.1px);
 }
 
 
@@ -2168,8 +2165,6 @@ input[type=number] {
   height: var(--book-height, 180px);
   transform-style: preserve-3d;
   transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-  /* Let video colors bleed in to sync lighting */
-  opacity: 0.97;
 }
 
 
