@@ -651,7 +651,7 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
       <div className="fixed inset-0 z-[2] pointer-events-none" style={{ background: 'rgba(6, 7, 13, 0.45)' }} />
 
       {/* 2. Glassmorphic Navigation Bar */}
-      <header className="relative z-20 w-full backdrop-blur-[2px] border-b border-white/3">
+      <header className={`relative w-full backdrop-blur-[2px] border-b border-white/3 transition-all duration-300 ${isBookOpen ? 'z-0' : 'z-20'}`}>
         <div className="flex flex-row justify-between items-center px-8 py-6 max-w-7xl mx-auto">
           {/* Logo brand combining the custom SVG mark and 'QuantIQ' */}
           <div className="flex items-center gap-3 select-none">
