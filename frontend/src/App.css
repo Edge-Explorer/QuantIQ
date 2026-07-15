@@ -2148,15 +2148,15 @@ input[type=number] {
   width: 250px;
   height: 190px;
   transform-style: preserve-3d;
-  /* Shallower tilt to show covers fully and look spacious */
-  transform: rotateX(28deg) rotateY(-8deg) rotateZ(-12deg);
+  /* Cinematic tilt angle showing covers and page blocks clearly */
+  transform: rotateX(46deg) rotateY(-6deg) rotateZ(-16deg);
   transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
   /* Slight blur matching background video's camera lens blur */
   filter: drop-shadow(0 15px 35px rgba(0, 0, 0, 0.65)) blur(0.3px);
 }
 
 .book-stack-wrapper:hover .book-pile {
-  transform: rotateX(24deg) rotateY(-5deg) rotateZ(-6deg) translateY(-8px);
+  transform: rotateX(38deg) rotateY(-4deg) rotateZ(-8deg) translateY(-10px);
   filter: drop-shadow(0 25px 45px rgba(0, 0, 0, 0.8)) blur(0.1px);
 }
 
@@ -2177,18 +2177,18 @@ input[type=number] {
    Each book sits directly on top of the one below.
    Z-offset = sum of thicknesses of all books below.
    ──────────────────────────────────────────────── */
-.book-3d.book-bottom { --t: 42px; transform: translateZ(0px); }
-.book-3d.book-4      { --t: 38px; transform: translateZ(42px) translateX(-3px); }
-.book-3d.book-3      { --t: 40px; transform: translateZ(80px) translateX(3px); }
-.book-3d.book-2      { --t: 40px; transform: translateZ(120px) translateX(-2px); }
-.book-3d.book-top    { --t: 38px; transform: translateZ(160px); }
+.book-3d.book-bottom { --t: 46px; transform: translateZ(0px); }
+.book-3d.book-4      { --t: 42px; transform: translateZ(46px) translateX(-3px); }
+.book-3d.book-3      { --t: 44px; transform: translateZ(88px) translateX(3px); }
+.book-3d.book-2      { --t: 44px; transform: translateZ(132px) translateX(-2px); }
+.book-3d.book-top    { --t: 42px; transform: translateZ(176px); }
 
 /* ─── Hover: fan books out slightly ──────────── */
 .book-stack-wrapper:hover .book-3d.book-bottom { transform: translateZ(0px) translateX(-6px); }
-.book-stack-wrapper:hover .book-3d.book-4      { transform: translateZ(42px) translateX(-12px) translateY(2px); }
-.book-stack-wrapper:hover .book-3d.book-3      { transform: translateZ(80px) translateX(6px) translateY(4px); }
-.book-stack-wrapper:hover .book-3d.book-2      { transform: translateZ(120px) translateX(-4px) translateY(-2px); }
-.book-stack-wrapper:hover .book-3d.book-top    { transform: translateZ(160px) translateX(-2px) translateY(-10px); }
+.book-stack-wrapper:hover .book-3d.book-4      { transform: translateZ(46px) translateX(-12px) translateY(2px); }
+.book-stack-wrapper:hover .book-3d.book-3      { transform: translateZ(88px) translateX(6px) translateY(4px); }
+.book-stack-wrapper:hover .book-3d.book-2      { transform: translateZ(132px) translateX(-4px) translateY(-2px); }
+.book-stack-wrapper:hover .book-3d.book-top    { transform: translateZ(176px) translateX(-2px) translateY(-10px); }
 
 /* ─── Top book flies open on click ─────────── */
 .book-3d.book-top.is-opening {
