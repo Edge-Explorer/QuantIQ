@@ -2104,6 +2104,44 @@ input[type=number] {
   user-select: none;
 }
 
+/* Ambient glow overlay blending stack with video behind it */
+.book-stack-wrapper::before {
+  content: "";
+  position: absolute;
+  width: 320px;
+  height: 320px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(14, 165, 233, 0.12) 0%,
+    rgba(99, 102, 241, 0.08) 40%,
+    rgba(245, 158, 11, 0.03) 70%,
+    transparent 100%
+  );
+  filter: blur(40px);
+  pointer-events: none;
+  z-index: 0;
+  transform: translateZ(-20px);
+}
+
+.book-stack-wrapper::after {
+  content: "";
+  position: absolute;
+  width: 240px;
+  height: 100px;
+  bottom: 30px;
+  background: radial-gradient(
+    ellipse,
+    rgba(245, 158, 11, 0.08) 0%,
+    transparent 80%
+  );
+  filter: blur(25px);
+  pointer-events: none;
+  z-index: 0;
+  transform: rotateX(60deg) translateZ(-10px);
+}
+
+
 /* ─── The pile container tilted in 3D ─────── */
 .book-pile {
   position: relative;
@@ -2172,8 +2210,10 @@ input[type=number] {
   background: var(--cover-gradient);
   border-radius: 3px 6px 6px 3px;
   box-shadow:
-    inset 0 0 30px rgba(0,0,0,0.35),
-    inset 4px 0 10px rgba(255,255,255,0.08);
+    inset 0 0 30px rgba(0,0,0,0.45),
+    inset 4px 0 10px rgba(255,255,255,0.06),
+    /* Soft cosmic ambient highlight on the top face */
+    inset 0 15px 30px rgba(14, 165, 233, 0.08);
   transform: translateZ(var(--t, 36px));
 }
 
@@ -2182,7 +2222,7 @@ input[type=number] {
   content: "";
   position: absolute;
   inset: 7px;
-  border: 1px solid rgba(191, 149, 63, 0.35);
+  border: 1px solid rgba(191, 149, 63, 0.28);
   border-radius: 2px;
   pointer-events: none;
 }
@@ -2201,8 +2241,8 @@ input[type=number] {
   transform: rotateY(-90deg);
   background: var(--spine-gradient);
   box-shadow:
-    inset -4px 0 16px rgba(0,0,0,0.7),
-    inset 2px 0 6px rgba(255,255,255,0.07);
+    inset -4px 0 16px rgba(0,0,0,0.75),
+    inset 2px 0 6px rgba(255,255,255,0.05);
   display: flex;
   flex-direction: column;
   justify-content: space-around;
@@ -2223,16 +2263,17 @@ input[type=number] {
   transform-origin: right center;
   transform: rotateY(90deg);
   background:
-    linear-gradient(to right, rgba(0,0,0,0.15) 0%, transparent 30%, transparent 70%, rgba(0,0,0,0.2) 100%),
+    /* Ambient blend gradient overlay to match background video lighting */
+    linear-gradient(to right, rgba(13, 27, 42, 0.3) 0%, transparent 40%, transparent 80%, rgba(0,0,0,0.3) 100%),
     repeating-linear-gradient(
       to bottom,
-      #f7edda 0px,
-      #f7edda 0.6px,
-      #d8c9a3 0.9px,
-      #eee3c9 1.4px,
-      #f7edda 1.8px
+      #f5e9d3 0px,
+      #f5e9d3 0.6px,
+      #d0bf98 0.9px,
+      #e8dbbe 1.4px,
+      #f5e9d3 1.8px
     );
-  box-shadow: inset 4px 0 10px rgba(0,0,0,0.25);
+  box-shadow: inset 4px 0 10px rgba(0,0,0,0.3);
 }
 
 /* Bottom / fore-edge page block
@@ -2248,16 +2289,17 @@ input[type=number] {
   transform-origin: bottom center;
   transform: rotateX(-90deg);
   background:
-    linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, transparent 40%, transparent 60%, rgba(0,0,0,0.15) 100%),
+    /* Ambient blend gradient overlay */
+    linear-gradient(to bottom, rgba(13, 27, 42, 0.25) 0%, transparent 45%, transparent 75%, rgba(0,0,0,0.25) 100%),
     repeating-linear-gradient(
       to right,
-      #f7edda 0px,
-      #f7edda 0.6px,
-      #d8c9a3 0.9px,
-      #eee3c9 1.4px,
-      #f7edda 1.8px
+      #f5e9d3 0px,
+      #f5e9d3 0.6px,
+      #d0bf98 0.9px,
+      #e8dbbe 1.4px,
+      #f5e9d3 1.8px
     );
-  box-shadow: inset 0 3px 8px rgba(0,0,0,0.2);
+  box-shadow: inset 0 3px 8px rgba(0,0,0,0.25);
 }
 
 
