@@ -2215,8 +2215,9 @@ input[type=number] {
   box-shadow:
     inset 0 0 30px rgba(0,0,0,0.45),
     inset 4px 0 10px rgba(255,255,255,0.06),
-    /* Soft cosmic ambient highlight on the top face */
-    inset 0 15px 30px rgba(14, 165, 233, 0.08);
+    /* Soft cosmic ambient highlight + warm gold light reflection overlay */
+    inset 0 15px 30px rgba(14, 165, 233, 0.08),
+    inset 0 -20px 40px rgba(251, 191, 36, 0.09);
   transform: translateZ(var(--t, 36px));
 }
 
@@ -2267,7 +2268,8 @@ input[type=number] {
   transform: rotateY(90deg);
   background-color: #f4ebd7; /* Solid fallback to prevent transparency gaps */
   background:
-    linear-gradient(to right, rgba(13, 27, 42, 0.2) 0%, transparent 30%, transparent 70%, rgba(0,0,0,0.2) 100%),
+    /* Warm gold ambient highlight blend + deep ambient shading */
+    linear-gradient(to right, rgba(251, 191, 36, 0.15) 0%, transparent 40%, rgba(0,0,0,0.2) 100%),
     repeating-linear-gradient(
       to bottom,
       #f5e9d3 0px,
@@ -2293,7 +2295,8 @@ input[type=number] {
   transform: rotateX(-90deg);
   background-color: #f4ebd7; /* Solid fallback */
   background:
-    linear-gradient(to bottom, rgba(13, 27, 42, 0.2) 0%, transparent 30%, transparent 70%, rgba(0,0,0,0.2) 100%),
+    /* Warm gold reflection overlay + deep ambient shading */
+    linear-gradient(to bottom, rgba(251, 191, 36, 0.15) 0%, transparent 40%, rgba(0,0,0,0.2) 100%),
     repeating-linear-gradient(
       to right,
       #f5e9d3 0px,
