@@ -2177,18 +2177,18 @@ input[type=number] {
    Each book sits directly on top of the one below.
    Z-offset = sum of thicknesses of all books below.
    ──────────────────────────────────────────────── */
-.book-3d.book-bottom { --t: 38px; transform: translateZ(0px); }
-.book-3d.book-4      { --t: 34px; transform: translateZ(38px) translateX(-3px); }
-.book-3d.book-3      { --t: 36px; transform: translateZ(72px) translateX(3px); }
-.book-3d.book-2      { --t: 36px; transform: translateZ(108px) translateX(-2px); }
-.book-3d.book-top    { --t: 34px; transform: translateZ(144px); }
+.book-3d.book-bottom { --t: 42px; transform: translateZ(0px); }
+.book-3d.book-4      { --t: 38px; transform: translateZ(42px) translateX(-3px); }
+.book-3d.book-3      { --t: 40px; transform: translateZ(80px) translateX(3px); }
+.book-3d.book-2      { --t: 40px; transform: translateZ(120px) translateX(-2px); }
+.book-3d.book-top    { --t: 38px; transform: translateZ(160px); }
 
 /* ─── Hover: fan books out slightly ──────────── */
 .book-stack-wrapper:hover .book-3d.book-bottom { transform: translateZ(0px) translateX(-6px); }
-.book-stack-wrapper:hover .book-3d.book-4      { transform: translateZ(38px) translateX(-12px) translateY(2px); }
-.book-stack-wrapper:hover .book-3d.book-3      { transform: translateZ(72px) translateX(6px) translateY(4px); }
-.book-stack-wrapper:hover .book-3d.book-2      { transform: translateZ(108px) translateX(-4px) translateY(-2px); }
-.book-stack-wrapper:hover .book-3d.book-top    { transform: translateZ(144px) translateX(-2px) translateY(-10px); }
+.book-stack-wrapper:hover .book-3d.book-4      { transform: translateZ(42px) translateX(-12px) translateY(2px); }
+.book-stack-wrapper:hover .book-3d.book-3      { transform: translateZ(80px) translateX(6px) translateY(4px); }
+.book-stack-wrapper:hover .book-3d.book-2      { transform: translateZ(120px) translateX(-4px) translateY(-2px); }
+.book-stack-wrapper:hover .book-3d.book-top    { transform: translateZ(160px) translateX(-2px) translateY(-10px); }
 
 /* ─── Top book flies open on click ─────────── */
 .book-3d.book-top.is-opening {
@@ -2265,9 +2265,9 @@ input[type=number] {
 .book-face-right-pages {
   position: absolute;
   width: var(--t, 36px);
-  height: 100%;
-  right: 0;
-  top: 0;
+  height: calc(100% - 8px);
+  right: 4px;
+  top: 4px;
   transform-origin: right center;
   transform: rotateY(90deg);
   background:
@@ -2290,10 +2290,10 @@ input[type=number] {
    Creates the bottom wall showing page thickness. ✓ */
 .book-face-front-pages {
   position: absolute;
-  width: 100%;
+  width: calc(100% - 8px);
   height: var(--t, 36px);
-  left: 0;
-  bottom: 0;
+  left: 4px;
+  bottom: 4px;
   transform-origin: bottom center;
   transform: rotateX(-90deg);
   background:

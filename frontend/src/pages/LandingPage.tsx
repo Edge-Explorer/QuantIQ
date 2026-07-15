@@ -813,7 +813,7 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
           </div>
 
           {/* Right Column — Volumetric 3D CSS Book Stack (Aligned to rest on the desk in the background video) */}
-          <div className="flex justify-center items-center relative w-full max-w-md lg:max-w-none pt-4 lg:pt-0 lg:translate-y-[15%] lg:translate-x-[5%] animate-fade-rise-delay">
+          <div className="flex justify-center items-center relative w-full max-w-md lg:max-w-none pt-4 lg:pt-0 lg:-translate-y-[4%] lg:translate-x-[2%] animate-fade-rise-delay">
             <div
               className="book-stack-wrapper"
               onClick={handleOpenBook}
