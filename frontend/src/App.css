@@ -2151,10 +2151,13 @@ input[type=number] {
   /* Shallower tilt to show covers fully and look spacious */
   transform: rotateX(28deg) rotateY(-8deg) rotateZ(-12deg);
   transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  /* Slight blur matching background video's camera lens blur */
+  filter: drop-shadow(0 15px 35px rgba(0, 0, 0, 0.65)) blur(0.3px);
 }
 
 .book-stack-wrapper:hover .book-pile {
   transform: rotateX(24deg) rotateY(-5deg) rotateZ(-6deg) translateY(-8px);
+  filter: drop-shadow(0 25px 45px rgba(0, 0, 0, 0.8)) blur(0.1px);
 }
 
 
@@ -2165,7 +2168,10 @@ input[type=number] {
   height: var(--book-height, 180px);
   transform-style: preserve-3d;
   transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  /* Let video colors bleed in to sync lighting */
+  opacity: 0.97;
 }
+
 
 /* ─── Per-book thickness variable & Z-positions ─
    Each book sits directly on top of the one below.
