@@ -664,8 +664,8 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
             </span>
           </div>
 
-          {/* Navigation Links */}
-          <nav className="hidden md:flex items-center gap-8 relative">
+          {/* Navigation Links (Faded out when book is open) */}
+          <nav className={`hidden md:flex items-center gap-8 relative transition-all duration-300 ${isBookOpen ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
             <a href="#hero" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
               Home
             </a>
@@ -690,7 +690,7 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
               </button>
               {showReachUs && (
                 <div 
-                  style={{ position: 'absolute', top: 'calc(100% + 12px)', left: '50%', transform: 'translateX(-50%)' }}
+                   style={{ position: 'absolute', top: 'calc(100% + 12px)', left: '50%', transform: 'translateX(-50%)' }}
                   className="w-48 p-2 rounded-2xl liquid-glass border border-white/10 shadow-2xl flex flex-col gap-1 z-20"
                 >
                   <a 
@@ -731,8 +731,8 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
             </div>
           </nav>
 
-          {/* CTA Trigger and Github Badge */}
-          <div className="flex items-center gap-4">
+          {/* CTA Trigger and Github Badge (Faded out when book is open) */}
+          <div className={`flex items-center gap-4 transition-all duration-300 ${isBookOpen ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
             <a 
               href="https://github.com/Edge-Explorer/QuantIQ"
               target="_blank"
