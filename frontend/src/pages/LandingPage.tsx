@@ -100,7 +100,7 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
 
   const handleNextPage = () => {
     playPageTurnSound();
-    setBookPage(prev => Math.min(prev + 1, 7));
+    setBookPage(prev => Math.min(prev + 1, 8));
   };
 
   const handlePrevPage = () => {
@@ -1375,67 +1375,50 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
               
               {/* LEFT PAGE (Context/Chapter Title) */}
               <div className="parchment-page-half left-page">
-                {/* PAGE 1: INDEX */}
+                {/* PAGE 1: LOGO PAGE */}
                 {bookPage === 1 && (
-                  <div className="flex flex-col h-full justify-between">
-                    <div>
-                      <h3 className="ink-heading text-center mb-1">Index</h3>
-                      <div className="w-16 h-0.5 bg-[#8c2020]/20 mx-auto mb-5"></div>
-                      
-                      <div className="flex flex-col gap-2.5 font-serif text-[12px] text-[#2c1d11] px-2">
-                        <div className="flex justify-between items-baseline">
-                          <span className="font-semibold">Prologue: Genesis</span>
-                          <span className="flex-grow border-b border-dotted border-[#8c2020]/30 mx-2"></span>
-                          <span>Page I</span>
-                        </div>
-                        <div className="flex justify-between items-baseline">
-                          <span className="font-semibold">Ch. I: The Redpanda Pipeline</span>
-                          <span className="flex-grow border-b border-dotted border-[#8c2020]/30 mx-2"></span>
-                          <span>Page II</span>
-                        </div>
-                        <div className="flex justify-between items-baseline">
-                          <span className="font-semibold">Ch. II: On-Device ONNX ML</span>
-                          <span className="flex-grow border-b border-dotted border-[#8c2020]/30 mx-2"></span>
-                          <span>Page III</span>
-                        </div>
-                        <div className="flex justify-between items-baseline">
-                          <span className="font-semibold">Ch. III: ReAct AI Analyst</span>
-                          <span className="flex-grow border-b border-dotted border-[#8c2020]/30 mx-2"></span>
-                          <span>Page IV</span>
-                        </div>
-                        <div className="flex justify-between items-baseline">
-                          <span className="font-semibold">Ch. IV: Context-Aware Chat</span>
-                          <span className="flex-grow border-b border-dotted border-[#8c2020]/30 mx-2"></span>
-                          <span>Page V</span>
-                        </div>
-                        <div className="flex justify-between items-baseline">
-                          <span className="font-semibold">Ch. V: MLOps Loop & Scale</span>
-                          <span className="flex-grow border-b border-dotted border-[#8c2020]/30 mx-2"></span>
-                          <span>Page VI</span>
-                        </div>
-                        <div className="flex justify-between items-baseline">
-                          <span className="font-semibold">Epilogue: Developer's Ledger</span>
-                          <span className="flex-grow border-b border-dotted border-[#8c2020]/30 mx-2"></span>
-                          <span>Page VII</span>
-                        </div>
-                      </div>
+                  <div className="flex flex-col h-full items-center justify-center py-8">
+                    {/* Gold Foil Celestial Ornament framing Logo */}
+                    <div className="w-32 h-32 rounded-full border border-amber-800/20 flex items-center justify-center relative shadow-[0_0_15px_rgba(140,32,32,0.05)] mb-6">
+                      <div className="absolute inset-2 rounded-full border border-dashed border-amber-800/15 animate-[spin_60s_linear_infinite]" />
+                      <Logo size={56} className="relative z-10 opacity-90 filter drop-shadow-[0_0_8px_rgba(140,32,32,0.15)]" />
                     </div>
                     
-                    <div className="text-center italic text-[#8c2020]/75 text-[11px] pb-4" style={{ fontFamily: "'EB Garamond', serif" }}>
-                      "Every great strategy begins with a single line in the registry."
-                    </div>
+                    <h2 className="font-serif text-3xl tracking-wide text-[#2c1d11] font-medium" style={{ fontFamily: "'Instrument Serif', serif" }}>
+                      QuantIQ
+                    </h2>
+                    <div className="w-20 h-0.5 bg-[#8c2020]/20 my-3"></div>
+                    <p className="text-center font-serif text-xs text-[#5c4a3c] italic max-w-[200px]" style={{ fontFamily: "'EB Garamond', serif" }}>
+                      "Decision Intelligence for the Modern Trader"
+                    </p>
                   </div>
                 )}
 
-                {/* PAGE 2: CHAPTER I */}
+                {/* PAGE 2: PROLOGUE: GENESIS */}
                 {bookPage === 2 && (
+                  <>
+                    <h3 className="ink-heading">Prologue: Genesis</h3>
+                    <p className="ink-paragraph">
+                      QuantIQ is an AI-powered decision intelligence platform for retail investors. 
+                    </p>
+                    <p className="ink-paragraph">
+                      Instead of forcing users to switch between charts, news portals, screeners, and general-purpose chatbots, QuantIQ unifies live market feeds, historical technical indicators, local machine learning models, and AI reasoning.
+                    </p>
+                    <p className="ink-paragraph">
+                      The goal is to reduce research time and provide transparent, data-backed insights to help users make more informed trading decisions.
+                    </p>
+                  </>
+                )}
+
+                {/* PAGE 3: CHAPTER I */}
+                {bookPage === 3 && (
                   <>
                     <h3 className="ink-heading">Chapter I: The Redpanda Pipeline</h3>
                     <p className="ink-paragraph">
                       In quantitative trading, latency is measured in losses. Our pipeline ingests real-time stock price ticks from Yahoo Finance every 5 seconds.
                     </p>
                     <p className="ink-paragraph">
-                      These ticks are published as JSON messages via an asynchronous Kafka-compatible Redpanda broker (`stock-ticks` topic). The backend consumer pulls the feed, and connected client browsers receive live tick updates instantly over WebSockets.
+                      These ticks are published as JSON messages via an asynchronous Kafka-compatible Redpanda broker (`stock-ticks` topic). Connected client browsers receive live tick updates instantly over WebSockets.
                     </p>
                     <p className="ink-paragraph">
                       To keep storage fees low and optimize queries, an ingestion worker aggregates ticks in-memory and flushes 1-minute OHLCV candles to our NeonDB.
@@ -1443,8 +1426,8 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
                   </>
                 )}
 
-                {/* PAGE 3: CHAPTER II */}
-                {bookPage === 3 && (
+                {/* PAGE 4: CHAPTER II */}
+                {bookPage === 4 && (
                   <>
                     <h3 className="ink-heading">Chapter II: On-Device ONNX ML</h3>
                     <p className="ink-paragraph">
@@ -1459,8 +1442,8 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
                   </>
                 )}
 
-                {/* PAGE 4: CHAPTER III */}
-                {bookPage === 4 && (
+                {/* PAGE 5: CHAPTER III */}
+                {bookPage === 5 && (
                   <>
                     <h3 className="ink-heading">Chapter III: ReAct AI Analyst</h3>
                     <p className="ink-paragraph">
@@ -1475,8 +1458,8 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
                   </>
                 )}
 
-                {/* PAGE 5: CHAPTER IV */}
-                {bookPage === 5 && (
+                {/* PAGE 6: CHAPTER IV */}
+                {bookPage === 6 && (
                   <>
                     <h3 className="ink-heading">Chapter IV: Context-Aware Chat</h3>
                     <p className="ink-paragraph">
@@ -1491,8 +1474,8 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
                   </>
                 )}
 
-                {/* PAGE 6: CHAPTER V */}
-                {bookPage === 6 && (
+                {/* PAGE 7: CHAPTER V */}
+                {bookPage === 7 && (
                   <>
                     <h3 className="ink-heading">Chapter V: MLOps Loop & Scale</h3>
                     <p className="ink-paragraph">
@@ -1507,8 +1490,8 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
                   </>
                 )}
 
-                {/* PAGE 7: EPILOGUE */}
-                {bookPage === 7 && (
+                {/* PAGE 8: EPILOGUE */}
+                {bookPage === 8 && (
                   <>
                     <h3 className="ink-heading">Epilogue: Developer's Ledger</h3>
                     <p className="ink-paragraph">
@@ -1526,20 +1509,56 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
 
               {/* RIGHT PAGE (Interactive Content) */}
               <div className="parchment-page-half right-page">
-                {/* PAGE 1: PROLOGUE */}
+                {/* PAGE 1: INDEX */}
                 {bookPage === 1 && (
-                  <>
-                    <h4 className="ink-subheading">Prologue: Genesis</h4>
-                    <p className="ink-paragraph">
-                      QuantIQ is an AI-powered decision intelligence platform for retail investors. 
-                    </p>
-                    <p className="ink-paragraph">
-                      Instead of forcing users to switch between charts, news portals, screeners, and general-purpose chatbots, QuantIQ unifies live market feeds, historical technical indicators, local machine learning models, and AI reasoning.
-                    </p>
-                    <p className="ink-paragraph">
-                      The goal is to reduce research time and provide transparent, data-backed insights to help users make more informed trading decisions.
-                    </p>
-                  </>
+                  <div className="flex flex-col h-full justify-between py-2">
+                    <div>
+                      <h3 className="ink-heading text-center mb-1">Index</h3>
+                      <div className="w-16 h-0.5 bg-[#8c2020]/20 mx-auto mb-4"></div>
+                      
+                      <div className="flex flex-col gap-2 font-serif text-[11.5px] text-[#2c1d11] px-1">
+                        <div className="flex justify-between items-baseline">
+                          <span className="font-semibold">Prologue: Genesis</span>
+                          <span className="flex-grow border-b border-dotted border-[#8c2020]/30 mx-2"></span>
+                          <span>Page II</span>
+                        </div>
+                        <div className="flex justify-between items-baseline">
+                          <span className="font-semibold">Ch. I: The Redpanda Pipeline</span>
+                          <span className="flex-grow border-b border-dotted border-[#8c2020]/30 mx-2"></span>
+                          <span>Page III</span>
+                        </div>
+                        <div className="flex justify-between items-baseline">
+                          <span className="font-semibold">Ch. II: On-Device ONNX ML</span>
+                          <span className="flex-grow border-b border-dotted border-[#8c2020]/30 mx-2"></span>
+                          <span>Page IV</span>
+                        </div>
+                        <div className="flex justify-between items-baseline">
+                          <span className="font-semibold">Ch. III: ReAct AI Analyst</span>
+                          <span className="flex-grow border-b border-dotted border-[#8c2020]/30 mx-2"></span>
+                          <span>Page V</span>
+                        </div>
+                        <div className="flex justify-between items-baseline">
+                          <span className="font-semibold">Ch. IV: Context-Aware Chat</span>
+                          <span className="flex-grow border-b border-dotted border-[#8c2020]/30 mx-2"></span>
+                          <span>Page VI</span>
+                        </div>
+                        <div className="flex justify-between items-baseline">
+                          <span className="font-semibold">Ch. V: MLOps Loop & Scale</span>
+                          <span className="flex-grow border-b border-dotted border-[#8c2020]/30 mx-2"></span>
+                          <span>Page VII</span>
+                        </div>
+                        <div className="flex justify-between items-baseline">
+                          <span className="font-semibold">Epilogue: Developer's Ledger</span>
+                          <span className="flex-grow border-b border-dotted border-[#8c2020]/30 mx-2"></span>
+                          <span>Page VIII</span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="text-center italic text-[#8c2020]/75 text-[10.5px] pb-2" style={{ fontFamily: "'EB Garamond', serif" }}>
+                      "Every great strategy begins with a single line in the registry."
+                    </div>
+                  </div>
                 )}
 
                 {/* PAGE 2: PIPELINE ACHIEVEMENTS */}
@@ -1651,11 +1670,6 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
                         >
                           <Globe size={22} className="text-[#204060]" />
                           <span className="sketch-node-label">Vercel UI</span>
-                          {hoveredNode === 'vercel' && (
-                            <div className="sketch-node-desc-bubble">
-                              <strong>Vercel Client</strong>: React/TS web interface. Fetches user data, watchlist items, and renders active price candles.
-                            </div>
-                          )}
                         </div>
                       </div>
 
@@ -1670,11 +1684,6 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
                         >
                           <span className="font-bold text-lg text-[#204060] font-serif">API</span>
                           <span className="sketch-node-label">FastAPI</span>
-                          {hoveredNode === 'fastapi' && (
-                            <div className="sketch-node-desc-bubble">
-                              <strong>FastAPI Server</strong>: Deployed on HF Spaces. Validates credits, opens WebSocket tickers, and initiates agent requests.
-                            </div>
-                          )}
                         </div>
                       </div>
 
@@ -1689,11 +1698,6 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
                         >
                           <span className="font-bold text-lg text-[#204060] font-serif">AI</span>
                           <span className="sketch-node-label">Gemini ReAct</span>
-                          {hoveredNode === 'gemini' && (
-                            <div className="sketch-node-desc-bubble">
-                              <strong>Gemini ReAct Agent</strong>: Coordinates analysis using tool calling (news, indicators, and ML forecasts) to write swing strategy guides.
-                            </div>
-                          )}
                         </div>
 
                         <div 
@@ -1703,11 +1707,6 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
                         >
                           <span className="font-bold text-lg text-[#204060] font-serif">ML</span>
                           <span className="sketch-node-label">ONNX Engine</span>
-                          {hoveredNode === 'onnx' && (
-                            <div className="sketch-node-desc-bubble">
-                              <strong>ONNX Model Router</strong>: Evaluates target indicators against Random Forest models to yield live upward probabilities.
-                            </div>
-                          )}
                         </div>
 
                         <div 
@@ -1717,11 +1716,6 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
                         >
                           <span className="font-bold text-lg text-[#204060] font-serif">Cache</span>
                           <span className="sketch-node-label">Redis DB</span>
-                          {hoveredNode === 'redis' && (
-                            <div className="sketch-node-desc-bubble">
-                              <strong>Redis Cache</strong>: DB 1 isolates yfinance daily indicator caches. DB 0 manages Celery tasks.
-                            </div>
-                          )}
                         </div>
                       </div>
 
@@ -1736,19 +1730,39 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
                         >
                           <SiPostgresql size={22} className="text-[#204060]" />
                           <span className="sketch-node-label">Neon DB</span>
-                          {hoveredNode === 'postgres' && (
-                            <div className="sketch-node-desc-bubble">
-                              <strong>Neon DB</strong>: Cloud Postgres database hosting user account data, watchlists, triggers, and prediction outcomes.
-                            </div>
-                          )}
                         </div>
                       </div>
                     </div>
                   </div>
                 )}
 
-                {/* PAGE 7: LEDGER CONTACT FORM */}
+                {/* PAGE 7: ROADMAP */}
                 {bookPage === 7 && (
+                  <>
+                    <h4 className="ink-subheading">Roadmap & Future Upgrades</h4>
+                    <div className="ink-bullet-list">
+                      <div className="ink-bullet-item">
+                        <span className="ink-bullet-bullet">✓</span>
+                        <span><strong>Contextual News Sentiment</strong>: Feed Yahoo Finance news feeds to the Gemini agent to cross-reference market headlines.</span>
+                      </div>
+                      <div className="ink-bullet-item">
+                        <span className="ink-bullet-bullet">✓</span>
+                        <span><strong>Catalyst Watch</strong>: Sync scheduled earnings dates, EPS Estimates, and Revenue consensuses.</span>
+                      </div>
+                      <div className="ink-bullet-item">
+                        <span className="ink-bullet-bullet">☐</span>
+                        <span><strong>Razorpay Subscription tiers</strong>: Commercial tiers targeting ₹1,00,000+ transactional volume upgrades.</span>
+                      </div>
+                      <div className="ink-bullet-item">
+                        <span className="ink-bullet-bullet">☐</span>
+                        <span><strong>SMS & WhatsApp Alerts</strong>: Trigger price alerts straight to your phone.</span>
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {/* PAGE 8: LEDGER CONTACT FORM */}
+                {bookPage === 8 && (
                   <div className="flex flex-col h-full justify-between">
                     <form onSubmit={handleBookContactSubmit} className="ink-form">
                       {bookFormError && (
@@ -1836,9 +1850,9 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
               )}
               {/* Page indicator */}
               <span className="book-page-indicator">
-                {['—  I  —', '—  II  —', '—  III  —', '—  IV  —', '—  V  —', '—  VI  —', '—  VII  —'][bookPage - 1]}
+                {['—  I  —', '—  II  —', '—  III  —', '—  IV  —', '—  V  —', '—  VI  —', '—  VII  —', '—  VIII  —'][bookPage - 1]}
               </span>
-              {bookPage < 7 && (
+              {bookPage < 8 && (
                 <button className="book-page-turn-btn next-btn" onClick={handleNextPage}>
                   Next Chapter <ArrowRight size={16} />
                 </button>
