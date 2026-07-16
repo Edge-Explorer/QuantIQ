@@ -46,7 +46,6 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
   const [isBookOpen, setIsBookOpen] = useState(false);
   const [isBookAnimating, setIsBookAnimating] = useState(false);
   const [bookPage, setBookPage] = useState(1);
-  const [hoveredNode, setHoveredNode] = useState<string | null>(null);
   
   // Book Form States
   const [bookName, setBookName] = useState('');
@@ -1663,11 +1662,7 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
                     <div className="blueprint-grid-nodes">
                       {/* Row 1: Frontend */}
                       <div className="blueprint-row">
-                        <div 
-                          className="sketch-node-circle"
-                          onMouseEnter={() => setHoveredNode('vercel')}
-                          onMouseLeave={() => setHoveredNode(null)}
-                        >
+                        <div className="sketch-node-circle">
                           <Globe size={22} className="text-[#204060]" />
                           <span className="sketch-node-label">Vercel UI</span>
                         </div>
@@ -1677,43 +1672,27 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
 
                       {/* Row 2: API Gateway */}
                       <div className="blueprint-row">
-                        <div 
-                          className="sketch-node-circle"
-                          onMouseEnter={() => setHoveredNode('fastapi')}
-                          onMouseLeave={() => setHoveredNode(null)}
-                        >
+                        <div className="sketch-node-circle">
                           <span className="font-bold text-lg text-[#204060] font-serif">API</span>
                           <span className="sketch-node-label">FastAPI</span>
                         </div>
                       </div>
 
-                      <div className="text-[#5a5246] text-[10px] font-bold">⬇ (Orchestration)</div>
+                      <div className="text-[#5a5246] text-[#5a5246] text-[10px] font-bold">⬇ (Orchestration)</div>
 
                       {/* Row 3: Central Processing */}
                       <div className="blueprint-row gap-4">
-                        <div 
-                          className="sketch-node-circle"
-                          onMouseEnter={() => setHoveredNode('gemini')}
-                          onMouseLeave={() => setHoveredNode(null)}
-                        >
+                        <div className="sketch-node-circle">
                           <span className="font-bold text-lg text-[#204060] font-serif">AI</span>
                           <span className="sketch-node-label">Gemini ReAct</span>
                         </div>
 
-                        <div 
-                          className="sketch-node-circle"
-                          onMouseEnter={() => setHoveredNode('onnx')}
-                          onMouseLeave={() => setHoveredNode(null)}
-                        >
+                        <div className="sketch-node-circle">
                           <span className="font-bold text-lg text-[#204060] font-serif">ML</span>
                           <span className="sketch-node-label">ONNX Engine</span>
                         </div>
 
-                        <div 
-                          className="sketch-node-circle"
-                          onMouseEnter={() => setHoveredNode('redis')}
-                          onMouseLeave={() => setHoveredNode(null)}
-                        >
+                        <div className="sketch-node-circle">
                           <span className="font-bold text-lg text-[#204060] font-serif">Cache</span>
                           <span className="sketch-node-label">Redis DB</span>
                         </div>
@@ -1723,11 +1702,7 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
 
                       {/* Row 4: Database */}
                       <div className="blueprint-row">
-                        <div 
-                          className="sketch-node-circle"
-                          onMouseEnter={() => setHoveredNode('postgres')}
-                          onMouseLeave={() => setHoveredNode(null)}
-                        >
+                        <div className="sketch-node-circle">
                           <SiPostgresql size={22} className="text-[#204060]" />
                           <span className="sketch-node-label">Neon DB</span>
                         </div>
