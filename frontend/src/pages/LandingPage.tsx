@@ -100,7 +100,7 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
 
   const handleNextPage = () => {
     playPageTurnSound();
-    setBookPage(prev => Math.min(prev + 1, 4));
+    setBookPage(prev => Math.min(prev + 1, 5));
   };
 
   const handlePrevPage = () => {
@@ -1375,38 +1375,79 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
               
               {/* LEFT PAGE (Context/Chapter Title) */}
               <div className="parchment-page-half left-page">
+                {/* PAGE 1: INDEX */}
                 {bookPage === 1 && (
-                  <>
-                    <h3 className="ink-heading">Chapter I: The QuantIQ Saga</h3>
-                    <p className="ink-paragraph">
-                      In the silent deeps of the financial oceans, most traders get lost in the deafening roar of the market. QuantIQ was born to carve out a sanctuary of sharp focus—a premium intelligence terminal that operates on pure mathematical logic.
-                    </p>
-                    <p className="ink-paragraph">
-                      We have laid down a resilient infrastructure built to query and process stock movements with extreme accuracy. By utilizing advanced local ONNX model routing and dynamic caching, we ensure traders get high-fidelity indicators without delay or limit.
-                    </p>
-                    <p className="ink-paragraph italic mt-6" style={{ fontFamily: "'EB Garamond', serif" }}>
-                      "Amidst the chaos and noise of the market tick, truth is revealed through the silent logic of the code."
-                    </p>
-                  </>
+                  <div className="flex flex-col h-full justify-between">
+                    <div>
+                      <h3 className="ink-heading text-center mb-1">Index</h3>
+                      <div className="w-16 h-0.5 bg-[#8c2020]/20 mx-auto mb-6"></div>
+                      
+                      <div className="flex flex-col gap-4 font-serif text-[13px] text-[#2c1d11] px-2">
+                        <div className="flex justify-between items-baseline">
+                          <span className="font-semibold">Prologue: Genesis</span>
+                          <span className="flex-grow border-b border-dotted border-[#8c2020]/30 mx-2"></span>
+                          <span>Page I</span>
+                        </div>
+                        <div className="flex justify-between items-baseline">
+                          <span className="font-semibold">Chapter I: The $10,000 Pipeline</span>
+                          <span className="flex-grow border-b border-dotted border-[#8c2020]/30 mx-2"></span>
+                          <span>Page II</span>
+                        </div>
+                        <div className="flex justify-between items-baseline">
+                          <span className="font-semibold">Chapter II: The AI Oracle & News</span>
+                          <span className="flex-grow border-b border-dotted border-[#8c2020]/30 mx-2"></span>
+                          <span>Page III</span>
+                        </div>
+                        <div className="flex justify-between items-baseline">
+                          <span className="font-semibold">Chapter III: Interconnected Graph</span>
+                          <span className="flex-grow border-b border-dotted border-[#8c2020]/30 mx-2"></span>
+                          <span>Page IV</span>
+                        </div>
+                        <div className="flex justify-between items-baseline">
+                          <span className="font-semibold">Chapter IV: The Developer's Ledger</span>
+                          <span className="flex-grow border-b border-dotted border-[#8c2020]/30 mx-2"></span>
+                          <span>Page V</span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="text-center italic text-[#8c2020]/75 text-[11px] pb-6" style={{ fontFamily: "'EB Garamond', serif" }}>
+                      "Every great strategy begins with a single line in the registry."
+                    </div>
+                  </div>
                 )}
 
+                {/* PAGE 2: CHAPTER I */}
                 {bookPage === 2 && (
                   <>
-                    <h3 className="ink-heading">Chapter II: The Horizon</h3>
+                    <h3 className="ink-heading">Chapter I: The $10,000 Pipeline</h3>
                     <p className="ink-paragraph">
-                      The roadmap ahead is carved with precision. We are expanding our tactical scope to incorporate fundamental catalysts and real-time news sentiment.
+                      In quantitative finance, latency is measured in losses. Our first challenge was building an ingestion engine capable of handling real-time streams without collapsing under bandwidth fees.
                     </p>
                     <p className="ink-paragraph">
-                      Our target is to build an advisor that merges macro news cycles with technical charts, providing a comprehensive, time-aware analysis for swing trading setups.
+                      By setting up aggressive caching layers inside isolated Redis DB pipelines, we reduced external API query overhead, saving an estimated $10,000 in licensing fees during testing. Every daily candle and volatile ATR computation is cached and served instantly.
                     </p>
-                    <div className="w-24 h-0.5 bg-[#8c2020]/20 my-6 mx-auto"></div>
-                    <p className="ink-paragraph text-center text-sm font-semibold text-[#8c2020]">
-                      Turn the page to study our core architectural engine.
+                    <p className="ink-paragraph italic mt-6" style={{ fontFamily: "'EB Garamond', serif" }}>
+                      "With $ and cents we measure cost, but with logic we ensure no tick is lost."
                     </p>
                   </>
                 )}
 
+                {/* PAGE 3: CHAPTER II */}
                 {bookPage === 3 && (
+                  <>
+                    <h3 className="ink-heading">Chapter II: The AI Oracle</h3>
+                    <p className="ink-paragraph">
+                      A simple indicator only shows the past. To capture the future, we routed technical indicators through Random Forest models in our ONNX runtime, evaluating live bullish probabilities.
+                    </p>
+                    <p className="ink-paragraph">
+                      To contextualize these metrics, we integrated our Gemini ReAct agent. The agent scans Yahoo Finance streams to cross-reference technical setups with news catalysts, writing structured strategy guides on the fly.
+                    </p>
+                  </>
+                )}
+
+                {/* PAGE 4: CHAPTER III */}
+                {bookPage === 4 && (
                   <>
                     <h3 className="ink-heading">Chapter III: The Graph</h3>
                     <p className="ink-paragraph">
@@ -1421,17 +1462,18 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
                   </>
                 )}
 
-                {bookPage === 4 && (
+                {/* PAGE 5: CHAPTER IV */}
+                {bookPage === 5 && (
                   <>
                     <h3 className="ink-heading">Chapter IV: The Developer's Ledger</h3>
                     <p className="ink-paragraph">
-                      Thank you for reading the story of QuantIQ. This platform is actively maintained by Karan Shelar.
+                      Thank you for studying the story of QuantIQ. This platform is actively designed and maintained by Karan Shelar.
                     </p>
                     <p className="ink-paragraph">
-                      If you have questions about the architecture, want to collaborate on quantitative models, or have design inquiries, drop a message in the ledger on the right page.
+                      If you have questions about our indicators, want to collaborate on swing models, or have technical inquiries, drop a message in the ledger.
                     </p>
                     <p className="ink-paragraph">
-                      The form is connected to our SMTP email dispatch server and will send a notification straight to my desk.
+                      The contact form is connected to our SMTP mail dispatcher and will notify my desk instantly.
                     </p>
                   </>
                 )}
@@ -1439,33 +1481,48 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
 
               {/* RIGHT PAGE (Interactive Content) */}
               <div className="parchment-page-half right-page">
+                {/* PAGE 1: PROLOGUE */}
                 {bookPage === 1 && (
+                  <>
+                    <h4 className="ink-subheading">Prologue: Genesis</h4>
+                    <p className="ink-paragraph">
+                      In the silent deeps of the financial oceans, most traders get lost in the deafening roar of the market. QuantIQ was born to carve out a sanctuary of sharp focus—a premium intelligence terminal operating on pure mathematical logic.
+                    </p>
+                    <p className="ink-paragraph">
+                      What began as a simple command-line script has evolved into a multi-layered terminal integrating live websocket ticks, machine learning probability models, and automated ledger checkpoints. Turn the page to study our journey.
+                    </p>
+                  </>
+                )}
+
+                {/* PAGE 2: ACHIEVEMENTS */}
+                {bookPage === 2 && (
                   <>
                     <h4 className="ink-subheading">Completed Achievements</h4>
                     <div className="ink-bullet-list">
                       <div className="ink-bullet-item">
                         <span className="ink-bullet-bullet">✦</span>
-                        <span><strong>Dynamic Volatility Fallback</strong>: Smart category-based ATR target calculations cached inside isolated Redis DB 1.</span>
+                        <span><strong>Dynamic Volatility Fallback</strong>: Smart category-based ATR target calculations cached inside Redis DB 1.</span>
                       </div>
                       <div className="ink-bullet-item">
                         <span className="ink-bullet-bullet">✦</span>
-                        <span><strong>Multi-Model ONNX Router</strong>: Specialized RandomForest classifier models for tech equities, cryptos, and market indices.</span>
+                        <span><strong>Multi-Model ONNX Router</strong>: Specialized RandomForest classifier models for tech equities and market indices.</span>
                       </div>
                       <div className="ink-bullet-item">
                         <span className="ink-bullet-bullet">✦</span>
-                        <span><strong>MLOps Retraining Cron</strong>: Automated weekly retraining tasks pushing challenger ONNX models directly to Hugging Face Hub.</span>
+                        <span><strong>MLOps Retraining Cron</strong>: Automated weekly retraining tasks pushing ONNX models directly to Hugging Face Hub.</span>
                       </div>
                       <div className="ink-bullet-item">
                         <span className="ink-bullet-bullet">✦</span>
-                        <span><strong>Closed-Market safeguards</strong>: Real-time tick filters that detect flat sessions and fallback to historical trading candles.</span>
+                        <span><strong>Closed-Market safeguards</strong>: Real-time tick filters that detect flat sessions and fallback to historical candles.</span>
                       </div>
                     </div>
                   </>
                 )}
 
-                {bookPage === 2 && (
+                {/* PAGE 3: ROADMAP */}
+                {bookPage === 3 && (
                   <>
-                    <h4 className="ink-subheading">Roadmap & Future Features</h4>
+                    <h4 className="ink-subheading">Roadmap: Scaling to ₹1,00,000+</h4>
                     <div className="ink-bullet-list">
                       <div className="ink-bullet-item">
                         <span className="ink-bullet-bullet">✓</span>
@@ -1473,11 +1530,11 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
                       </div>
                       <div className="ink-bullet-item">
                         <span className="ink-bullet-bullet">✓</span>
-                        <span><strong>Catalyst Watch</strong>: Sync next scheduled earnings dates, EPS Estimates, and Revenue consensuses.</span>
+                        <span><strong>Catalyst Watch</strong>: Sync scheduled earnings dates, EPS Estimates, and Revenue consensuses.</span>
                       </div>
                       <div className="ink-bullet-item">
                         <span className="ink-bullet-bullet">☐</span>
-                        <span><strong>Razorpay Subscription tiers</strong>: Commercial tier upgrades enabling unlimited strategy locks.</span>
+                        <span><strong>Razorpay Subscription tiers</strong>: Commercial tiers targeting ₹1,00,000+ transactional volume upgrades.</span>
                       </div>
                       <div className="ink-bullet-item">
                         <span className="ink-bullet-bullet">☐</span>
@@ -1487,7 +1544,8 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
                   </>
                 )}
 
-                {bookPage === 3 && (
+                {/* PAGE 4: ARCHITECTURE BLUEPRINT */}
+                {bookPage === 4 && (
                   <div className="blueprint-container">
                     <div className="blueprint-grid-nodes">
                       {/* Row 1: Frontend */}
@@ -1595,7 +1653,8 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
                   </div>
                 )}
 
-                {bookPage === 4 && (
+                {/* PAGE 5: LEDGER CONTACT FORM */}
+                {bookPage === 5 && (
                   <div className="flex flex-col h-full justify-between">
                     <form onSubmit={handleBookContactSubmit} className="ink-form">
                       {bookFormError && (
@@ -1683,9 +1742,9 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
               )}
               {/* Page indicator */}
               <span className="book-page-indicator">
-                {['—  I  —', '—  II  —', '—  III  —', '—  IV  —'][bookPage - 1]}
+                {['—  I  —', '—  II  —', '—  III  —', '—  IV  —', '—  V  —'][bookPage - 1]}
               </span>
-              {bookPage < 4 && (
+              {bookPage < 5 && (
                 <button className="book-page-turn-btn next-btn" onClick={handleNextPage}>
                   Next Chapter <ArrowRight size={16} />
                 </button>
