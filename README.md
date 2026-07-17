@@ -69,6 +69,12 @@ Comprehensive system monitoring. Live Grafana dashboard scraping FastAPI, Celery
   <img src="assets/Monitoringpage.png" alt="Grafana Production Monitoring" width="700" />
 </div>
 
+### 7. NeonDB Serverless Schema
+Interactive entity mapping and tables tracking watchlist coordinates, strategy backtesting predictions, and user checkouts.
+<div align="center">
+  <img src="assets/QuantIQ_Neondb_tables.png" alt="NeonDB Database Schema Tables" width="700" />
+</div>
+
 ---
 
 ## Core Features
