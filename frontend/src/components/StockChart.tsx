@@ -227,9 +227,6 @@ export default function StockChart({ activeTicker, chartData, activeStats, chart
   const dragStartScrollIndex = useRef(0);
   // Ref to the chart canvas div — used for non-passive wheel listener
   const chartCanvasRef = useRef<HTMLDivElement>(null);
-  // Ref to capture latest zoom-related values inside wheel listener closure
-  const zoomFactorRef = useRef(zoomFactor);
-  useEffect(() => { zoomFactorRef.current = zoomFactor; }, [zoomFactor]);
 
   // Reset zoom and scroll when ticker or range changes
   useEffect(() => {
@@ -250,13 +247,16 @@ export default function StockChart({ activeTicker, chartData, activeStats, chart
 
   // Non-passive wheel listener on the chart canvas — the ONLY way to call
   // e.preventDefault() in Chrome and stop page scroll while hovering the chart.
-  // React's synthetic onWheel is passive by default since React 17, making
-  // preventDefault() a no-op for page scroll prevention.
+  // React's synthetic onWheel is passive by default since React 17.
+  //
+  // CRITICAL: The chart canvas div renders CONDITIONALLY (only when processedData
+  // has items), so we depend on processedData.length to re-run this effect the
+  // moment data loads and chartCanvasRef.current becomes valid.
   useEffect(() => {
     const el = chartCanvasRef.current;
     if (!el) return;
     const onWheel = (e: WheelEvent) => {
-      e.preventDefault(); // stops page scroll — works because listener is non-passive
+      e.preventDefault(); // stops BOTH page scroll AND browser pinch-zoom
       const zoomStep = 0.08;
       if (e.deltaY < 0) {
         setZoomFactor(prev => Math.max(0.1, prev - zoomStep));
@@ -266,7 +266,7 @@ export default function StockChart({ activeTicker, chartData, activeStats, chart
     };
     el.addEventListener('wheel', onWheel, { passive: false });
     return () => el.removeEventListener('wheel', onWheel);
-  }, []); // only run once on mount — setZoomFactor is stable
+  }, [chartData.length]); // re-run when data availability changes
 
   // Markers state for drawing entry/exit lines
   interface ChartMarker {
@@ -859,7 +859,8 @@ export default function StockChart({ activeTicker, chartData, activeStats, chart
               width: '100%',
               position: 'relative',
               cursor: isZoomed ? (isDragging.current ? 'grabbing' : 'grab') : 'crosshair',
-              userSelect: 'none'
+              userSelect: 'none',
+              touchAction: 'none'  // prevents browser pinch-zoom gesture on this element
             }}>
 
             <ResponsiveContainer width="100%" height="100%">
