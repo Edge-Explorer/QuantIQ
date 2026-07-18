@@ -18,6 +18,7 @@ from backend.app.database.session import get_db
 from backend.app.database import crud
 from backend.app.schemas import schemas
 from backend.app.config.metrics import payment_callbacks_total, external_api_calls_total
+from backend.app.services.gemini import onnx_sessions, get_onnx_session_for_type
 
 router= APIRouter()
 
@@ -1207,3 +1208,70 @@ async def chat_with_analyst(
         "messages_remaining": user.messages_remaining,
         "monthly_messages_used": user.monthly_messages_used
     }
+
+
+@router.get("/ml/metadata")
+async def get_ml_model_metadata():
+    """
+    Get ML model metadata including last retrained timestamp and model information.
+    Returns the custom metadata from the ONNX model session.
+    """
+    try:
+        # Get the ONNX session for the default model type (tech)
+        session = get_onnx_session_for_type("tech")
+
+        if session is None:
+            # Return default values if no session is available
+            return {
+                "trained_date": None,
+                "features": [],
+                "accuracy": None,
+                "model_type": "tech",
+                "status": "model_not_loaded"
+            }
+
+        # Get the model metadata
+        meta = session.get_modelmeta()
+        custom_metadata_map = getattr(meta, 'custom_metadata_map', {}) or {}
+        # Ensure it's a dictionary
+        if not isinstance(custom_metadata_map, dict):
+            custom_metadata_map = {}
+
+        # Extract and map the required fields with fallback defaults
+        trained_date = custom_metadata_map.get('trained_date') or custom_metadata_map.get('timestamp') or custom_metadata_map.get('date')
+        features_str = custom_metadata_map.get('features') or custom_metadata_map.get('feature_names') or ''
+        accuracy = custom_metadata_map.get('accuracy') or custom_metadata_map.get('acc') or custom_metadata_map.get('score')
+
+        # Parse features if it's a comma-separated string
+        features = []
+        if isinstance(features_str, str):
+            features = [f.strip() for f in features_str.split(',') if f.strip()]
+        elif isinstance(features_str, list):
+            features = [str(f).strip() for f in features_str if str(f).strip()]
+
+        # Convert accuracy to float if possible
+        accuracy_float = None
+        if accuracy is not None:
+            try:
+                accuracy_float = float(accuracy)
+            except (ValueError, TypeError):
+                pass
+
+        return {
+            "trained_date": trained_date,
+            "features": features,
+            "accuracy": accuracy_float,
+            "model_type": "tech",
+            "status": "success"
+        }
+
+    except Exception as e:
+        # Return error information if metadata retrieval fails
+        return {
+            "trained_date": None,
+            "features": [],
+            "accuracy": None,
+            "model_type": "tech",
+            "status": "error",
+            "error_message": str(e)
+        }
