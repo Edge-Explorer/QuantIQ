@@ -18,7 +18,7 @@ from backend.app.database.session import get_db
 from backend.app.database import crud
 from backend.app.schemas import schemas
 from backend.app.config.metrics import payment_callbacks_total, external_api_calls_total
-from backend.app.services.gemini import onnx_sessions, get_onnx_session_for_type
+from backend.app.services.gemini import get_onnx_session_for_type
 
 router= APIRouter()
 
