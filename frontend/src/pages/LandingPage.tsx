@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Button } from '../components/ui/button';
-import { X, Eye, EyeOff, Lock, Mail, User, Globe, ArrowRight, ArrowLeft } from 'lucide-react';
+import { X, Eye, EyeOff, Lock, Mail, User, Globe } from 'lucide-react';
 
 import Logo from '../components/Logo';
 import LogoLoop from '../components/LogoLoop';
