@@ -591,7 +591,7 @@ export default function ChartChatbot({ ticker, markers, activeIndicators, user, 
           lineHeight: 1.5,
           borderTop: '1px solid rgba(255, 255, 255, 0.03)'
         }}>
-          ⚠️ QuantIQ AI may make errors. All strategies are for educational purposes only and do not constitute financial advice. Always do your own research before trading.
+          ⚠️ QuantIQ AI may make errors.
         </div>
       </div>
     </div>
