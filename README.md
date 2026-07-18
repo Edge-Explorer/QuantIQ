@@ -428,6 +428,12 @@ This fetches 2 years of daily OHLCV data, computes RSI/MACD/EMA features, trains
 | Monitoring | Grafana Cloud | Free tier |
 | AI Analysis | Google Gemini API | Pay-per-use (very small) |
 
+To deploy backend updates to Hugging Face Spaces, **do not push manually**. Run the automated deployment script from the project root:
+```powershell
+.\deploy_hf.ps1
+```
+This script prepends required YAML frontmatter config, commits and pushes to the HF remote space, and automatically restores the clean `README.md` file for GitHub. After running the script, push your clean branch updates to GitHub: `git push origin main`.
+
 ## CI/CD Pipeline
 
 The project uses GitHub Actions for automated code quality and build verification on every push and pull request to the `main` branch:

@@ -1,30 +1,52 @@
 # Contributing to QuantIQ
 
-Thank you for your interest in contributing to QuantIQ! We welcome developers of all skill levels to help us improve the platform. 
+Thank you for your interest in contributing to QuantIQ! We welcome developers of all backgrounds to help us build a premium quantitative research terminal.
 
-This document outlines our development setup and lists several active **Open Issues** that are ready for implementation.
+This document details the project architecture, developer setup, code guidelines, and deployment workflows.
+
+---
+
+## 📂 Project Structure Map
+
+*   `backend/` — FastAPI core server. Exposes GraphQL/REST APIs and WebSocket channels.
+*   `frontend/` — React / TypeScript client built with Vite and Tailwind CSS.
+*   `worker/` — Tick ingestion service. Periodically polls Yahoo Finance and dispatches ticks to Redpanda Cloud.
+*   `alembic/` — Database migrations for watchlists, strategy records, and user targets.
+*   `assets/` — UI mockups, database schemas, and documentation images.
+*   `train.py` — Offline model training script that generates indicator features and exports `model.onnx`.
+*   `deploy_hf.ps1` — Automated deployment pipeline script for Hugging Face Spaces.
 
 ---
 
 ## 🛠️ Local Development Setup
 
 ### 1. Ingest Ingestion & Backend Setup
-Make sure you have [uv](https://astral.sh/uv) installed:
+Prerequisites: Make sure you have [uv](https://astral.sh/uv) and [Docker Desktop](https://www.docker.com/) installed.
+
 ```bash
-# Sync all dependencies
+# Sync python virtual environment and lock file
 uv sync
 
-# Start PostgreSQL and Redis containers
+# Spin up local PostgreSQL (NeonDB replica) and Redis containers
 docker-compose up -d
 
-# Run migrations
+# Execute database migrations
 uv run alembic upgrade head
 
-# Launch local servers
+# Start the local FastAPI server
 uv run uvicorn backend.app.main:app --reload
 ```
 
-### 2. Frontend Setup
+### 2. Start Background Services
+```bash
+# Start the ingestion worker (fetches stock ticks every 5 seconds)
+uv run python worker/worker.py
+
+# Start Celery worker with beat enabled (logs ML predictions and outcomes)
+uv run celery -A backend.app.services.celery_app worker --beat --loglevel=info
+```
+
+### 3. Frontend Dashboard Setup
 ```bash
 cd frontend
 npm install
@@ -33,46 +55,51 @@ npm run dev
 
 ---
 
-## 🎯 Open Development Issues (Help Wanted)
+## 🚀 Deployment Workflow (Hugging Face Spaces & GitHub)
 
-Here are the active development goals. If you'd like to work on one, feel free to open a Pull Request!
+Hugging Face Spaces hosting requires a custom metadata block (YAML frontmatter) at the very top of `README.md`. To keep the GitHub repository clean while pushing updates to Hugging Face, **you must use the automated deployment script:**
 
-### 1. [Backend] Expose ONNX Model Metadata Endpoint (`/api/v1/ml/metadata`)
-*   **Goal**: Create a new API route to let the UI fetch metadata properties directly from the loaded `model.onnx`.
-*   **Context**: The backend currently initializes the ONNX inference session in `backend/app/services/ml.py`. ONNX models can store custom metadata properties (such as training date, feature names, and accuracy score).
-*   **Requirements**:
-    *   Expose a `GET /api/v1/ml/metadata` endpoint in FastAPI.
-    *   Read the metadata properties from `onnxruntime.InferenceSession.get_modelmeta().custom_metadata_map`.
-    *   Return a JSON payload with key metrics (e.g. `trained_date`, `features_list`, `accuracy`).
-*   **Difficulty**: Medium (Python, ONNX Runtime).
-
----
-
-### 2. [Frontend] Implement RSI Overbought/Oversold indicators on TradingView Charts
-*   **Goal**: Draw visual indicator bounds directly on the candle chart.
-*   **Context**: The chart component is rendered using `lightweight-charts` inside the frontend. 
-*   **Requirements**:
-    *   When the RSI calculation is toggled, draw horizontal grid lines or background bands at value `70` (Overbought - Red) and `30` (Oversold - Green).
-    *   Use the `createPriceLine` API of Lightweight Charts to draw these reference marks dynamically.
-*   **Difficulty**: Medium-Easy (TypeScript, Lightweight Charts).
+### Hugging Face Deployment Procedure:
+1. Ensure your changes are committed on your local branch.
+2. In PowerShell, execute the deployment script from the project root:
+   ```powershell
+   .\deploy_hf.ps1
+   ```
+3. **What this script does automatically:**
+   * Prepends the YAML frontmatter configuration block to `README.md`.
+   * Commits the change (`chore: add HF Space config for deployment`).
+   * Pushes the commit to the Hugging Face space repository (`git push hf main`).
+   * Automatically restores the clean `README.md` file back to its default state.
+   * Commits the cleanup (`chore: restore clean README for GitHub`).
+4. Finally, push your clean branch changes directly to GitHub:
+   ```bash
+   git push origin main
+   ```
 
 ---
 
-### 3. [Backend] Discord & Slack Webhook Alert Dispatcher
-*   **Goal**: Expand the notification options beyond Gmail SMTP to support chat integrations.
-*   **Context**: Users currently receive price alerts via email in `backend/app/services/alerts.py`.
-*   **Requirements**:
-    *   Create a webhook notification service inside `backend/app/services/notifications.py`.
-    *   Use `httpx` to send a formatted markdown message payload containing ticker price alert info to a user's Slack or Discord webhook channel.
-    *   Add an optional `webhook_url` column to the watchlists database schema.
-*   **Difficulty**: Medium (Python, HTTP Requests, SQL Alchemy).
+## 🧼 Code Quality & Style Guidelines
+
+To keep the pipeline green, verify the following standards locally before opening a pull request:
+
+### 🐍 Python (Backend / Worker)
+*   **Linter & Formatter**: We use `ruff`. Run the check locally:
+    ```bash
+    uv run ruff check .
+    ```
+
+### ⚛️ TypeScript & React (Frontend)
+*   **Formatters**: Ensure typescript compiling (`tsc`) and Vite bundling compile cleanly:
+    ```bash
+    cd frontend
+    npm run build
+    ```
 
 ---
 
-## 🚀 How to Submit a Pull Request
-1. Fork the repository.
-2. Create a feature branch: `git checkout -b feature/your-feature-name`.
-3. Verify formatting and compile safety:
-   * **Backend**: Run `ruff check .`
-   * **Frontend**: Run `npm run build`
-4. Commit your changes and open a Pull Request against our `main` branch.
+## 🎯 Open Development Goals
+
+Check out our active GitHub Issues page or pick one of these tasks to start:
+1. **[Backend] Model Metadata Endpoint**: Expose `GET /api/v1/ml/metadata` to parse and return properties from the loaded `model.onnx`.
+2. **[Frontend] RSI Reference Boundaries**: Use the Lightweight Charts API to draw Overbought (70) and Oversold (30) reference price lines.
+3. **[Backend] Discord/Slack webhook price alerts**: Build a dispatcher service sending real-time stock crossings directly to webhook endpoints.
