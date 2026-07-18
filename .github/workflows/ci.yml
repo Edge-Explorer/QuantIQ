@@ -54,4 +54,4 @@ jobs:
         continue-on-error: true # Warning mode for initial transition
 
       - name: Verify Backend Entry Point builds
-        run: uv run python -c "import main"
+        run: uv run python -c "from backend.app import main"
