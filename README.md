@@ -434,6 +434,10 @@ The project uses GitHub Actions for automated code quality and build verificatio
 - **Frontend CI**: Automatically installs dependencies, checks TypeScript compiler types, and verifies production bundles run correctly (`npm run build`).
 - **Backend CI**: Dynamically configures a Python environment using the fast `uv` package manager, validates code quality/formatting using the `ruff` linter, and checks that entry points compile cleanly.
 
+## Contributing
+
+Interested in adding features or helping us scale? Check out our [Contribution Guidelines](CONTRIBUTING.md) for local setup instructions and a list of active **Open Issues** (like Discord webhooks and ONNX model metadata APIs).
+
 ---
 
 ## License
