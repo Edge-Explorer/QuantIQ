@@ -774,10 +774,10 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
       <main className="relative z-10 w-full flex flex-col items-center">
         
         {/* HERO SECTION */}
-        <section id="hero" className="flex flex-col lg:flex-row justify-between items-center px-6 gap-12 max-w-7xl mx-auto w-full min-h-[90vh] py-16">
+        <section id="hero" className="flex flex-col justify-center items-center px-6 text-center max-w-4xl mx-auto w-full min-h-[90vh] py-16">
           
-          {/* Left Column (Content) */}
-          <div className="flex flex-col items-center lg:items-start text-center lg:text-left max-w-2xl pt-8">
+          {/* Main Hero Content */}
+          <div className="flex flex-col items-center pt-8">
             {/* Heading H1 */}
             <h1 
               className="text-5xl sm:text-7xl md:text-8xl font-normal leading-[0.95] tracking-[-2.46px] text-foreground animate-fade-rise"
@@ -788,7 +788,7 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
             </h1>
 
             {/* Subtext */}
-            <p className="text-muted-foreground text-base sm:text-lg mt-8 leading-relaxed animate-fade-rise-delay font-normal">
+            <p className="text-muted-foreground text-base sm:text-lg mt-8 leading-relaxed animate-fade-rise-delay font-normal max-w-2xl">
               We're designing tools for quantitative traders, market analysts, and strategic investors. 
               Amid market noise, we build high-fidelity spaces for sharp focus and outperforming strategy.
             </p>
@@ -809,41 +809,6 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
                 Unlock Alpha
               </button>
             )}
-          </div>
-
-          {/* Right Column — Volumetric 3D CSS Book Stack */}
-          <div className="flex justify-center items-center relative w-full max-w-md lg:max-w-none pt-4 lg:pt-0 animate-fade-rise-delay">
-            {/* Minimalist interactive card triggering the codex story overlay */}
-            <div 
-              onClick={handleOpenBook}
-              className="group relative w-[340px] h-[220px] rounded-3xl cursor-pointer overflow-hidden border border-white/5 bg-black/40 backdrop-blur-md p-6 flex flex-col justify-between transition-all duration-300 hover:border-amber-500/25 hover:shadow-[0_0_30px_rgba(245,158,11,0.05)]"
-            >
-              {/* Background accent glow */}
-              <div className="absolute -top-12 -right-12 w-32 h-32 rounded-full bg-amber-500/5 blur-3xl transition-all duration-300 group-hover:bg-amber-500/10" />
-
-              {/* Top Brand Block */}
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full border border-amber-500/20 flex items-center justify-center relative shadow-[0_0_10px_rgba(245,158,11,0.05)]">
-                  <div className="absolute inset-1 rounded-full border border-dashed border-amber-500/10 animate-[spin_40s_linear_infinite]" />
-                  <Logo size={16} className="relative z-10 opacity-85 filter drop-shadow-[0_0_4px_rgba(0,242,254,0.4)]" />
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-[10px] font-semibold text-amber-500/80 tracking-widest uppercase font-serif">Registry</span>
-                  <span className="text-xs font-medium text-white/80">Book of QuantIQ</span>
-                </div>
-              </div>
-
-              {/* Bottom CTA Block */}
-              <div className="flex flex-col gap-2 mt-auto">
-                <h3 className="text-base font-serif text-white/90 leading-snug group-hover:text-amber-500/90 transition-colors duration-200" style={{ fontFamily: "'Instrument Serif', serif" }}>
-                  Study our model specifications, Redpanda pipelines, and sign the ledger.
-                </h3>
-                <div className="flex items-center gap-1 text-[11px] text-muted-foreground group-hover:text-white transition-colors duration-200 mt-2 font-medium">
-                  <span>Open the Codex</span>
-                  <ArrowRight size={12} className="transform group-hover:translate-x-1 transition-transform duration-200" />
-                </div>
-              </div>
-            </div>
           </div>
         </section>
 
