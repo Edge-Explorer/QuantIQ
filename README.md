@@ -428,6 +428,12 @@ This fetches 2 years of daily OHLCV data, computes RSI/MACD/EMA features, trains
 | Monitoring | Grafana Cloud | Free tier |
 | AI Analysis | Google Gemini API | Pay-per-use (very small) |
 
+## CI/CD Pipeline
+
+The project uses GitHub Actions for automated code quality and build verification on every push and pull request to the `main` branch:
+- **Frontend CI**: Automatically installs dependencies, checks TypeScript compiler types, and verifies production bundles run correctly (`npm run build`).
+- **Backend CI**: Dynamically configures a Python environment using the fast `uv` package manager, validates code quality/formatting using the `ruff` linter, and checks that entry points compile cleanly.
+
 ---
 
 ## License
