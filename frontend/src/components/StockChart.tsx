@@ -387,16 +387,33 @@ export default function StockChart({ activeTicker, chartData, activeStats, chart
     : rsiData;
 
   // Calculate global Y-axis domain bounds dynamically to prevent clipping
-  const prices = visibleData.map(d => d.price);
-  const highs = visibleData.map(d => d.high ?? d.price);
-  const lows = visibleData.map(d => d.low ?? d.price);
+  // Filter to only finite, positive numbers to prevent garbage values like NaN/Infinity
+  // from corrupting Math.min/max and producing labels like 'i1499999986'
+  const filterFinite = (arr: number[]) => arr.filter(v => typeof v === 'number' && isFinite(v) && v > 0);
+  const prices = filterFinite(visibleData.map(d => d.price));
+  const highs = filterFinite(visibleData.map(d => d.high ?? d.price));
+  const lows = filterFinite(visibleData.map(d => d.low ?? d.price));
 
-  const rawMinPrice = prices.length > 0 ? Math.min(...lows, ...prices) : 0;
-  const rawMaxPrice = prices.length > 0 ? Math.max(...highs, ...prices) : 100;
+  const rawMinPrice = prices.length > 0 ? Math.min(...lows.length > 0 ? lows : prices, ...prices) : 0;
+  const rawMaxPrice = prices.length > 0 ? Math.max(...highs.length > 0 ? highs : prices, ...prices) : 100;
 
   // Add 5% padding to top/bottom to prevent lines touching borders
   const yMin = rawMinPrice === rawMaxPrice ? rawMinPrice * 0.95 : (rawMinPrice > 0 ? rawMinPrice * 0.95 : rawMinPrice);
   const yMax = rawMinPrice === rawMaxPrice ? rawMaxPrice * 1.05 : rawMaxPrice * 1.05;
+
+  // Mouse-wheel pan handler: scrolls visible window left/right when chart is zoomed in
+  const handleChartWheel = (e: React.WheelEvent<HTMLDivElement>) => {
+    if (!isZoomed) return;
+    e.preventDefault();
+    const step = Math.max(1, Math.round(visibleCount * 0.1));
+    if (e.deltaY > 0) {
+      // Scroll right (toward more recent data)
+      setScrollIndex(prev => Math.min(prev + step, maxScrollIndex));
+    } else {
+      // Scroll left (toward older data)
+      setScrollIndex(prev => Math.max(prev - step, 0));
+    }
+  };
 
   const chartPanelStyle: React.CSSProperties = isMaximized ? {
     position: 'fixed',
@@ -826,13 +843,16 @@ export default function StockChart({ activeTicker, chartData, activeStats, chart
         )}
 
         {processedData.length > 0 ? (
-          <div style={{ 
-            height: showRSI 
-              ? (isMaximized ? (isZoomed ? '62%' : '72%') : 'calc(100% - 110px)') 
-              : (isMaximized ? (isZoomed ? '86%' : '100%') : '100%'), 
-            width: '100%',
-            position: 'relative'
-          }}>
+          <div 
+            onWheel={handleChartWheel}
+            style={{ 
+              height: showRSI 
+                ? (isMaximized ? (isZoomed ? '62%' : '72%') : 'calc(100% - 110px)') 
+                : (isMaximized ? (isZoomed ? '86%' : '100%') : '100%'), 
+              width: '100%',
+              position: 'relative',
+              cursor: isZoomed ? 'ew-resize' : 'default'
+            }}>
 
             <ResponsiveContainer width="100%" height="100%">
               <ComposedChart 
@@ -858,6 +878,11 @@ export default function StockChart({ activeTicker, chartData, activeStats, chart
                   fontSize={11}
                   domain={[yMin, yMax]}
                   tickLine={false}
+                  tickFormatter={(v: number) => {
+                    if (!isFinite(v) || isNaN(v)) return '';
+                    if (v >= 1000) return `${(v / 1000).toFixed(1)}k`;
+                    return v.toFixed(2);
+                  }}
                 />
                 
                 <Tooltip content={<CustomTooltip />} />
