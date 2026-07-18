@@ -7,7 +7,7 @@ requires-python = ">=3.12"
 dependencies = [
     "fastapi>=0.110.0",
     "uvicorn[standard]>=0.28.0",
-    "websockets>=12.0",
+    "websockets>=16.1.1",
     "sqlalchemy[mypy]>=2.0.28",
     "asyncpg>=0.29.0",
     "psycopg2-binary>=2.9.9",
