@@ -680,6 +680,12 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
             <a href="#news" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
               News
             </a>
+            <button 
+              onClick={handleOpenBook}
+              className="text-sm font-medium text-amber-500/90 hover:text-amber-400 transition-colors cursor-pointer outline-none"
+            >
+              Codex
+            </button>
             <div className="relative">
               <button 
                 onClick={() => setShowReachUs(prev => !prev)}
