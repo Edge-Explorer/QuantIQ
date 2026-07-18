@@ -3,12 +3,15 @@
   <img src="assets/banner.png" alt="QuantIQ — AI Stock Intelligence" width="750" />
   <br /><br />
   <p>
-    <img src="https://img.shields.io/badge/Python-3.12-blue?style=flat-square" alt="Python" />
-    <img src="https://img.shields.io/badge/FastAPI-0.110+-green?style=flat-square" alt="FastAPI" />
-    <img src="https://img.shields.io/badge/React-19-61DAFB?style=flat-square" alt="React" />
-    <img src="https://img.shields.io/badge/TypeScript-5.x-3178C6?style=flat-square" alt="TypeScript" />
-    <img src="https://img.shields.io/badge/Gemini-2.5 Flash-orange?style=flat-square" alt="Gemini" />
-    <img src="https://img.shields.io/badge/License-MIT-lightgrey?style=flat-square" alt="MIT License" />
+    <a href="https://www.python.org/"><img src="https://img.shields.io/badge/Python-3.12-blue?style=flat-square" alt="Python" /></a>
+    <a href="https://fastapi.tiangolo.com/"><img src="https://img.shields.io/badge/FastAPI-0.110+-green?style=flat-square" alt="FastAPI" /></a>
+    <a href="https://react.dev/"><img src="https://img.shields.io/badge/React-19-61DAFB?style=flat-square" alt="React" /></a>
+    <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-5.x-3178C6?style=flat-square" alt="TypeScript" /></a>
+    <a href="https://ai.google.dev/"><img src="https://img.shields.io/badge/Gemini-2.5 Flash-orange?style=flat-square" alt="Gemini" /></a>
+    <a href="https://huggingface.co/"><img src="https://img.shields.io/badge/Hugging Face-Spaces-yellow?style=flat-square" alt="Hugging Face" /></a>
+    <a href="https://vercel.com/"><img src="https://img.shields.io/badge/Vercel-Frontend-black?style=flat-square" alt="Vercel" /></a>
+    <a href="https://neon.tech/"><img src="https://img.shields.io/badge/NeonDB-Serverless-00e599?style=flat-square" alt="NeonDB" /></a>
+    <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-lightgrey?style=flat-square" alt="MIT License" /></a>
   </p>
 </div>
 
