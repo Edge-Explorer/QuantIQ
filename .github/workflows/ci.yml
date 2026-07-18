@@ -55,3 +55,7 @@ jobs:
 
       - name: Verify Backend Entry Point builds
         run: uv run python -c "from backend.app import main"
+        env:
+          DATABASE_URL: "postgresql+asyncpg://mock:mock@localhost:5432/mock"
+          REDIS_URL: "redis://localhost:6379/0"
+          GEMINI_API_KEY: "mock_api_key"
