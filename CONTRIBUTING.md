@@ -27,6 +27,9 @@ Prerequisites: Make sure you have [uv](https://astral.sh/uv) and [Docker Desktop
 # Sync python virtual environment and lock file
 uv sync
 
+# Copy the environment template and configure keys
+cp .env.example .env
+
 # Spin up local PostgreSQL (NeonDB replica) and Redis containers
 docker-compose up -d
 
