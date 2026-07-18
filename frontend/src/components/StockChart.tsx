@@ -1,7 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { ResponsiveContainer, ComposedChart, Area, Bar, Line, XAxis, YAxis, Tooltip, ReferenceLine, LineChart } from 'recharts';
 import { AreaChart as AreaIcon, BarChart2 as CandleIcon, Activity, Eye, EyeOff, Maximize2, Minimize2 } from 'lucide-react';
-import { useRef } from 'react';
 import ChartChatbot from './ChartChatbot';
 
 
@@ -226,6 +225,11 @@ export default function StockChart({ activeTicker, chartData, activeStats, chart
   const isDragging = useRef(false);
   const dragStartX = useRef(0);
   const dragStartScrollIndex = useRef(0);
+  // Ref to the chart canvas div — used for non-passive wheel listener
+  const chartCanvasRef = useRef<HTMLDivElement>(null);
+  // Ref to capture latest zoom-related values inside wheel listener closure
+  const zoomFactorRef = useRef(zoomFactor);
+  useEffect(() => { zoomFactorRef.current = zoomFactor; }, [zoomFactor]);
 
   // Reset zoom and scroll when ticker or range changes
   useEffect(() => {
@@ -243,6 +247,26 @@ export default function StockChart({ activeTicker, chartData, activeStats, chart
       setScrollIndex(prev => Math.min(prev, maxScroll));
     }
   }, [zoomFactor, chartData.length]);
+
+  // Non-passive wheel listener on the chart canvas — the ONLY way to call
+  // e.preventDefault() in Chrome and stop page scroll while hovering the chart.
+  // React's synthetic onWheel is passive by default since React 17, making
+  // preventDefault() a no-op for page scroll prevention.
+  useEffect(() => {
+    const el = chartCanvasRef.current;
+    if (!el) return;
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault(); // stops page scroll — works because listener is non-passive
+      const zoomStep = 0.08;
+      if (e.deltaY < 0) {
+        setZoomFactor(prev => Math.max(0.1, prev - zoomStep));
+      } else {
+        setZoomFactor(prev => Math.min(1.0, prev + zoomStep));
+      }
+    };
+    el.addEventListener('wheel', onWheel, { passive: false });
+    return () => el.removeEventListener('wheel', onWheel);
+  }, []); // only run once on mount — setZoomFactor is stable
 
   // Markers state for drawing entry/exit lines
   interface ChartMarker {
@@ -407,19 +431,7 @@ export default function StockChart({ activeTicker, chartData, activeStats, chart
   const yMin = rawMinPrice === rawMaxPrice ? rawMinPrice * 0.95 : (rawMinPrice > 0 ? rawMinPrice * 0.95 : rawMinPrice);
   const yMax = rawMinPrice === rawMaxPrice ? rawMaxPrice * 1.05 : rawMaxPrice * 1.05;
 
-  // Mouse-wheel ZOOM handler (Binance-style: scroll up = zoom in, scroll down = zoom out)
-  const handleChartWheel = (e: React.WheelEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    const zoomStep = 0.08;
-    if (e.deltaY < 0) {
-      // Scroll up = zoom in (show fewer candles)
-      setZoomFactor(prev => Math.max(0.1, prev - zoomStep));
-    } else {
-      // Scroll down = zoom out (show more candles)
-      setZoomFactor(prev => Math.min(1.0, prev + zoomStep));
-    }
-  };
-
+  // Mouse-wheel zoom is now handled via non-passive native addEventListener above.
   // Drag-to-pan handlers (Binance-style: click + drag left/right to pan)
   const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!isZoomed) return;
@@ -834,8 +846,8 @@ export default function StockChart({ activeTicker, chartData, activeStats, chart
         )}
 
         {processedData.length > 0 ? (
-          <div 
-            onWheel={handleChartWheel}
+          <div
+            ref={chartCanvasRef}
             onMouseDown={handleMouseDown}
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUp}
