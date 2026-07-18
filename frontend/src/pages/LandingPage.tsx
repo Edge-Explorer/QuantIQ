@@ -812,168 +812,39 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
           </div>
 
           {/* Right Column — Volumetric 3D CSS Book Stack */}
-          <div className="flex justify-center items-center relative w-full max-w-md lg:max-w-none pt-4 lg:pt-0 lg:-translate-y-[11%] lg:translate-x-[2%] animate-fade-rise-delay">
-            <div
-              className="book-stack-wrapper"
+          <div className="flex justify-center items-center relative w-full max-w-md lg:max-w-none pt-4 lg:pt-0 animate-fade-rise-delay">
+            {/* Minimalist interactive card triggering the codex story overlay */}
+            <div 
               onClick={handleOpenBook}
-              title="Click to open the Book of QuantIQ"
+              className="group relative w-[340px] h-[220px] rounded-3xl cursor-pointer overflow-hidden border border-white/5 bg-black/40 backdrop-blur-md p-6 flex flex-col justify-between transition-all duration-300 hover:border-amber-500/25 hover:shadow-[0_0_30px_rgba(245,158,11,0.05)]"
             >
-              {/* Volumetric 3D stacked books pile */}
-              <div className="book-pile">
+              {/* Background accent glow */}
+              <div className="absolute -top-12 -right-12 w-32 h-32 rounded-full bg-amber-500/5 blur-3xl transition-all duration-300 group-hover:bg-amber-500/10" />
 
-                {/* Book 5 (Bottom) — Antique Black/Charcoal */}
-                <div
-                  className="book-3d book-bottom"
-                  style={{
-                    '--book-width': '250px',
-                    '--book-height': '190px',
-                    '--cover-gradient': 'linear-gradient(135deg, #18181b 0%, #27272a 45%, #09090b 100%)',
-                    '--spine-gradient': 'linear-gradient(180deg, #111113 0%, #3f3f46 50%, #09090b 100%)'
-                  } as React.CSSProperties}
-                >
-                  <div className="book-face-bottom" />
-                  <div className="book-face-spine">
-                    <div className="book-spine-ridges">
-                      <div className="book-spine-ridge" />
-                      <div className="book-spine-ridge" />
-                      <div className="book-spine-ridge" />
-                      <div className="book-spine-ridge" />
-                    </div>
-                    <span className="book-spine-star">✦</span>
-                    <span className="book-spine-text">Quant Research</span>
-                    <span className="book-spine-star">✦</span>
-                  </div>
-
-                  <div className="book-face-right-pages" />
-                  <div className="book-face-front-pages" />
-                  <div className="book-face-top" />
+              {/* Top Brand Block */}
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full border border-amber-500/20 flex items-center justify-center relative shadow-[0_0_10px_rgba(245,158,11,0.05)]">
+                  <div className="absolute inset-1 rounded-full border border-dashed border-amber-500/10 animate-[spin_40s_linear_infinite]" />
+                  <Logo size={16} className="relative z-10 opacity-85 filter drop-shadow-[0_0_4px_rgba(0,242,254,0.4)]" />
                 </div>
-
-                {/* Book 4 — Antique Amber/Brown */}
-                <div
-                  className="book-3d book-4"
-                  style={{
-                    '--book-width': '242px',
-                    '--book-height': '182px',
-                    '--cover-gradient': 'linear-gradient(135deg, #5f2d0a 0%, #85400f 45%, #3e1b03 100%)',
-                    '--spine-gradient': 'linear-gradient(180deg, #4c2204 0%, #a16207 50%, #3e1b03 100%)'
-                  } as React.CSSProperties}
-                >
-                  <div className="book-face-bottom" />
-                  <div className="book-face-spine">
-                    <div className="book-spine-ridges">
-                      <div className="book-spine-ridge" />
-                      <div className="book-spine-ridge" />
-                      <div className="book-spine-ridge" />
-                      <div className="book-spine-ridge" />
-                    </div>
-                    <span className="book-spine-star">✦</span>
-                    <span className="book-spine-text">Microstructure</span>
-                    <span className="book-spine-star">✦</span>
-                  </div>
-
-                  <div className="book-face-right-pages" />
-                  <div className="book-face-front-pages" />
-                  <div className="book-face-top" />
+                <div className="flex flex-col">
+                  <span className="text-[10px] font-semibold text-amber-500/80 tracking-widest uppercase font-serif">Registry</span>
+                  <span className="text-xs font-medium text-white/80">Book of QuantIQ</span>
                 </div>
-
-                {/* Book 3 — Antique Emerald/Forest Green */}
-                <div
-                  className="book-3d book-3"
-                  style={{
-                    '--book-width': '246px',
-                    '--book-height': '186px',
-                    '--cover-gradient': 'linear-gradient(135deg, #04382a 0%, #065f46 45%, #02241b 100%)',
-                    '--spine-gradient': 'linear-gradient(180deg, #022b20 0%, #0f766e 50%, #02241b 100%)'
-                  } as React.CSSProperties}
-                >
-                  <div className="book-face-bottom" />
-                  <div className="book-face-spine">
-                    <div className="book-spine-ridges">
-                      <div className="book-spine-ridge" />
-                      <div className="book-spine-ridge" />
-                      <div className="book-spine-ridge" />
-                      <div className="book-spine-ridge" />
-                    </div>
-                    <span className="book-spine-star">✦</span>
-                    <span className="book-spine-text">System Graph</span>
-                    <span className="book-spine-star">✦</span>
-                  </div>
-
-                  <div className="book-face-right-pages" />
-                  <div className="book-face-front-pages" />
-                  <div className="book-face-top" />
-                </div>
-
-                {/* Book 2 — Antique Burgundy/Crimson */}
-                <div
-                  className="book-3d book-2"
-                  style={{
-                    '--book-width': '238px',
-                    '--book-height': '178px',
-                    '--cover-gradient': 'linear-gradient(135deg, #380707 0%, #7f1d1d 45%, #200303 100%)',
-                    '--spine-gradient': 'linear-gradient(180deg, #2d0505 0%, #991b1b 50%, #200303 100%)'
-                  } as React.CSSProperties}
-                >
-                  <div className="book-face-bottom" />
-                  <div className="book-face-spine">
-                    <div className="book-spine-ridges">
-                      <div className="book-spine-ridge" />
-                      <div className="book-spine-ridge" />
-                      <div className="book-spine-ridge" />
-                      <div className="book-spine-ridge" />
-                    </div>
-                    <span className="book-spine-star">✦</span>
-                    <span className="book-spine-text">ML Signal Engine</span>
-                    <span className="book-spine-star">✦</span>
-                  </div>
-
-                  <div className="book-face-right-pages" />
-                  <div className="book-face-front-pages" />
-                  <div className="book-face-top" />
-                </div>
-
-                {/* Book 1 (Top Book) — Astronomical Cosmic Blue */}
-                <div
-                  className={`book-3d book-top${isBookAnimating ? ' is-opening' : ''}`}
-                  style={{
-                    '--book-width': '232px',
-                    '--book-height': '172px',
-                    '--cover-gradient': 'linear-gradient(135deg, #090d16 0%, #1e293b 45%, #080c14 100%)',
-                    '--spine-gradient': 'linear-gradient(180deg, #05080f 0%, #334155 50%, #080c14 100%)'
-                  } as React.CSSProperties}
-                >
-                  <div className="book-face-bottom" />
-                  <div className="book-face-spine">
-                    <div className="book-spine-ridges">
-                      <div className="book-spine-ridge" />
-                      <div className="book-spine-ridge" />
-                      <div className="book-spine-ridge" />
-                      <div className="book-spine-ridge" />
-                    </div>
-                    <span className="book-spine-star">✦</span>
-                    <span className="book-spine-text">QuantIQ Codex</span>
-                    <span className="book-spine-star">✦</span>
-                  </div>
-
-                  <div className="book-face-right-pages" />
-                  <div className="book-face-front-pages" />
-                  <div className="book-face-top flex items-center justify-center">
-                    {/* Gold Foil Celestial Ornament */}
-                    <div className="w-20 h-20 rounded-full border border-amber-500/35 flex items-center justify-center relative shadow-[0_0_15px_rgba(191,149,63,0.15)]">
-                      <div className="absolute inset-1.5 rounded-full border border-dashed border-amber-500/25 animate-[spin_40s_linear_infinite]" />
-                      <Logo size={36} className="relative z-10 opacity-80 filter drop-shadow-[0_0_6px_rgba(0,242,254,0.4)]" />
-                    </div>
-                  </div>
-                </div>
-
               </div>
 
-
+              {/* Bottom CTA Block */}
+              <div className="flex flex-col gap-2 mt-auto">
+                <h3 className="text-base font-serif text-white/90 leading-snug group-hover:text-amber-500/90 transition-colors duration-200" style={{ fontFamily: "'Instrument Serif', serif" }}>
+                  Study our model specifications, Redpanda pipelines, and sign the ledger.
+                </h3>
+                <div className="flex items-center gap-1 text-[11px] text-muted-foreground group-hover:text-white transition-colors duration-200 mt-2 font-medium">
+                  <span>Open the Codex</span>
+                  <ArrowRight size={12} className="transform group-hover:translate-x-1 transition-transform duration-200" />
+                </div>
+              </div>
             </div>
           </div>
-
-
         </section>
 
         {/* MARKET MOVERS SECTION */}
