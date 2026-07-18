@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { ResponsiveContainer, ComposedChart, Area, Bar, Line, XAxis, YAxis, Tooltip, ReferenceLine, LineChart } from 'recharts';
-import { AreaChart as AreaIcon, BarChart2 as CandleIcon, Activity, Eye, EyeOff, Maximize2, Minimize2, ZoomIn, ZoomOut } from 'lucide-react';
+import { AreaChart as AreaIcon, BarChart2 as CandleIcon, Activity, Eye, EyeOff, Maximize2, Minimize2 } from 'lucide-react';
+import { useRef } from 'react';
 import ChartChatbot from './ChartChatbot';
 
 
@@ -217,9 +218,14 @@ export default function StockChart({ activeTicker, chartData, activeStats, chart
     localStorage.setItem(`quantiq_show_rsi_${email}_${activeTicker}`, String(showRSI));
   }, [showRSI, activeTicker, user]);
 
-  // Zoom Factor and Scroll/Pan states (only active in maximized view)
+  // Zoom Factor and Scroll/Pan states — active always (Binance-style interactions)
   const [zoomFactor, setZoomFactor] = useState<number>(1.0);
   const [scrollIndex, setScrollIndex] = useState<number>(0);
+
+  // Drag-to-pan state refs (no re-render on drag move)
+  const isDragging = useRef(false);
+  const dragStartX = useRef(0);
+  const dragStartScrollIndex = useRef(0);
 
   // Reset zoom and scroll when ticker or range changes
   useEffect(() => {
@@ -227,14 +233,14 @@ export default function StockChart({ activeTicker, chartData, activeStats, chart
     setScrollIndex(0);
   }, [activeTicker, chartRange]);
 
-  // Adjust scroll position to latest candles whenever zoom changes
+  // Adjust scroll position to latest candles whenever zoom factor changes
   useEffect(() => {
-    if (zoomFactor === 1.0) {
+    if (zoomFactor >= 1.0) {
       setScrollIndex(0);
     } else {
       const visibleCount = Math.max(5, Math.round(chartData.length * zoomFactor));
       const maxScroll = Math.max(0, chartData.length - visibleCount);
-      setScrollIndex(maxScroll);
+      setScrollIndex(prev => Math.min(prev, maxScroll));
     }
   }, [zoomFactor, chartData.length]);
 
@@ -371,8 +377,8 @@ export default function StockChart({ activeTicker, chartData, activeStats, chart
     rsi: latestDataPoint?.rsi || null
   };
   
-  // Slice data if zoomed in maximized view
-  const isZoomed = isMaximized && zoomFactor < 1.0;
+  // Slice data based on zoom — works in both normal and maximized views
+  const isZoomed = zoomFactor < 1.0;
   const visibleCount = Math.max(5, Math.round(processedData.length * zoomFactor));
   const maxScrollIndex = Math.max(0, processedData.length - visibleCount);
   const currentScrollIndex = isZoomed ? Math.min(scrollIndex, maxScrollIndex) : 0;
@@ -401,19 +407,40 @@ export default function StockChart({ activeTicker, chartData, activeStats, chart
   const yMin = rawMinPrice === rawMaxPrice ? rawMinPrice * 0.95 : (rawMinPrice > 0 ? rawMinPrice * 0.95 : rawMinPrice);
   const yMax = rawMinPrice === rawMaxPrice ? rawMaxPrice * 1.05 : rawMaxPrice * 1.05;
 
-  // Mouse-wheel pan handler: scrolls visible window left/right when chart is zoomed in
+  // Mouse-wheel ZOOM handler (Binance-style: scroll up = zoom in, scroll down = zoom out)
   const handleChartWheel = (e: React.WheelEvent<HTMLDivElement>) => {
-    if (!isZoomed) return;
     e.preventDefault();
-    const step = Math.max(1, Math.round(visibleCount * 0.1));
-    if (e.deltaY > 0) {
-      // Scroll right (toward more recent data)
-      setScrollIndex(prev => Math.min(prev + step, maxScrollIndex));
+    const zoomStep = 0.08;
+    if (e.deltaY < 0) {
+      // Scroll up = zoom in (show fewer candles)
+      setZoomFactor(prev => Math.max(0.1, prev - zoomStep));
     } else {
-      // Scroll left (toward older data)
-      setScrollIndex(prev => Math.max(prev - step, 0));
+      // Scroll down = zoom out (show more candles)
+      setZoomFactor(prev => Math.min(1.0, prev + zoomStep));
     }
   };
+
+  // Drag-to-pan handlers (Binance-style: click + drag left/right to pan)
+  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!isZoomed) return;
+    isDragging.current = true;
+    dragStartX.current = e.clientX;
+    dragStartScrollIndex.current = currentScrollIndex;
+  };
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!isDragging.current || !isZoomed) return;
+    // Each ~8px of mouse movement = 1 candle shift
+    const deltaX = dragStartX.current - e.clientX;
+    const canvasWidth = e.currentTarget.clientWidth;
+    const pixelsPerCandle = canvasWidth / visibleCount;
+    const candleShift = Math.round(deltaX / pixelsPerCandle);
+    const newIndex = Math.max(0, Math.min(dragStartScrollIndex.current + candleShift, maxScrollIndex));
+    setScrollIndex(newIndex);
+  };
+
+  const handleMouseUp = () => { isDragging.current = false; };
+  const handleMouseLeave = () => { isDragging.current = false; };
 
   const chartPanelStyle: React.CSSProperties = isMaximized ? {
     position: 'fixed',
@@ -653,75 +680,39 @@ export default function StockChart({ activeTicker, chartData, activeStats, chart
             </div>
           )}
 
-          {/* Zoom controls inside the marker control row */}
+          {/* Zoom level badge + reset — replaces old zoom buttons */}
           <div style={{ marginLeft: 'auto', display: 'flex', gap: '8px', alignItems: 'center' }}>
             {isZoomed && (
-              <button
-                onClick={() => setZoomFactor(1.0)}
-                style={{
-                  background: 'rgba(255, 255, 255, 0.05)',
-                  border: '1px solid rgba(255, 255, 255, 0.1)',
-                  borderRadius: '6px',
-                  color: '#fff',
-                  padding: '4px 10px',
-                  fontSize: '11px',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  backdropFilter: 'blur(8px)',
-                  transition: 'all 0.2s'
-                }}
-                onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'}
-                onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)'}
-              >
-                Reset Zoom
-              </button>
+              <>
+                <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'monospace' }}>
+                  {Math.round((1 / zoomFactor) * 100)}% zoom
+                </span>
+                <button
+                  onClick={() => setZoomFactor(1.0)}
+                  style={{
+                    background: 'rgba(255, 255, 255, 0.05)',
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    borderRadius: '6px',
+                    color: '#fff',
+                    padding: '4px 10px',
+                    fontSize: '11px',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    backdropFilter: 'blur(8px)',
+                    transition: 'all 0.2s'
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'}
+                  onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)'}
+                >
+                  Reset Zoom
+                </button>
+              </>
             )}
-            <button
-              onClick={() => setZoomFactor(f => Math.max(0.2, f - 0.2))}
-              style={{
-                background: 'rgba(0, 242, 254, 0.15)',
-                border: '1px solid rgba(0, 242, 254, 0.3)',
-                borderRadius: '50%',
-                width: '32px',
-                height: '32px',
-                color: '#fff',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'pointer',
-                backdropFilter: 'blur(8px)',
-                boxShadow: '0 0 10px rgba(0, 242, 254, 0.2)',
-                transition: 'all 0.2s'
-              }}
-              onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(0, 242, 254, 0.25)'}
-              onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(0, 242, 254, 0.15)'}
-              title="Zoom In"
-            >
-              <ZoomIn size={16} />
-            </button>
-            <button
-              onClick={() => setZoomFactor(f => Math.min(1.0, f + 0.2))}
-              style={{
-                background: 'rgba(161, 84, 255, 0.15)',
-                border: '1px solid rgba(161, 84, 255, 0.3)',
-                borderRadius: '50%',
-                width: '32px',
-                height: '32px',
-                color: '#fff',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'pointer',
-                backdropFilter: 'blur(8px)',
-                boxShadow: '0 0 10px rgba(161, 84, 255, 0.2)',
-                transition: 'all 0.2s'
-              }}
-              onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(161, 84, 255, 0.25)'}
-              onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(161, 84, 255, 0.15)'}
-              title="Zoom Out"
-            >
-              <ZoomOut size={16} />
-            </button>
+            {!isZoomed && (
+              <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontStyle: 'italic' }}>
+                Scroll to zoom · Drag to pan
+              </span>
+            )}
           </div>
         </div>
       )}
@@ -845,13 +836,18 @@ export default function StockChart({ activeTicker, chartData, activeStats, chart
         {processedData.length > 0 ? (
           <div 
             onWheel={handleChartWheel}
+            onMouseDown={handleMouseDown}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUp}
+            onMouseLeave={handleMouseLeave}
             style={{ 
               height: showRSI 
                 ? (isMaximized ? (isZoomed ? '62%' : '72%') : 'calc(100% - 110px)') 
                 : (isMaximized ? (isZoomed ? '86%' : '100%') : '100%'), 
               width: '100%',
               position: 'relative',
-              cursor: isZoomed ? 'ew-resize' : 'default'
+              cursor: isZoomed ? (isDragging.current ? 'grabbing' : 'grab') : 'crosshair',
+              userSelect: 'none'
             }}>
 
             <ResponsiveContainer width="100%" height="100%">
@@ -962,40 +958,21 @@ export default function StockChart({ activeTicker, chartData, activeStats, chart
           </div>
         )}
 
-        {/* Horizontal Scroll/Pan Bar when Zoomed */}
+        {/* Zoomed date range indicator (replaces PAN CHART slider) */}
         {processedData.length > 0 && isZoomed && (
-          <div 
-            style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              gap: '12px', 
-              padding: '10px 24px', 
-              background: 'rgba(255,255,255,0.02)',
-              border: '1px solid rgba(255,255,255,0.05)',
-              borderRadius: '10px',
-              margin: '8px 0 12px 0'
-            }}
-          >
-            <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 700, letterSpacing: '0.05em' }}>PAN CHART:</span>
-            <input 
-              type="range"
-              min={0}
-              max={maxScrollIndex}
-              value={currentScrollIndex}
-              onChange={(e) => setScrollIndex(parseInt(e.target.value))}
-              style={{
-                flex: 1,
-                height: '6px',
-                borderRadius: '3px',
-                background: 'rgba(255, 255, 255, 0.1)',
-                outline: 'none',
-                cursor: 'ew-resize',
-                accentColor: 'var(--neon-cyan)'
-              }}
-            />
-            <span style={{ fontSize: '10px', color: 'var(--neon-cyan)', fontFamily: 'monospace', fontWeight: 600 }}>
-              {visibleData[0]?.time} — {visibleData[visibleData.length - 1]?.time}
-            </span>
+          <div style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center',
+            gap: '6px', 
+            padding: '4px 12px',
+            fontSize: '10px',
+            color: 'var(--text-muted)',
+            fontFamily: 'monospace'
+          }}>
+            <span style={{ color: 'var(--neon-cyan)' }}>{visibleData[0]?.time}</span>
+            <span>—</span>
+            <span style={{ color: 'var(--neon-cyan)' }}>{visibleData[visibleData.length - 1]?.time}</span>
           </div>
         )}
 
