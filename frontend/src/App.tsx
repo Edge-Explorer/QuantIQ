@@ -191,10 +191,15 @@ export default function App() {
         `);
         setAlerts(alertsData.alerts);
         await fetchStrategyHistory();
-      } catch (err) {
-        console.error('Failed to load profile / user data', err);
-        // If unauthorized or token expired, log out
-        handleLogout();
+      } catch (err: any) {
+        console.error('Failed to load profile / user data:', err);
+        // Only force-logout on explicit auth errors (invalid/expired token)
+        // Do NOT logout on network errors, HF downtime, or 500s — keep the session alive
+        const msg = err?.message?.toLowerCase() || '';
+        if (msg.includes('unauthorized') || msg.includes('invalid token') || msg.includes('not authenticated')) {
+          handleLogout();
+        }
+        // Otherwise stay logged in — the server may just be temporarily down
       }
     };
 
@@ -430,13 +435,25 @@ export default function App() {
   const handleGoogleCredentialResponse = async (response: any) => {
     try {
       const idToken = response.credential;
-      const res = await fetch(`${API_URL}/api/v1/auth/google`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token_id: idToken }),
-      }).then(r => r.json());
+      // Retry up to 5 times to handle HF dead replica routing
+      let res: any = null;
+      for (let attempt = 1; attempt <= 5; attempt++) {
+        const r = await fetch(`${API_URL}/api/v1/auth/google`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token_id: idToken }),
+        });
+        const ct = r.headers.get('content-type') || '';
+        if (r.status >= 500 && attempt < 5) {
+          await new Promise(resolve => setTimeout(resolve, 800 + Math.random() * 800));
+          continue;
+        }
+        if (!ct.includes('application/json')) break;
+        res = await r.json();
+        break;
+      }
 
-      if (res.access_token) {
+      if (res?.access_token) {
         handleAuthSuccess(res.access_token);
       }
     } catch (err) {
