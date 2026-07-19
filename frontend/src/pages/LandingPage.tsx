@@ -308,15 +308,18 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
     }
   };
 
-  // Fetch with automatic retry on 503/5xx (HF Space cold-start / rate-limit)
-  const fetchWithRetry = async (url: string, options: RequestInit, retries = 3): Promise<Response> => {
+  // Fetch with automatic retry on 503/5xx (HF Space load-balancer multi-replica issue)
+  // HF free tier has 2 replicas — one may be dead. We retry up to 6 times with random
+  // jitter so each attempt independently re-rolls the load balancer lottery.
+  const fetchWithRetry = async (url: string, options: RequestInit, retries = 6): Promise<Response> => {
     for (let attempt = 1; attempt <= retries; attempt++) {
       const response = await fetch(url, options);
       // If 5xx and not last attempt, wait and retry
       if (response.status >= 500 && attempt < retries) {
-        const delay = attempt * 1200; // 1.2s, 2.4s
-        setErrorMsg(`Server is warming up… retrying (${attempt}/${retries - 1})`);
-        await new Promise(res => setTimeout(res, delay));
+        // Random jitter 800ms–1600ms so each retry independently hits the LB
+        const jitter = 800 + Math.random() * 800;
+        setErrorMsg(`Connecting to server… retrying (${attempt}/${retries})`);
+        await new Promise(res => setTimeout(res, jitter));
         continue;
       }
       return response;
