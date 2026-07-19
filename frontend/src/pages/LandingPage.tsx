@@ -308,6 +308,23 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
     }
   };
 
+  // Fetch with automatic retry on 503/5xx (HF Space cold-start / rate-limit)
+  const fetchWithRetry = async (url: string, options: RequestInit, retries = 3): Promise<Response> => {
+    for (let attempt = 1; attempt <= retries; attempt++) {
+      const response = await fetch(url, options);
+      // If 5xx and not last attempt, wait and retry
+      if (response.status >= 500 && attempt < retries) {
+        const delay = attempt * 1200; // 1.2s, 2.4s
+        setErrorMsg(`Server is warming up… retrying (${attempt}/${retries - 1})`);
+        await new Promise(res => setTimeout(res, delay));
+        continue;
+      }
+      return response;
+    }
+    // Should never reach here, but TypeScript needs it
+    return fetch(url, options);
+  };
+
   const handleTraditionalSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg(null);
@@ -338,7 +355,7 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
 
     try {
       if (authMode === 'signup') {
-        const response = await fetch(`${apiUrl}/api/v1/auth/signup`, {
+        const response = await fetchWithRetry(`${apiUrl}/api/v1/auth/signup`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -348,6 +365,12 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
             password: password
           })
         });
+
+        // Guard against non-JSON 503 HTML responses from HF
+        const contentType = response.headers.get('content-type') || '';
+        if (!contentType.includes('application/json')) {
+          throw new Error("The server is temporarily unavailable. Please try again in a few seconds.");
+        }
 
         const data = await response.json();
         if (!response.ok) {
@@ -370,8 +393,8 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
           }, 1000);
         }
       } else {
-        // Sign In
-        const response = await fetch(`${apiUrl}/api/v1/auth/login`, {
+        // Sign In — with retry on 503
+        const response = await fetchWithRetry(`${apiUrl}/api/v1/auth/login`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -379,6 +402,12 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
             password: password
           })
         });
+
+        // Guard against non-JSON 503 HTML responses from HF
+        const contentType = response.headers.get('content-type') || '';
+        if (!contentType.includes('application/json')) {
+          throw new Error("The server is temporarily unavailable. Please wait a moment and try again.");
+        }
 
         const data = await response.json();
         if (!response.ok) {
@@ -393,6 +422,7 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
           setSuccessMsg("Your account is not verified yet. A new verification code has been sent to your email.");
           setPassword('');
         } else if (data.access_token) {
+          setErrorMsg(null);
           onAuthSuccess(data.access_token);
           setShowAuthModal(false);
         }
@@ -417,7 +447,7 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
     setLoading(true);
 
     try {
-      const response = await fetch(`${apiUrl}/api/v1/auth/verify`, {
+      const response = await fetchWithRetry(`${apiUrl}/api/v1/auth/verify`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -425,6 +455,11 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
           code: otp.trim()
         })
       });
+
+      const contentType = response.headers.get('content-type') || '';
+      if (!contentType.includes('application/json')) {
+        throw new Error("The server is temporarily unavailable. Please try again in a few seconds.");
+      }
 
       const data = await response.json();
       if (!response.ok) {
@@ -451,13 +486,18 @@ export default function LandingPage({ onGoogleLogin, googleClientId, onAuthSucce
     setSuccessMsg(null);
 
     try {
-      const response = await fetch(`${apiUrl}/api/v1/auth/resend-code`, {
+      const response = await fetchWithRetry(`${apiUrl}/api/v1/auth/resend-code`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           email: emailToVerify
         })
       });
+
+      const contentType = response.headers.get('content-type') || '';
+      if (!contentType.includes('application/json')) {
+        throw new Error("The server is temporarily unavailable. Please try again in a few seconds.");
+      }
 
       const data = await response.json();
       if (!response.ok) {
