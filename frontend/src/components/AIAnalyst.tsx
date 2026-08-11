@@ -218,7 +218,7 @@ export default function AIAnalyst({
         </div>
       </div>
 
-      <div style={{ flex: 1, overflowY: 'auto' }}>
+      <div style={{ flex: 1, overflowY: 'auto', paddingBottom: '20px' }}>
         {activeTab === 'analysis' ? (
           <>
             {!insight && !loadingInsight && (
