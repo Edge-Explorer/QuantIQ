@@ -568,7 +568,7 @@ export default function StockChart({ activeTicker, chartData, activeStats, chart
   const subPanePct = isZoomed ? 18 : 24;
   const mainChartHeight = isMaximized
     ? `calc(${100 - subPanePct * subPaneCount - (isZoomed ? 20 : 4)}%)`
-    : `calc(100% - ${110 * subPaneCount}px)`;
+    : '340px';
   const subPaneHeight = isMaximized
     ? `calc(${subPanePct}%)`
     : '100px';
@@ -898,7 +898,7 @@ export default function StockChart({ activeTicker, chartData, activeStats, chart
         padding: isMaximized ? '16px 24px 24px' : '16px 16px 32px', 
         flex: 'unset',
         flexShrink: 0,
-        height: isMaximized ? `${650 + subPaneCount * 200}px` : `${340 + subPaneCount * 110}px`
+        height: isMaximized ? `${650 + subPaneCount * 200}px` : 'auto'
       }}>
         {/* Floating Add Marker Form */}
         {showAddMarkerForm && (
