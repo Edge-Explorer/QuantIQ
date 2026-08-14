@@ -538,6 +538,25 @@
   position: relative;
 }
 
+/* Technical Indicator Sub-Panes (RSI / MACD stacked below the price chart) */
+.chart-indicator-pane {
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.008);
+  padding-bottom: 4px;
+  transition: opacity 0.2s ease;
+}
+
+/* MACD / Bollinger toggle accents for the Technical Overlays toolbar */
+.control-toggle-btn.indicator-macd.active {
+  color: var(--neon-violet) !important;
+  background: rgba(161, 84, 255, 0.1) !important;
+}
+
+.control-toggle-btn.indicator-bb.active {
+  color: #f59e0b !important;
+  background: rgba(245, 158, 11, 0.1) !important;
+}
+
 /* ─── 6. AI Analyst Panel ───────────────── */
 .insight-panel {
   padding: 20px;

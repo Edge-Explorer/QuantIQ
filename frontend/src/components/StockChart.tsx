@@ -1,17 +1,29 @@
 import { useState, useEffect, useRef } from 'react';
-import { ResponsiveContainer, ComposedChart, Area, Bar, Line, XAxis, YAxis, Tooltip, ReferenceLine, LineChart } from 'recharts';
+import { ResponsiveContainer, ComposedChart, Area, Bar, Cell, Line, XAxis, YAxis, Tooltip, ReferenceLine, LineChart } from 'recharts';
 import { AreaChart as AreaIcon, BarChart2 as CandleIcon, Activity, Eye, EyeOff, Maximize2, Minimize2 } from 'lucide-react';
 import ChartChatbot from './ChartChatbot';
 
+// Backend REST base URL (matches the rest of the frontend)
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 interface ChartDataPoint {
   time: string;
+  // Epoch seconds of the candle — used to align backend indicator series with the chart
+  ts?: number;
   price: number;
   open?: number;
   high?: number;
   low?: number;
   close?: number;
   range?: [number, number];
+  // Bollinger Bands (aligned by ts from /api/v1/indicators)
+  bb_upper?: number | null;
+  bb_middle?: number | null;
+  bb_lower?: number | null;
+  // MACD (aligned by ts from /api/v1/indicators)
+  macd?: number | null;
+  macd_signal?: number | null;
+  macd_hist?: number | null;
 }
 
 interface StockChartProps {
@@ -150,12 +162,65 @@ const CustomTooltip = ({ active, payload, label }: any) => {
               </div>
             );
           }
+          if (entry.dataKey === 'bb_upper' && entry.value !== undefined && entry.value !== null) {
+            return (
+              <div key={`bbu-${index}`} style={{ display: 'flex', justifyContent: 'space-between', gap: '16px', color: '#a154ff', borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '4px', marginTop: '4px' }}>
+                <span>BB Upper</span>
+                <span style={{ fontWeight: 600 }}>${entry.value.toFixed(2)}</span>
+              </div>
+            );
+          }
+          if (entry.dataKey === 'bb_middle' && entry.value !== undefined && entry.value !== null) {
+            return (
+              <div key={`bbm-${index}`} style={{ display: 'flex', justifyContent: 'space-between', gap: '16px', color: '#f59e0b', borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '4px', marginTop: '4px' }}>
+                <span>BB Middle</span>
+                <span style={{ fontWeight: 600 }}>${entry.value.toFixed(2)}</span>
+              </div>
+            );
+          }
+          if (entry.dataKey === 'bb_lower' && entry.value !== undefined && entry.value !== null) {
+            return (
+              <div key={`bbl-${index}`} style={{ display: 'flex', justifyContent: 'space-between', gap: '16px', color: '#a154ff', borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '4px', marginTop: '4px' }}>
+                <span>BB Lower</span>
+                <span style={{ fontWeight: 600 }}>${entry.value.toFixed(2)}</span>
+              </div>
+            );
+          }
           return null;
         })}
       </div>
     );
   }
   return null;
+};
+
+// Merges backend-computed indicator series (from /api/v1/indicators) into the chart
+// data, keyed by each candle's epoch timestamp (ts). Any candle without a matching
+// backend value (e.g. live ticks appended after the fetch) falls back to null so
+// recharts simply leaves a gap instead of drawing garbage.
+const mergeIndicators = (data: ChartDataPoint[], ind: any): ChartDataPoint[] => {
+  if (!ind) return data;
+  const toMap = (arr?: any[]) => new Map((arr || []).map((p: any) => [p.time, p.value]));
+
+  const bbUpper = toMap(ind.bollinger_bands?.upper);
+  const bbMiddle = toMap(ind.bollinger_bands?.middle);
+  const bbLower = toMap(ind.bollinger_bands?.lower);
+  const macdLine = toMap(ind.macd?.line);
+  const macdSignal = toMap(ind.macd?.signal);
+  const macdHist = toMap(ind.macd?.histogram);
+
+  return data.map((d) => {
+    const t = d.ts;
+    return {
+      ...d,
+      bb_upper: t !== undefined && bbUpper.has(t) ? bbUpper.get(t) : null,
+      bb_middle: t !== undefined && bbMiddle.has(t) ? bbMiddle.get(t) : null,
+      bb_lower: t !== undefined && bbLower.has(t) ? bbLower.get(t) : null,
+      macd: t !== undefined && macdLine.has(t) ? macdLine.get(t) : null,
+      macd_signal: t !== undefined && macdSignal.has(t) ? macdSignal.get(t) : null,
+      macd_hist: t !== undefined && macdHist.has(t) ? macdHist.get(t) : null,
+    };
+  });
 };
 
 export default function StockChart({ activeTicker, chartData, activeStats, chartRange, onRangeChange, user, onOpenRecharge }: StockChartProps) {
@@ -180,6 +245,16 @@ export default function StockChart({ activeTicker, chartData, activeStats, chart
   const [showRSI, setShowRSI] = useState<boolean>(() => {
     const email = localStorage.getItem('quantiq_last_logged_in_email') || 'generic';
     const saved = localStorage.getItem(`quantiq_show_rsi_${email}_${activeTicker}`);
+    return saved === 'true';
+  });
+  const [showMACD, setShowMACD] = useState<boolean>(() => {
+    const email = localStorage.getItem('quantiq_last_logged_in_email') || 'generic';
+    const saved = localStorage.getItem(`quantiq_show_macd_${email}_${activeTicker}`);
+    return saved === 'true';
+  });
+  const [showBB, setShowBB] = useState<boolean>(() => {
+    const email = localStorage.getItem('quantiq_last_logged_in_email') || 'generic';
+    const saved = localStorage.getItem(`quantiq_show_bb_${email}_${activeTicker}`);
     return saved === 'true';
   });
   const [isMaximized, setIsMaximized] = useState<boolean>(() => {
@@ -216,6 +291,50 @@ export default function StockChart({ activeTicker, chartData, activeStats, chart
     const email = user?.email || localStorage.getItem('quantiq_last_logged_in_email') || 'generic';
     localStorage.setItem(`quantiq_show_rsi_${email}_${activeTicker}`, String(showRSI));
   }, [showRSI, activeTicker, user]);
+
+  useEffect(() => {
+    const email = user?.email || localStorage.getItem('quantiq_last_logged_in_email') || 'generic';
+    localStorage.setItem(`quantiq_show_macd_${email}_${activeTicker}`, String(showMACD));
+  }, [showMACD, activeTicker, user]);
+
+  useEffect(() => {
+    const email = user?.email || localStorage.getItem('quantiq_last_logged_in_email') || 'generic';
+    localStorage.setItem(`quantiq_show_bb_${email}_${activeTicker}`, String(showBB));
+  }, [showBB, activeTicker, user]);
+
+  // ── Backend-computed indicators (MACD + Bollinger Bands) ──
+  // Fetched from /api/v1/indicators whenever MACD/BB is toggled on or the ticker /
+  // range changes. Series are aligned by epoch timestamp (ts) with the candles
+  // served by the stockHistory query, so they always line up with the chart.
+  const [indicatorData, setIndicatorData] = useState<any>(null);
+  const [indicatorLoading, setIndicatorLoading] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (!showMACD && !showBB) {
+      setIndicatorData(null);
+      setIndicatorLoading(false);
+      return;
+    }
+    let cancelled = false;
+    setIndicatorLoading(true);
+    const url = `${API_URL}/api/v1/indicators?ticker=${encodeURIComponent(activeTicker)}&range=${encodeURIComponent(chartRange)}`;
+    fetch(url)
+      .then((res) => {
+        if (!res.ok) throw new Error(`Indicators API responded with ${res.status}`);
+        return res.json();
+      })
+      .then((data) => {
+        if (!cancelled) setIndicatorData(data);
+      })
+      .catch((err) => {
+        console.error('Failed to load chart indicators:', err);
+        if (!cancelled) setIndicatorData(null);
+      })
+      .finally(() => {
+        if (!cancelled) setIndicatorLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, [activeTicker, chartRange, showMACD, showBB]);
 
   // Zoom Factor and Scroll/Pan states — active always (Binance-style interactions)
   const [zoomFactor, setZoomFactor] = useState<number>(1.0);
@@ -386,8 +505,9 @@ export default function StockChart({ activeTicker, chartData, activeStats, chart
     });
   };
 
-  // Pipeline processed chart data
-  let processedData = [...chartData];
+  // Pipeline processed chart data — enrich with backend MACD/BB series first,
+  // then apply the client-side SMA/EMA overlays.
+  let processedData = mergeIndicators([...chartData], indicatorData);
   if (showSMA) processedData = computeSMA(processedData, 20);
   if (showEMA) processedData = computeEMA(processedData, 20);
 
@@ -416,6 +536,12 @@ export default function StockChart({ activeTicker, chartData, activeStats, chart
     ? rsiData.slice(currentScrollIndex, currentScrollIndex + visibleCount)
     : rsiData;
 
+  // MACD data is enriched onto processedData by mergeIndicators (aligned by ts)
+  const macdData = showMACD ? processedData : [];
+  const visibleMacdData = isZoomed
+    ? macdData.slice(currentScrollIndex, currentScrollIndex + visibleCount)
+    : macdData;
+
   // Calculate global Y-axis domain bounds dynamically to prevent clipping
   // Filter to only finite, positive numbers to prevent garbage values like NaN/Infinity
   // from corrupting Math.min/max and producing labels like 'i1499999986'
@@ -424,12 +550,28 @@ export default function StockChart({ activeTicker, chartData, activeStats, chart
   const highs = filterFinite(visibleData.map(d => d.high ?? d.price));
   const lows = filterFinite(visibleData.map(d => d.low ?? d.price));
 
-  const rawMinPrice = prices.length > 0 ? Math.min(...lows.length > 0 ? lows : prices, ...prices) : 0;
-  const rawMaxPrice = prices.length > 0 ? Math.max(...highs.length > 0 ? highs : prices, ...prices) : 100;
+  // Include Bollinger Band extremes so the overlay never clips against the Y domain
+  const bbHighs = showBB ? filterFinite(visibleData.map(d => d.bb_upper as number)) : [];
+  const bbLows = showBB ? filterFinite(visibleData.map(d => d.bb_lower as number)) : [];
+
+  const rawMinPrice = prices.length > 0 ? Math.min(...lows.length > 0 ? lows : prices, ...prices, ...bbLows) : 0;
+  const rawMaxPrice = prices.length > 0 ? Math.max(...highs.length > 0 ? highs : prices, ...prices, ...bbHighs) : 100;
 
   // Add 5% padding to top/bottom to prevent lines touching borders
   const yMin = rawMinPrice === rawMaxPrice ? rawMinPrice * 0.95 : (rawMinPrice > 0 ? rawMinPrice * 0.95 : rawMinPrice);
   const yMax = rawMinPrice === rawMaxPrice ? rawMaxPrice * 1.05 : rawMaxPrice * 1.05;
+
+  // Sub-pane sizing: RSI + MACD are stacked below the main chart. The container
+  // grows with each active pane and the main chart shrinks proportionally so the
+  // multi-pane layout stays balanced in both normal and maximized modes.
+  const subPaneCount = (showRSI ? 1 : 0) + (showMACD ? 1 : 0);
+  const subPanePct = isZoomed ? 18 : 24;
+  const mainChartHeight = isMaximized
+    ? `calc(${100 - subPanePct * subPaneCount - (isZoomed ? 20 : 4)}%)`
+    : `calc(100% - ${110 * subPaneCount}px)`;
+  const subPaneHeight = isMaximized
+    ? `calc(${subPanePct}%)`
+    : '100px';
 
   // Mouse-wheel zoom is now handled via non-passive native addEventListener above.
   // Drag-to-pan handlers (Binance-style: click + drag left/right to pan)
@@ -632,6 +774,24 @@ export default function StockChart({ activeTicker, chartData, activeStats, chart
             <Activity size={13} />
             RSI 14
           </button>
+          <button 
+            onClick={() => setShowMACD(!showMACD)} 
+            className={`control-toggle-btn indicator-macd ${showMACD ? 'active' : ''}`}
+            title="Moving Average Convergence Divergence"
+            style={{ padding: '6px 12px', background: showMACD ? 'rgba(161, 84, 255, 0.1)' : 'none', border: '1px solid var(--border-glass)', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', color: showMACD ? 'var(--neon-violet)' : 'var(--text-secondary)', fontSize: '12px', transition: 'all 0.2s ease', outline: 'none' }}
+          >
+            {showMACD ? <Eye size={13} /> : <EyeOff size={13} />}
+            MACD
+          </button>
+          <button 
+            onClick={() => setShowBB(!showBB)} 
+            className={`control-toggle-btn indicator-bb ${showBB ? 'active' : ''}`}
+            title="Bollinger Bands (20, 2)"
+            style={{ padding: '6px 12px', background: showBB ? 'rgba(245, 158, 11, 0.1)' : 'none', border: '1px solid var(--border-glass)', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', color: showBB ? '#f59e0b' : 'var(--text-secondary)', fontSize: '12px', transition: 'all 0.2s ease', outline: 'none' }}
+          >
+            {showBB ? <Eye size={13} /> : <EyeOff size={13} />}
+            Bollinger
+          </button>
         </div>
       </div>
 
@@ -738,7 +898,7 @@ export default function StockChart({ activeTicker, chartData, activeStats, chart
         padding: isMaximized ? '16px 24px 24px' : '16px 16px 32px', 
         flex: 'unset',
         flexShrink: 0,
-        height: isMaximized ? (showRSI ? '850px' : '650px') : (showRSI ? '450px' : '340px')
+        height: isMaximized ? `${650 + subPaneCount * 200}px` : `${340 + subPaneCount * 110}px`
       }}>
         {/* Floating Add Marker Form */}
         {showAddMarkerForm && (
@@ -853,9 +1013,7 @@ export default function StockChart({ activeTicker, chartData, activeStats, chart
             onMouseUp={handleMouseUp}
             onMouseLeave={handleMouseLeave}
             style={{ 
-              height: showRSI 
-                ? (isMaximized ? (isZoomed ? '62%' : '72%') : 'calc(100% - 110px)') 
-                : (isMaximized ? (isZoomed ? '86%' : '100%') : '100%'), 
+              height: mainChartHeight,
               width: '100%',
               position: 'relative',
               cursor: isZoomed ? (isDragging.current ? 'grabbing' : 'grab') : 'crosshair',
@@ -954,6 +1112,38 @@ export default function StockChart({ activeTicker, chartData, activeStats, chart
                     name="EMA 20"
                   />
                 )}
+
+                {/* Bollinger Bands Overlay (backend-computed via pandas-ta, aligned by ts) */}
+                {showBB && (
+                  <>
+                    <Line 
+                      type="monotone" 
+                      dataKey="bb_upper" 
+                      stroke="#a154ff" 
+                      strokeWidth={1.2} 
+                      strokeDasharray="3 3"
+                      dot={false}
+                      name="BB Upper"
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="bb_middle" 
+                      stroke="#f59e0b" 
+                      strokeWidth={1.2} 
+                      dot={false}
+                      name="BB Middle"
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="bb_lower" 
+                      stroke="#a154ff" 
+                      strokeWidth={1.2} 
+                      strokeDasharray="3 3"
+                      dot={false}
+                      name="BB Lower"
+                    />
+                  </>
+                )}
               </ComposedChart>
             </ResponsiveContainer>
           </div>
@@ -991,7 +1181,7 @@ export default function StockChart({ activeTicker, chartData, activeStats, chart
 
         {/* Technical Indicator panel: RSI 14 (Auxiliary Chart below main price chart) */}
         {showRSI && visibleRsiData.length > 0 && (
-          <div style={{ height: isMaximized ? (isZoomed ? '18%' : '24%') : '100px', width: '100%', borderTop: '1px dashed var(--border-glass)', paddingTop: '10px' }}>
+          <div style={{ height: subPaneHeight, width: '100%', borderTop: '1px dashed var(--border-glass)', paddingTop: '10px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--text-secondary)', marginBottom: '4px', paddingLeft: '10px' }}>
               <span style={{ fontWeight: 700, color: 'var(--neon-cyan)' }}>RSI (14)</span>
               <span style={{ color: 'var(--text-muted)' }}>Overbought &gt;70 | Oversold &lt;30</span>
@@ -1027,6 +1217,60 @@ export default function StockChart({ activeTicker, chartData, activeStats, chart
             </ResponsiveContainer>
           </div>
         )}
+
+        {/* Technical Indicator panel: MACD (12, 26, 9) — separate pane below the price chart */}
+        {showMACD && visibleMacdData.length > 0 && (
+          <div className="chart-indicator-pane" style={{ height: subPaneHeight, width: '100%', borderTop: '1px dashed var(--border-glass)', paddingTop: '10px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--text-secondary)', marginBottom: '4px', paddingLeft: '10px' }}>
+              <span style={{ fontWeight: 700, color: 'var(--neon-violet)' }}>MACD (12, 26, 9)</span>
+              <span style={{ color: 'var(--text-muted)' }}>
+                {indicatorLoading ? 'Loading…' : 'Line · Signal · Histogram'}
+              </span>
+            </div>
+            <ResponsiveContainer width="100%" height="100%">
+              <ComposedChart data={visibleMacdData} margin={{ top: 5, right: 5, left: 20, bottom: 5 }}>
+                <XAxis dataKey="time" hide />
+                <YAxis stroke="#475569" fontSize={9} tickLine={false} />
+                <Tooltip 
+                  contentStyle={{ 
+                    background: '#0d101b', 
+                    borderColor: '#2e303a',
+                    borderRadius: '8px',
+                    color: '#fff',
+                    fontSize: '11px'
+                  }}
+                />
+
+                {/* Zero baseline */}
+                <ReferenceLine y={0} stroke="#475569" strokeWidth={1} />
+
+                {/* Histogram (green above / red below the zero line) */}
+                <Bar dataKey="macd_hist" name="MACD Histogram" maxBarSize={8} isAnimationActive={false}>
+                  {visibleMacdData.map((entry, idx) => (
+                    <Cell key={`hist-${idx}`} fill={(entry.macd_hist ?? 0) >= 0 ? 'rgba(16, 185, 129, 0.45)' : 'rgba(239, 68, 68, 0.45)'} />
+                  ))}
+                </Bar>
+
+                <Line 
+                  type="monotone" 
+                  dataKey="macd" 
+                  stroke="var(--neon-cyan)" 
+                  strokeWidth={1.5} 
+                  dot={false}
+                  name="MACD"
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="macd_signal" 
+                  stroke="#fb923c" 
+                  strokeWidth={1.5} 
+                  dot={false}
+                  name="Signal"
+                />
+              </ComposedChart>
+            </ResponsiveContainer>
+          </div>
+        )}
         </div> {/* closes chart-container */}
         </div> {/* closes Left Column */}
 
@@ -1035,7 +1279,7 @@ export default function StockChart({ activeTicker, chartData, activeStats, chart
           <ChartChatbot 
             ticker={activeTicker}
             markers={markers}
-            activeIndicators={{ sma: showSMA, ema: showEMA, rsi: showRSI }}
+            activeIndicators={{ sma: showSMA, ema: showEMA, rsi: showRSI, macd: showMACD, bb: showBB }}
             user={user}
             onOpenRecharge={onOpenRecharge}
             liveData={chatbotLiveData}

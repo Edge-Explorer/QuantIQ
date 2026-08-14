@@ -18,7 +18,7 @@ from backend.app.database.session import get_db
 from backend.app.database import crud
 from backend.app.schemas import schemas
 from backend.app.config.metrics import payment_callbacks_total, external_api_calls_total
-from backend.app.services.gemini import get_onnx_session_for_type
+from backend.app.services.gemini import get_onnx_session_for_type, compute_chart_indicators
 
 router= APIRouter()
 
@@ -1067,6 +1067,31 @@ async def get_market_movers():
     _market_movers_cache = {"data": result, "timestamp": now}
     return result
 
+@router.get("/indicators")
+async def get_chart_indicators(
+    ticker: str,
+    range: str = "1d",
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Returns precomputed MACD (12/26/9) and Bollinger Bands (20, 2) series for the
+    active chart range. Series are aligned by epoch timestamp with the candles
+    served by the ``stockHistory`` GraphQL query, and computed with the exact same
+    pandas-ta pipeline the backend ML model uses under the hood.
+
+    Example:
+        GET /api/v1/indicators?ticker=BTC-USD&range=1d
+    """
+    try:
+        return await compute_chart_indicators(db, ticker, range)
+    except Exception as e:
+        print(f"Error computing chart indicators for {ticker} ({range}): {e}")
+        return {
+            "macd": {"line": [], "signal": [], "histogram": []},
+            "bollinger_bands": {"upper": [], "middle": [], "lower": []},
+            "candle_count": 0,
+        }
+
 from typing import List, Dict, Any, Optional
 
 class ChatRequest(BaseModel):
@@ -1143,6 +1168,10 @@ async def chat_with_analyst(
         indicators_list.append("EMA 20 Overlay")
     if active_indicators.get("rsi"):
         indicators_list.append("RSI 14 Panel")
+    if active_indicators.get("macd"):
+        indicators_list.append("MACD (12, 26, 9) Panel")
+    if active_indicators.get("bb"):
+        indicators_list.append("Bollinger Bands (20, 2) Overlay")
     indicators_text = ", ".join(indicators_list) if indicators_list else "None"
  
     # Construct system instructions

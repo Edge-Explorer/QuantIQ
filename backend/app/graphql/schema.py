@@ -246,118 +246,20 @@ class Query:
     async def stock_history(self, info: Info, ticker: str, range: str = "1d") -> List[StockHistoryType]:
         """Fetch historical aggregated candles for a ticker based on range (1d, 5d, 1m, 6m, ytd, 1y, 5y, max)."""
         db = info.context["db"]
-        
-        range_mapping = {
-            "1d":   {"period": "1d",   "interval": "2m"},
-            "5d":   {"period": "5d",   "interval": "15m"},
-            "1m":   {"period": "1mo",  "interval": "1d"},
-            "6m":   {"period": "6mo",  "interval": "1d"},
-            "ytd":  {"period": "ytd",  "interval": "1d"},
-            "1y":   {"period": "1y",   "interval": "1d"},
-            "5y":   {"period": "5y",   "interval": "1wk"},
-            "max":  {"period": "max",  "interval": "1mo"}
-        }
-        
-        selected_range = range.lower()
-        if selected_range not in range_mapping:
-            selected_range = "1d"
-            
-        config = range_mapping[selected_range]
-        
-        # If it's 1d, let's try local DB first
-        if selected_range == "1d":
-            try:
-                local_data = await crud.get_stock_history(db, ticker, limit=100)
-                
-                # Filter out flat closed candles (zero volume and zero movement) for non-crypto assets
-                is_crypto = ticker.upper().endswith("-USD") or ticker.upper().endswith("-BTC")
-                if not is_crypto:
-                    local_data = [h for h in local_data if not (h.open == h.close and h.volume == 0)]
-                
-                if len(local_data) > 10:
-                    return [
-                        StockHistoryType(
-                            id=h.id,
-                            ticker=h.ticker,
-                            timestamp=h.timestamp,
-                            open=h.open,
-                            high=h.high,
-                            low=h.low,
-                            close=h.close,
-                            volume=h.volume
-                        ) for h in local_data
-                    ]
-            except Exception as db_err:
-                print(f"Error querying local DB for ticker history: {db_err}")
-
-
-        # Otherwise, dynamically fetch from Yahoo Finance in a thread pool
-        try:
-            import yfinance as yf
-            loop = asyncio.get_event_loop()
-            yf_ticker = yf.Ticker(ticker)
-            
-            df = await loop.run_in_executor(
-                None, 
-                lambda: yf_ticker.history(period=config["period"], interval=config["interval"])
+        rows = await gemini.fetch_stock_history_rows(db, ticker, range)
+        return [
+            StockHistoryType(
+                id=idx,
+                ticker=ticker.upper(),
+                timestamp=row["timestamp"],
+                open=row["open"],
+                high=row["high"],
+                low=row["low"],
+                close=row["close"],
+                volume=row["volume"]
             )
-            external_api_calls_total.labels(provider="yfinance", status="success").inc()
-            
-            history_list = []
-            if not df.empty:
-                df = df.reset_index()
-                
-                time_col = None
-                for col in ['Date', 'Datetime', 'index', 'timestamp']:
-                    if col in df.columns:
-                        time_col = col
-                        break
-                
-                if time_col:
-                    # Limit to last 350 points to ensure smooth chart performance
-                    df = df.tail(350)
-                    for i, row in df.iterrows():
-                        ts = row[time_col]
-                        if hasattr(ts, 'to_pydatetime'):
-                            ts_dt = ts.to_pydatetime()
-                        elif isinstance(ts, str):
-                            ts_dt = datetime.datetime.fromisoformat(ts)
-                        else:
-                            ts_dt = ts
-                            
-                        if ts_dt.tzinfo is not None:
-                            ts_dt = ts_dt.replace(tzinfo=None)
-                            
-                        history_list.append(
-                            StockHistoryType(
-                                id=i,
-                                ticker=ticker.upper(),
-                                timestamp=ts_dt,
-                                open=float(row["Open"]),
-                                high=float(row["High"]),
-                                low=float(row["Low"]),
-                                close=float(row["Close"]),
-                                volume=int(row["Volume"]) if "Volume" in row else 0
-                            )
-                        )
-            return history_list
-        except Exception as e:
-            external_api_calls_total.labels(provider="yfinance", status="failed").inc()
-            print(f"Error fetching yfinance history for {ticker}: {str(e)}")
-            # Failover fallback
-            local_data = await crud.get_stock_history(db, ticker, limit=100)
-            return [
-                StockHistoryType(
-                    id=h.id,
-                    ticker=h.ticker,
-                    timestamp=h.timestamp,
-                    open=h.open,
-                    high=h.high,
-                    low=h.low,
-                    close=h.close,
-                    volume=h.volume
-                ) for h in local_data
-            ]
+            for idx, row in enumerate(rows)
+        ]
 
     @strawberry.field
     async def recently_analyzed(self, info: Info, limit: Optional[int] = 5) -> List[str]:
