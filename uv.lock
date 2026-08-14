@@ -1875,7 +1875,7 @@ requires-dist = [
     { name = "pyjwt", specifier = ">=2.8.0" },
     { name = "razorpay", specifier = ">=2.0.1" },
     { name = "redis", specifier = ">=5.0.3" },
-    { name = "scikit-learn", specifier = ">=1.4.0" },
+    { name = "scikit-learn", specifier = ">=1.9.0" },
     { name = "skl2onnx", specifier = ">=0.5.0" },
     { name = "sqlalchemy", extras = ["mypy"], specifier = ">=2.0.28" },
     { name = "strawberry-graphql", extras = ["fastapi"], specifier = ">=0.219.0" },
