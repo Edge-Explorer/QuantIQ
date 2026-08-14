@@ -24,6 +24,8 @@ interface ChartDataPoint {
   macd?: number | null;
   macd_signal?: number | null;
   macd_hist?: number | null;
+  // RSI (aligned by ts from /api/v1/indicators)
+  rsi?: number | null;
 }
 
 interface StockChartProps {
@@ -208,6 +210,7 @@ const mergeIndicators = (data: ChartDataPoint[], ind: any): ChartDataPoint[] => 
   const macdLine = toMap(ind.macd?.line);
   const macdSignal = toMap(ind.macd?.signal);
   const macdHist = toMap(ind.macd?.histogram);
+  const rsiVal = toMap(ind.rsi);
 
   return data.map((d) => {
     const t = d.ts;
@@ -219,6 +222,7 @@ const mergeIndicators = (data: ChartDataPoint[], ind: any): ChartDataPoint[] => 
       macd: t !== undefined && macdLine.has(t) ? macdLine.get(t) : null,
       macd_signal: t !== undefined && macdSignal.has(t) ? macdSignal.get(t) : null,
       macd_hist: t !== undefined && macdHist.has(t) ? macdHist.get(t) : null,
+      rsi: t !== undefined && rsiVal.has(t) ? rsiVal.get(t) : null,
     };
   });
 };
@@ -532,9 +536,11 @@ export default function StockChart({ activeTicker, chartData, activeStats, chart
     : processedData;
   
   const rsiData = showRSI ? computeRSI(chartData, 14) : [];
-  const visibleRsiData = isZoomed
-    ? rsiData.slice(currentScrollIndex, currentScrollIndex + visibleCount)
-    : rsiData;
+  const visibleRsiData = showRSI
+    ? (indicatorData?.rsi
+        ? visibleData.map(d => ({ time: d.time, rsi: d.rsi }))
+        : (isZoomed ? rsiData.slice(currentScrollIndex, currentScrollIndex + visibleCount) : rsiData))
+    : [];
 
   // MACD data is enriched onto processedData by mergeIndicators (aligned by ts)
   const macdData = showMACD ? processedData : [];

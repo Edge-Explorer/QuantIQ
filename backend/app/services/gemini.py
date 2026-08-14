@@ -237,7 +237,7 @@ RANGE_MAPPING = {
 }
 
 
-async def fetch_stock_history_rows(db: AsyncSession, ticker: str, range: str = "1d") -> list:
+async def fetch_stock_history_rows(db: AsyncSession, ticker: str, range: str = "1d", override_period: str = None) -> list:
     """
     Fetches historical aggregated candles for a ticker based on range
     (1d, 5d, 1m, 6m, ytd, 1y, 5y, max).
@@ -254,8 +254,8 @@ async def fetch_stock_history_rows(db: AsyncSession, ticker: str, range: str = "
     selected_range = (range or "1d").lower()
     config = RANGE_MAPPING.get(selected_range, RANGE_MAPPING["1d"])
 
-    # If it's 1d, try local DB first
-    if selected_range == "1d":
+    # If it's 1d, try local DB first (only when we are not overriding the period)
+    if selected_range == "1d" and not override_period:
         try:
             local_data = await crud.get_stock_history(db, ticker, limit=100)
 
@@ -285,9 +285,10 @@ async def fetch_stock_history_rows(db: AsyncSession, ticker: str, range: str = "
         loop = asyncio.get_event_loop()
         yf_ticker = yf.Ticker(ticker)
 
+        period_val = override_period if override_period else config["period"]
         df = await loop.run_in_executor(
             None,
-            lambda: yf_ticker.history(period=config["period"], interval=config["interval"])
+            lambda: yf_ticker.history(period=period_val, interval=config["interval"])
         )
         external_api_calls_total.labels(provider="yfinance", status="success").inc()
 
@@ -365,6 +366,7 @@ async def compute_chart_indicators(db: AsyncSession, ticker: str, range: str = "
             "middle": [...],
             "lower": [...]
           },
+          "rsi": [{"time": <epoch_secs>, "value": <float|null>}, ...],
           "candle_count": int
         }
     """
@@ -375,10 +377,26 @@ async def compute_chart_indicators(db: AsyncSession, ticker: str, range: str = "
     empty = {
         "macd": {"line": [], "signal": [], "histogram": []},
         "bollinger_bands": {"upper": [], "middle": [], "lower": []},
+        "rsi": [],
         "candle_count": 0,
     }
 
-    rows = await fetch_stock_history_rows(db, ticker, range)
+    # Warmup periods map standard chart ranges to longer historical fetches.
+    # This prevents indicator cold-starts (e.g. MACD needs 26 rows to initialize;
+    # 1mo daily candles have only 20 rows and would otherwise return all NaN).
+    INDICATOR_WARMUP_PERIODS = {
+        "1d": "5d",
+        "5d": "1mo",
+        "1m": "3mo",
+        "6m": "1y",
+        "ytd": "2y",
+        "1y": "2y",
+        "5y": "6y",
+        "max": "max"
+    }
+    warmup_period = INDICATOR_WARMUP_PERIODS.get((range or "1d").lower(), "3mo")
+
+    rows = await fetch_stock_history_rows(db, ticker, range, override_period=warmup_period)
     if not rows:
         return empty
 
@@ -397,6 +415,7 @@ async def compute_chart_indicators(db: AsyncSession, ticker: str, range: str = "
     # ── Compute indicators exactly like the ML model's feature pipeline ──
     df.ta.macd(close="close", fast=12, slow=26, signal=9, append=True)
     df.ta.bbands(close="close", length=20, std=2, append=True)
+    df.ta.rsi(close="close", length=14, append=True)
 
     def find_col(prefix: str) -> str:
         for col in df.columns:
@@ -410,6 +429,7 @@ async def compute_chart_indicators(db: AsyncSession, ticker: str, range: str = "
     bbu_col     = find_col("BBU_")
     bbm_col     = find_col("BBM_")
     bbl_col     = find_col("BBL_")
+    rsi_col     = find_col("RSI_")
 
     def series(column) -> list:
         """Convert a pandas column to [{time, value}] with NaN → null (JSON-safe)."""
@@ -434,6 +454,7 @@ async def compute_chart_indicators(db: AsyncSession, ticker: str, range: str = "
             "middle": series(bbm_col),
             "lower": series(bbl_col),
         },
+        "rsi": series(rsi_col),
         "candle_count": len(df),
     }
 
