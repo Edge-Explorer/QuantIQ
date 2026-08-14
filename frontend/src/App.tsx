@@ -267,6 +267,8 @@ export default function App() {
           const lowVal = parseFloat((h.low !== null && h.low !== undefined ? h.low : h.close).toFixed(2));
           return {
             time: timeLabel,
+            // Epoch seconds of the candle — used to align backend indicator series (MACD/BB) with the chart
+            ts: Math.floor(new Date(h.timestamp).getTime() / 1000),
             price: closeVal,
             open: openVal,
             high: highVal,
@@ -353,6 +355,7 @@ export default function App() {
         });
         
         const tickTime = new Date(tick.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const tickTs = Math.floor(new Date(tick.timestamp).getTime() / 1000);
         
         setChartData((prevData) => {
           const updated = [...prevData];
@@ -366,6 +369,7 @@ export default function App() {
             
             updated[updated.length - 1] = { 
               time: tickTime, 
+              ts: last.ts ?? tickTs,
               price: newPrice,
               open: openVal,
               high: highVal,
@@ -379,6 +383,7 @@ export default function App() {
               ...updated, 
               { 
                 time: tickTime, 
+                ts: tickTs,
                 price: newPrice,
                 open: newPrice,
                 high: newPrice,

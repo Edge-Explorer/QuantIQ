@@ -17,7 +17,8 @@ from backend.app.config.metrics import (
     llm_tokens_total,
     agent_steps_total,
     agent_latency_seconds,
-    agent_tool_calls_total
+    agent_tool_calls_total,
+    external_api_calls_total
 )
 
 # Global variables for ONNX inference sessions and hot-reloading metadata
@@ -219,6 +220,222 @@ def _fetch_yf_daily_cached(ticker_upper: str, period: str = "60d") -> "pd.DataFr
             print(f"[yfinance cache] Redis write failed for {ticker_upper}: {cache_err}")
 
     return df
+
+
+# Range → yfinance period/interval mapping, shared by the chart history GraphQL
+# query and the /api/v1/indicators REST endpoint so indicator series stay aligned
+# with the exact candles rendered on the chart.
+RANGE_MAPPING = {
+    "1d":   {"period": "1d",   "interval": "2m"},
+    "5d":   {"period": "5d",   "interval": "15m"},
+    "1m":   {"period": "1mo",  "interval": "1d"},
+    "6m":   {"period": "6mo",  "interval": "1d"},
+    "ytd":  {"period": "ytd",  "interval": "1d"},
+    "1y":   {"period": "1y",   "interval": "1d"},
+    "5y":   {"period": "5y",   "interval": "1wk"},
+    "max":  {"period": "max",  "interval": "1mo"}
+}
+
+
+async def fetch_stock_history_rows(db: AsyncSession, ticker: str, range: str = "1d") -> list:
+    """
+    Fetches historical aggregated candles for a ticker based on range
+    (1d, 5d, 1m, 6m, ytd, 1y, 5y, max).
+
+    Serves as the single source of truth for both the ``stockHistory`` GraphQL
+    query and the ``/api/v1/indicators`` REST endpoint. Returns a list of dicts:
+    ``{timestamp, open, high, low, close, volume}`` where ``timestamp`` is a
+    tz-naive ``datetime.datetime``.
+
+    - ``1d`` prefers the locally ingested live candles (Postgres) when available.
+    - All other ranges are fetched from Yahoo Finance in a thread pool.
+    - Falls back to local DB rows if yfinance is unreachable.
+    """
+    selected_range = (range or "1d").lower()
+    config = RANGE_MAPPING.get(selected_range, RANGE_MAPPING["1d"])
+
+    # If it's 1d, try local DB first
+    if selected_range == "1d":
+        try:
+            local_data = await crud.get_stock_history(db, ticker, limit=100)
+
+            # Filter out flat closed candles (zero volume and zero movement) for non-crypto assets
+            is_crypto = ticker.upper().endswith("-USD") or ticker.upper().endswith("-BTC")
+            if not is_crypto:
+                local_data = [h for h in local_data if not (h.open == h.close and h.volume == 0)]
+
+            if len(local_data) > 10:
+                return [
+                    {
+                        "timestamp": h.timestamp,
+                        "open": h.open,
+                        "high": h.high,
+                        "low": h.low,
+                        "close": h.close,
+                        "volume": h.volume,
+                    }
+                    for h in local_data
+                ]
+        except Exception as db_err:
+            print(f"Error querying local DB for ticker history: {db_err}")
+
+    # Otherwise, dynamically fetch from Yahoo Finance in a thread pool
+    try:
+        import yfinance as yf
+        loop = asyncio.get_event_loop()
+        yf_ticker = yf.Ticker(ticker)
+
+        df = await loop.run_in_executor(
+            None,
+            lambda: yf_ticker.history(period=config["period"], interval=config["interval"])
+        )
+        external_api_calls_total.labels(provider="yfinance", status="success").inc()
+
+        rows = []
+        if not df.empty:
+            df = df.reset_index()
+
+            time_col = None
+            for col in ['Date', 'Datetime', 'index', 'timestamp']:
+                if col in df.columns:
+                    time_col = col
+                    break
+
+            if time_col:
+                # Limit to last 350 points to ensure smooth chart performance
+                df = df.tail(350)
+                for _, row in df.iterrows():
+                    ts = row[time_col]
+                    if hasattr(ts, 'to_pydatetime'):
+                        ts_dt = ts.to_pydatetime()
+                    elif isinstance(ts, str):
+                        ts_dt = datetime.datetime.fromisoformat(ts)
+                    else:
+                        ts_dt = ts
+
+                    if ts_dt.tzinfo is not None:
+                        ts_dt = ts_dt.replace(tzinfo=None)
+
+                    rows.append({
+                        "timestamp": ts_dt,
+                        "open": float(row["Open"]),
+                        "high": float(row["High"]),
+                        "low": float(row["Low"]),
+                        "close": float(row["Close"]),
+                        "volume": int(row["Volume"]) if "Volume" in row else 0,
+                    })
+        return rows
+    except Exception as e:
+        external_api_calls_total.labels(provider="yfinance", status="failed").inc()
+        print(f"Error fetching yfinance history for {ticker}: {str(e)}")
+        # Failover fallback
+        local_data = await crud.get_stock_history(db, ticker, limit=100)
+        return [
+            {
+                "timestamp": h.timestamp,
+                "open": h.open,
+                "high": h.high,
+                "low": h.low,
+                "close": h.close,
+                "volume": h.volume,
+            }
+            for h in local_data
+        ]
+
+
+async def compute_chart_indicators(db: AsyncSession, ticker: str, range: str = "1d") -> dict:
+    """
+    Computes MACD (12/26/9) and Bollinger Bands (20, 2) series for chart visualization.
+
+    Uses the exact same pandas-ta calculations the backend ML model relies on under
+    the hood (``ta.macd`` / ``ta.bbands``), so the visual overlays mirror the
+    features the Random Forest model is trained on. Series are aligned by epoch
+    timestamp with the candles returned by ``stockHistory``.
+
+    Returns::
+
+        {
+          "macd": {
+            "line": [{"time": <epoch_secs>, "value": <float|null>}, ...],
+            "signal": [...],
+            "histogram": [...]
+          },
+          "bollinger_bands": {
+            "upper": [...],
+            "middle": [...],
+            "lower": [...]
+          },
+          "candle_count": int
+        }
+    """
+    import math
+    import pandas as pd
+    import pandas_ta as ta
+
+    empty = {
+        "macd": {"line": [], "signal": [], "histogram": []},
+        "bollinger_bands": {"upper": [], "middle": [], "lower": []},
+        "candle_count": 0,
+    }
+
+    rows = await fetch_stock_history_rows(db, ticker, range)
+    if not rows:
+        return empty
+
+    df = pd.DataFrame([{
+        "timestamp": r["timestamp"],
+        "open": float(r["open"]),
+        "high": float(r["high"]),
+        "low": float(r["low"]),
+        "close": float(r["close"]),
+        "volume": float(r.get("volume") or 0),
+    } for r in rows])
+
+    # Epoch seconds (local-time interpretation, matches frontend Date.parse of ISO strings)
+    epochs = [int(ts.timestamp()) for ts in df["timestamp"].tolist()]
+
+    # ── Compute indicators exactly like the ML model's feature pipeline ──
+    df.ta.macd(close="close", fast=12, slow=26, signal=9, append=True)
+    df.ta.bbands(close="close", length=20, std=2, append=True)
+
+    def find_col(prefix: str) -> str:
+        for col in df.columns:
+            if col.startswith(prefix):
+                return col
+        return None
+
+    macd_col    = find_col("MACD_")
+    macds_col   = find_col("MACDs_")
+    macdh_col   = find_col("MACDh_")
+    bbu_col     = find_col("BBU_")
+    bbm_col     = find_col("BBM_")
+    bbl_col     = find_col("BBL_")
+
+    def series(column) -> list:
+        """Convert a pandas column to [{time, value}] with NaN → null (JSON-safe)."""
+        out = []
+        if column is None:
+            return out
+        for t, v in zip(epochs, df[column].tolist()):
+            if v is None or (isinstance(v, float) and math.isnan(v)):
+                out.append({"time": t, "value": None})
+            else:
+                out.append({"time": t, "value": round(float(v), 6)})
+        return out
+
+    return {
+        "macd": {
+            "line": series(macd_col),
+            "signal": series(macds_col),
+            "histogram": series(macdh_col),
+        },
+        "bollinger_bands": {
+            "upper": series(bbu_col),
+            "middle": series(bbm_col),
+            "lower": series(bbl_col),
+        },
+        "candle_count": len(df),
+    }
 
 
 async def compute_atr_levels(

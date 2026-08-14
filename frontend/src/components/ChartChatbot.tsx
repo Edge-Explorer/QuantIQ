@@ -5,7 +5,7 @@ import Logo from './Logo';
 interface ChartChatbotProps {
   ticker: string;
   markers: Array<{ price: number; label: string; color: string }>;
-  activeIndicators: { sma: boolean; ema: boolean; rsi: boolean };
+  activeIndicators: { sma: boolean; ema: boolean; rsi: boolean; macd: boolean; bb: boolean };
   user: any;
   onOpenRecharge?: () => void;
   liveData?: {
