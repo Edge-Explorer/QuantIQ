@@ -29,40 +29,71 @@ aggregation_buffer: Dict[str, Dict[str, List]] = {}
 COOLDOWN_UNTIL = None
 COOLDOWN_BACKOFF_SEC = 60
 
-async def get_latest_stock_data(ticker: str) -> Optional[dict]:
+async def get_latest_stock_data_bulk(tickers: List[str]) -> Dict[str, dict]:
     """
-    Fetch current stock price and cumulative volume using yfinance fast_info.
+    Fetch current stock price and cumulative volume for multiple tickers in a single bulk request.
     Respects global rate-limiting cooldown if Yahoo Finance blocks the IP.
     """
     global COOLDOWN_UNTIL, COOLDOWN_BACKOFF_SEC
     
+    if not tickers:
+        return {}
+        
     now_utc = datetime.datetime.now(datetime.timezone.utc)
     if COOLDOWN_UNTIL and now_utc < COOLDOWN_UNTIL:
-        return None
+        return {}
 
     try:
+        import pandas as pd
         # Run synchronous yfinance operations in a thread pool to avoid blocking the event loop
         loop = asyncio.get_event_loop()
-        yf_ticker = yf.Ticker(ticker)
         
-        # fast_info retrieves basic metrics quickly
-        info = await loop.run_in_executor(None, lambda: yf_ticker.fast_info)
+        # Download 1d of 2m interval candles for all tickers in a single bulk request
+        df = await loop.run_in_executor(
+            None,
+            lambda: yf.download(tickers=tickers, period="1d", interval="2m", group_by="ticker", progress=False)
+        )
         
-        price = info.last_price
-        volume = info.last_volume
-        
-        if price is None or volume is None:
-            return None
+        if df.empty:
+            return {}
             
+        results = {}
+        for ticker in tickers:
+            ticker_upper = ticker.upper()
+            
+            # Check if columns are a MultiIndex (standard for group_by="ticker")
+            if isinstance(df.columns, pd.MultiIndex):
+                # Ensure the ticker level exists in the columns
+                if ticker_upper not in df.columns.levels[0]:
+                    continue
+                ticker_data = df[ticker_upper]
+            else:
+                ticker_data = df
+                
+            if ticker_data.empty:
+                continue
+                
+            # Find the last valid row (contains Close price)
+            valid_rows = ticker_data.dropna(subset=["Close"])
+            if valid_rows.empty:
+                continue
+                
+            last_row = valid_rows.iloc[-1]
+            price = last_row["Close"]
+            volume = last_row["Volume"]
+            
+            if price is not None and volume is not None:
+                results[ticker] = {
+                    "price": float(price),
+                    "volume": int(volume),
+                    "timestamp": now_utc
+                }
+                
         # Reset backoff on success
         COOLDOWN_BACKOFF_SEC = 60
         COOLDOWN_UNTIL = None
         
-        return {
-            "price": float(price),
-            "volume": int(volume),
-            "timestamp": now_utc
-        }
+        return results
     except Exception as e:
         err_str = str(e).lower()
         if "too many requests" in err_str or "rate limit" in err_str or "429" in err_str:
@@ -70,8 +101,9 @@ async def get_latest_stock_data(ticker: str) -> Optional[dict]:
             print(f"Worker rate limited. Entering yfinance cooldown for {COOLDOWN_BACKOFF_SEC}s. Error: {e}")
             COOLDOWN_BACKOFF_SEC = min(COOLDOWN_BACKOFF_SEC * 2, 900)  # Double backoff up to 15 mins
         else:
-            print(f"Error fetching data for {ticker}: {str(e)}")
-        return None
+            print(f"Error fetching bulk data for tickers {tickers}: {str(e)}")
+        return {}
+
 
 
 async def aggregate_and_save_candle(db, ticker: str, timestamp: datetime.datetime):
@@ -160,8 +192,11 @@ async def main():
                         if t not in aggregation_buffer:
                             aggregation_buffer[t]= {"prices": [], "volumes": []}
                     
+                    # Fetch data in bulk for all watchlist tickers
+                    bulk_ticks = await get_latest_stock_data_bulk(dynamic_tickers)
+                    
                     for ticker in dynamic_tickers:
-                        tick = await get_latest_stock_data(ticker)
+                        tick = bulk_ticks.get(ticker)
                         
                         if tick:
                             aggregation_buffer[ticker]["prices"].append(tick["price"])
@@ -179,9 +214,6 @@ async def main():
                         
                         if minute_changed:
                             await aggregate_and_save_candle(db, ticker, now)
-                            
-                        # Stagger calls to yfinance to prevent rate limiting
-                        await asyncio.sleep(1.5)
                 
                 if minute_changed:
                     last_minute = now.minute
