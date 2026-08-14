@@ -1,12 +1,3 @@
----
-title: QuantIQ
-emoji: 📈
-colorFrom: indigo
-colorTo: blue
-sdk: docker
-app_port: 7860
-pinned: false
----
 
 <div align="center">
   <img src="assets/banner.png" alt="QuantIQ — AI Stock Intelligence" width="750" />
