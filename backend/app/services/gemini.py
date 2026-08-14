@@ -409,8 +409,8 @@ async def compute_chart_indicators(db: AsyncSession, ticker: str, range: str = "
         "volume": float(r.get("volume") or 0),
     } for r in rows])
 
-    # Epoch seconds (local-time interpretation, matches frontend Date.parse of ISO strings)
-    epochs = [int(ts.timestamp()) for ts in df["timestamp"].tolist()]
+    # Epoch seconds (forced to UTC to align with frontend ISO UTC parsing)
+    epochs = [int(ts.replace(tzinfo=datetime.timezone.utc).timestamp()) for ts in df["timestamp"].tolist()]
 
     # ── Compute indicators exactly like the ML model's feature pipeline ──
     df.ta.macd(close="close", fast=12, slow=26, signal=9, append=True)

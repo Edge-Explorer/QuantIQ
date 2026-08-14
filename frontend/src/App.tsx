@@ -268,7 +268,7 @@ export default function App() {
           return {
             time: timeLabel,
             // Epoch seconds of the candle — used to align backend indicator series (MACD/BB) with the chart
-            ts: Math.floor(new Date(h.timestamp).getTime() / 1000),
+            ts: Math.floor(new Date(h.timestamp.endsWith('Z') || h.timestamp.includes('+') ? h.timestamp : h.timestamp + 'Z').getTime() / 1000),
             price: closeVal,
             open: openVal,
             high: highVal,
