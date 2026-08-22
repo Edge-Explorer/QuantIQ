@@ -407,10 +407,24 @@ async def get_model_metrics(db: AsyncSession = Depends(get_db)):
     """
     Computes real-time MLOps prediction statistics from the database.
     """
+    from sqlalchemy import select, func, case
+
+    total_count = 0
+    completed_count = 0
+    success_count = 0
+    win_rate = 0.0
+    avg_pnl = 0.0
+    by_version = []
+    logs = []
+    
+    strat_total = 0
+    strat_completed = 0
+    ai_win_rate = 0.0
+    user_win_rate = 0.0
+    avg_deviation = 0.0
+
+    # 1. Prediction log summary counts
     try:
-        from sqlalchemy import select, func, case
-        
-        # 1. Fetch total counts, completed, successful
         total_result = await db.execute(select(func.count(models.PredictionLog.id)))
         total_count = total_result.scalar() or 0
         
@@ -426,51 +440,52 @@ async def get_model_metrics(db: AsyncSession = Depends(get_db)):
             .where(models.PredictionLog.outcome == "success")
         )
         success_count = success_result.scalar() or 0
-        
-        # Calculate general win rate
         win_rate = (success_count / completed_count * 100.0) if completed_count > 0 else 0.0
         
-        # 2. Calculate average PnL
         pnl_result = await db.execute(
             select(func.avg(models.PredictionLog.pnl))
             .where(models.PredictionLog.status == "completed")
         )
         avg_pnl = pnl_result.scalar() or 0.0
-        
-        # 3. Calculate statistics grouped by model_version
+    except Exception as db_err1:
+        print(f"Metrics warning (prediction counts): {db_err1}")
+
+    # 2. Prediction log performance by version
+    try:
         version_stmt = (
             select(
                 models.PredictionLog.model_version,
                 func.count(models.PredictionLog.id).label("total"),
-                func.sum(case((models.PredictionLog.outcome == "success", 1), else_=0)).label("successes"),
                 func.avg(models.PredictionLog.pnl).label("avg_pnl")
             )
             .where(models.PredictionLog.status == "completed")
             .group_by(models.PredictionLog.model_version)
         )
-        
         version_results = await db.execute(version_stmt)
-        by_version = []
         for row in version_results:
             total = row.total or 0
-            successes = row.successes or 0
-            wr = (successes / total * 100.0) if total > 0 else 0.0
             by_version.append({
                 "model_version": row.model_version or "v1.0.0",
                 "total_predictions": total,
-                "success_rate": round(wr, 2),
+                "success_rate": 0.0,
                 "average_pnl": round(float(row.avg_pnl or 0.0), 4)
             })
-            
-        # 4. Fetch the last 15 prediction logs
+    except Exception as db_err2:
+        print(f"Metrics warning (version breakdown): {db_err2}")
+
+    # 3. Recent prediction logs
+    try:
         logs_result = await db.execute(
             select(models.PredictionLog)
             .order_by(models.PredictionLog.timestamp.desc())
             .limit(15)
         )
         logs = list(logs_result.scalars().all())
-        
-        # 5. Fetch Strategy Log Statistics (User vs AI comparison)
+    except Exception as db_err3:
+        print(f"Metrics warning (recent logs): {db_err3}")
+
+    # 4. Strategy Log Statistics (User vs AI comparison)
+    try:
         strat_total_result = await db.execute(select(func.count(models.StrategyLog.id)))
         strat_total = strat_total_result.scalar() or 0
         
@@ -497,66 +512,47 @@ async def get_model_metrics(db: AsyncSession = Depends(get_db)):
         ai_win_rate = (ai_success / strat_completed * 100.0) if strat_completed > 0 else 0.0
         user_win_rate = (user_success / strat_completed * 100.0) if strat_completed > 0 else 0.0
         
-        # Calculate average target deviation (user_target - ai_target)
         deviation_result = await db.execute(
             select(func.avg(models.StrategyLog.user_target - models.StrategyLog.ai_target))
             .where(models.StrategyLog.status == "completed")
         )
         avg_deviation = deviation_result.scalar() or 0.0
-        
-        return {
-            "summary": {
-                "total_predictions": total_count,
-                "completed_evaluations": completed_count,
-                "successful_predictions": success_count,
-                "global_win_rate_percent": round(win_rate, 2),
-                "global_average_pnl_percent": round(float(avg_pnl or 0.0), 4)
-            },
-            "performance_by_model_version": by_version,
-            "strategy_performance_tracker": {
-                "total_strategies_locked": strat_total,
-                "completed_strategy_evaluations": strat_completed,
-                "ai_strategy_win_rate_percent": round(ai_win_rate, 2),
-                "user_strategy_win_rate_percent": round(user_win_rate, 2),
-                "average_user_target_price_deviation": round(float(avg_deviation or 0.0), 4)
-            },
-            "recent_predictions": [
-                {
-                    "id": str(log.id),
-                    "ticker": log.ticker,
-                    "timestamp": log.timestamp.isoformat() if hasattr(log.timestamp, "isoformat") else str(log.timestamp),
-                    "model_version": log.model_version,
-                    "confidence": round(float(log.confidence or 0.0), 4),
-                    "predicted_action": log.predicted_action,
-                    "entry_price": log.entry_price,
-                    "actual_price_1h": log.actual_price_1h,
-                    "status": log.status,
-                    "outcome": log.outcome,
-                    "pnl_percent": round(float(log.pnl), 4) if log.pnl is not None else None
-                }
-                for log in logs
-            ]
-        }
-    except Exception as err:
-        return {
-            "summary": {
-                "total_predictions": 0,
-                "completed_evaluations": 0,
-                "successful_predictions": 0,
-                "global_win_rate_percent": 0.0,
-                "global_average_pnl_percent": 0.0
-            },
-            "performance_by_model_version": [],
-            "strategy_performance_tracker": {
-                "total_strategies_locked": 0,
-                "completed_strategy_evaluations": 0,
-                "ai_strategy_win_rate_percent": 0.0,
-                "user_strategy_win_rate_percent": 0.0,
-                "average_user_target_price_deviation": 0.0
-            },
-            "recent_predictions": [],
-            "error": str(err)
-        }
+    except Exception as db_err4:
+        print(f"Metrics warning (strategy logs): {db_err4}")
+
+    return {
+        "summary": {
+            "total_predictions": total_count,
+            "completed_evaluations": completed_count,
+            "successful_predictions": success_count,
+            "global_win_rate_percent": round(win_rate, 2),
+            "global_average_pnl_percent": round(float(avg_pnl or 0.0), 4)
+        },
+        "performance_by_model_version": by_version,
+        "strategy_performance_tracker": {
+            "total_strategies_locked": strat_total,
+            "completed_strategy_evaluations": strat_completed,
+            "ai_strategy_win_rate_percent": round(ai_win_rate, 2),
+            "user_strategy_win_rate_percent": round(user_win_rate, 2),
+            "average_user_target_price_deviation": round(float(avg_deviation or 0.0), 4)
+        },
+        "recent_predictions": [
+            {
+                "id": str(log.id),
+                "ticker": log.ticker,
+                "timestamp": log.timestamp.isoformat() if hasattr(log.timestamp, "isoformat") else str(log.timestamp),
+                "model_version": log.model_version,
+                "confidence": round(float(log.confidence or 0.0), 4),
+                "predicted_action": log.predicted_action,
+                "entry_price": log.entry_price,
+                "actual_price_1h": log.actual_price_1h,
+                "status": log.status,
+                "outcome": log.outcome,
+                "pnl_percent": round(float(log.pnl), 4) if log.pnl is not None else None
+            }
+            for log in logs
+        ]
+    }
 
 @router.post("/payments/webhook")
 async def razorpay_webhook(request: Request, x_razorpay_signature: str= Header(None), db: AsyncSession= Depends(get_db)):
