@@ -78,6 +78,10 @@ export default function App() {
   const [loadingInsight, setLoadingInsight] = useState<boolean>(false);
   const [insightError, setInsightError] = useState<string | null>(null);
 
+  // Lock-In Strategy State (live MLOps tracking via strategy_logs)
+  const [lockingStrategy, setLockingStrategy] = useState<boolean>(false);
+  const [strategyLocked, setStrategyLocked] = useState<boolean>(false);
+
 
 
   const fetchWatchlistData = async () => {
@@ -290,6 +294,7 @@ export default function App() {
   useEffect(() => {
     setInsight(null);
     setInsightError(null);
+    setStrategyLocked(false);
   }, [activeTicker]);
 
   // 4. WebSocket Live Price Streaming Subscription (graphql-transport-ws protocol)
@@ -547,6 +552,7 @@ export default function App() {
     setLoadingInsight(true);
     setInsightError(null);
     setInsight(null);
+    setStrategyLocked(false);
 
     try {
       const insightData = await graphqlRequest(`
@@ -568,6 +574,52 @@ export default function App() {
       setInsightError(err.message || 'Error compiling strategy.');
     } finally {
       setLoadingInsight(false);
+    }
+  };
+
+  // 8b. Lock In Strategy — populates strategy_logs for live AI-vs-User win-rate tracking.
+  // NOTE: the backend's lock_in_strategy resolver computes its own AI target/stop-loss
+  // independently (ONNX + ATR-14) and stores it as ai_entry/ai_target/ai_stop_loss.
+  // The values passed here are the trader's OWN entry/target/stop-loss, stored as
+  // user_entry/user_target/user_stop_loss and compared against the AI's numbers.
+  const handleLockInStrategy = async (target: number, stopLoss: number) => {
+    if (!insight || !activeTicker || lockingStrategy || strategyLocked) return;
+
+    // Entry = live current price for the active ticker (not part of the insight payload)
+    const currentPrice = watchlistQuotes[activeTicker]?.price ?? activeStats?.close ?? null;
+
+    if (currentPrice === null || isNaN(target) || isNaN(stopLoss)) {
+      addToast('Missing entry, target, or stop-loss data — cannot lock in strategy.', 'alert');
+      return;
+    }
+
+    setLockingStrategy(true);
+    try {
+      const data = await graphqlRequest(`
+        mutation LockInStrategy($ticker: String!, $entry: Float!, $target: Float!, $stopLoss: Float!) {
+          lockInStrategy(ticker: $ticker, entry: $entry, target: $target, stopLoss: $stopLoss) {
+            success
+            message
+          }
+        }
+      `, {
+        ticker: activeTicker,
+        entry: currentPrice,
+        target: target,
+        stopLoss: stopLoss,
+      });
+
+      if (data.lockInStrategy?.success) {
+        setStrategyLocked(true);
+        addToast(`Strategy for ${activeTicker} locked in! Tracking live outcome...`, 'success');
+      } else {
+        addToast(data.lockInStrategy?.message || 'Failed to lock in strategy.', 'alert');
+      }
+    } catch (err: any) {
+      console.error('Lock in strategy error:', err);
+      addToast(err.message || 'Failed to lock in strategy.', 'alert');
+    } finally {
+      setLockingStrategy(false);
     }
   };
 
@@ -684,7 +736,11 @@ export default function App() {
         onCreateAlert={handleCreateAlert}
         onDeactivateAlert={handleDeactivateAlert}
         onTriggerInsight={triggerAIInsight}
-        onResetInsight={() => { setInsight(null); setInsightError(null); }}
+        onResetInsight={() => { setInsight(null); setInsightError(null); setStrategyLocked(false); }}
+        currentPrice={watchlistQuotes[activeTicker]?.price ?? activeStats?.close ?? null}
+        lockingStrategy={lockingStrategy}
+        strategyLocked={strategyLocked}
+        onLockInStrategy={handleLockInStrategy}
         onOpenRecharge={() => setCurrentView('upgrade')}
         onLogout={handleLogout}
         onLogoClick={() => setCurrentView('landing')}

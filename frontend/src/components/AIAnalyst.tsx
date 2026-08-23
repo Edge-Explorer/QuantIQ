@@ -16,6 +16,17 @@ interface AIAnalystProps {
   insightError: string | null;
   onTriggerInsight: (tradingStyle: string, riskTolerance: string) => void;
   onResetInsight: () => void;
+  // Lock-In Strategy props.
+  // NOTE: the backend's lock_in_strategy resolver independently computes its
+  // own AI target/stop-loss via ONNX + ATR-14 (ai_entry/ai_target/ai_stop_loss)
+  // and logs them to strategy_logs alongside whatever the user submits here
+  // (stored as user_entry/user_target/user_stop_loss). GeminiInsightType has
+  // no target/stopLoss fields, so the trader's own target/stop must be
+  // captured in the UI rather than read off the insight object.
+  currentPrice?: number | null;
+  lockingStrategy?: boolean;
+  strategyLocked?: boolean;
+  onLockInStrategy?: (target: number, stopLoss: number) => void;
 }
 
 export default function AIAnalyst({
@@ -26,7 +37,13 @@ export default function AIAnalyst({
   insightError,
   onTriggerInsight,
   onResetInsight,
+  currentPrice = null,
+  lockingStrategy = false,
+  strategyLocked = false,
+  onLockInStrategy,
 }: AIAnalystProps) {
+  const [targetPriceInput, setTargetPriceInput] = useState<string>('');
+  const [stopLossInput, setStopLossInput] = useState<string>('');
   const [activeTab, setActiveTab] = useState<'analysis' | 'history'>('analysis');
   const [selectedHistoryItem, setSelectedHistoryItem] = useState<any | null>(null);
   const [tradingStyle, setTradingStyle] = useState('swing_trading');
@@ -41,6 +58,24 @@ export default function AIAnalyst({
       setSelectedHistoryItem(null);
     }
   }, [loadingInsight]);
+
+  // Prefill Target Price / Stop Loss with sensible defaults whenever a fresh
+  // strategy is generated, based on the bias direction and current price.
+  // The trader can edit these before locking in -- they are stored as
+  // user_target / user_stop_loss server-side and compared against the
+  // backend's own ATR-14-computed AI levels.
+  useEffect(() => {
+    if (insight && currentPrice != null) {
+      const isBullish = insight.bullishProbability >= 50;
+      const defaultTarget = isBullish ? currentPrice * 1.05 : currentPrice * 0.95;
+      const defaultStopLoss = isBullish ? currentPrice * 0.98 : currentPrice * 1.02;
+      setTargetPriceInput(defaultTarget.toFixed(2));
+      setStopLossInput(defaultStopLoss.toFixed(2));
+    } else if (!insight) {
+      setTargetPriceInput('');
+      setStopLossInput('');
+    }
+  }, [insight, currentPrice]);
 
   // Parse inline markdown: **bold**, *italic*
   const parseInline = (text: string, keyPrefix: string) => {
@@ -506,6 +541,78 @@ export default function AIAnalyst({
                   </div>
                   <div className="insight-reason-body">
                     {formatReason(insight.reason)}
+                  </div>
+
+                  {/* Lock In Strategy — captures the trader's own entry/target/stop-loss,
+                      logged as user_entry/user_target/user_stop_loss in strategy_logs and
+                      compared server-side against the backend's own ATR-14 AI levels. */}
+                  <div className="lock-strategy-panel" style={{ marginTop: '16px', paddingTop: '12px', borderTop: '1px solid rgba(255, 255, 255, 0.05)' }}>
+                    {strategyLocked ? (
+                      <div className="lock-strategy-badge" style={{ width: '100%', textAlign: 'center' }}>
+                        ✓ Strategy Locked
+                      </div>
+                    ) : (
+                      <>
+                        <div style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
+                          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                            <label style={{ fontSize: '10px', color: 'var(--text-secondary)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                              Entry
+                            </label>
+                            <div style={{ padding: '8px 10px', borderRadius: '8px', border: '1px solid var(--border-glass)', background: 'rgba(255,255,255,0.02)', color: 'var(--text-primary)', fontSize: '12px' }}>
+                              {currentPrice != null ? `$${currentPrice.toFixed(2)}` : '—'}
+                            </div>
+                          </div>
+                          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                            <label htmlFor="lock-target-input" style={{ fontSize: '10px', color: 'var(--text-secondary)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                              Target
+                            </label>
+                            <input
+                              id="lock-target-input"
+                              type="number"
+                              step="0.01"
+                              value={targetPriceInput}
+                              onChange={(e) => setTargetPriceInput(e.target.value)}
+                              style={{ width: '100%', boxSizing: 'border-box', padding: '8px 10px', borderRadius: '8px', border: '1px solid var(--border-glass)', background: 'rgba(255,255,255,0.02)', color: 'var(--text-primary)', fontSize: '12px', outline: 'none' }}
+                            />
+                          </div>
+                          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                            <label htmlFor="lock-stoploss-input" style={{ fontSize: '10px', color: 'var(--text-secondary)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                              Stop Loss
+                            </label>
+                            <input
+                              id="lock-stoploss-input"
+                              type="number"
+                              step="0.01"
+                              value={stopLossInput}
+                              onChange={(e) => setStopLossInput(e.target.value)}
+                              style={{ width: '100%', boxSizing: 'border-box', padding: '8px 10px', borderRadius: '8px', border: '1px solid var(--border-glass)', background: 'rgba(255,255,255,0.02)', color: 'var(--text-primary)', fontSize: '12px', outline: 'none' }}
+                            />
+                          </div>
+                        </div>
+                        <button
+                          className="lock-strategy-btn"
+                          disabled={
+                            lockingStrategy ||
+                            !onLockInStrategy ||
+                            currentPrice == null ||
+                            targetPriceInput.trim() === '' ||
+                            stopLossInput.trim() === '' ||
+                            isNaN(parseFloat(targetPriceInput)) ||
+                            isNaN(parseFloat(stopLossInput))
+                          }
+                          onClick={() => {
+                            const target = parseFloat(targetPriceInput);
+                            const stopLoss = parseFloat(stopLossInput);
+                            if (onLockInStrategy && !isNaN(target) && !isNaN(stopLoss)) {
+                              onLockInStrategy(target, stopLoss);
+                            }
+                          }}
+                          style={{ width: '100%', padding: '10px 14px', fontSize: '12px' }}
+                        >
+                          {lockingStrategy ? 'Locking In...' : '🔒 Lock In Strategy'}
+                        </button>
+                      </>
+                    )}
                   </div>
                   <div style={{ marginTop: '16px', paddingTop: '12px', borderTop: '1px solid rgba(255, 255, 255, 0.05)', fontSize: '11px', color: 'var(--text-muted)', display: 'flex', gap: '6px', lineHeight: '140%', textAlign: 'left' }}>
                     <span style={{ color: 'var(--neon-cyan)', fontWeight: 600 }}>Disclaimer:</span>

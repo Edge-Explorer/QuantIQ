@@ -1,4 +1,3 @@
-
 import Navbar from '../components/Navbar';
 import WatchlistSidebar from '../components/WatchlistSidebar';
 import StockChart from '../components/StockChart';
@@ -33,6 +32,15 @@ interface DashboardProps {
   onLogoClick?: () => void;
   onAvatarUpload?: (newUrl: string) => void;
   indices: any[];
+  // Lock-In Strategy — passed straight through to AIAnalyst.
+  // See AIAnalyst.tsx: entry is the live current price, target/stopLoss are
+  // the trader's own numbers (stored as user_entry/user_target/user_stop_loss
+  // in strategy_logs, compared server-side against the backend's own
+  // ATR-14-computed AI levels).
+  currentPrice: number | null;
+  lockingStrategy: boolean;
+  strategyLocked: boolean;
+  onLockInStrategy: (target: number, stopLoss: number) => void;
 }
 
 export default function Dashboard({
@@ -60,7 +68,12 @@ export default function Dashboard({
   onLogout,
   onLogoClick,
   onAvatarUpload,
-  indices,}: DashboardProps) {
+  indices,
+  currentPrice,
+  lockingStrategy,
+  strategyLocked,
+  onLockInStrategy,
+}: DashboardProps) {
   return (
     <div className="app-container animate-fade">
       {/* Header / Navigation */}
@@ -113,6 +126,10 @@ export default function Dashboard({
                 insightError={insightError}
                 onTriggerInsight={onTriggerInsight}
                 onResetInsight={onResetInsight}
+                currentPrice={currentPrice}
+                lockingStrategy={lockingStrategy}
+                strategyLocked={strategyLocked}
+                onLockInStrategy={onLockInStrategy}
               />
             </section>
 
