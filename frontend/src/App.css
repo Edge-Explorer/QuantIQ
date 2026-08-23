@@ -2834,6 +2834,113 @@ input[type=number] {
   pointer-events: none;
 }
 
+.lock-strategy-btn {
+  position: relative;
+  background: rgba(0, 255, 157, 0.06);
+  border: 1px solid rgba(0, 255, 157, 0.4);
+  border-radius: 10px;
+  color: #00ff9d;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  outline: none;
+  overflow: hidden;
+  transition: all 0.25s ease;
+}
+
+.lock-strategy-btn:hover:not(:disabled) {
+  background: rgba(0, 255, 157, 0.14);
+  border-color: #00ff9d;
+  box-shadow:
+    0 0 10px rgba(0, 255, 157, 0.45),
+    0 0 24px rgba(0, 255, 157, 0.2),
+    inset 0 0 8px rgba(0, 255, 157, 0.1);
+  transform: translateY(-1px);
+}
+
+.lock-strategy-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.lock-strategy-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  border-color: var(--border-glass);
+  color: var(--text-secondary);
+  box-shadow: none;
+}
+
+/* Subtle animated neon sweep on hover */
+.lock-strategy-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -75%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(
+    120deg,
+    transparent 0%,
+    rgba(0, 255, 157, 0.35) 50%,
+    transparent 100%
+  );
+  transform: skewX(-20deg);
+  transition: left 0.6s ease;
+  pointer-events: none;
+}
+
+.lock-strategy-btn:hover:not(:disabled)::before {
+  left: 125%;
+}
+
+/* Target / Stop Loss number inputs inside the lock-strategy-panel */
+.lock-strategy-panel input[type='number'] {
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.lock-strategy-panel input[type='number']:focus {
+  border-color: var(--neon-cyan);
+  box-shadow: 0 0 0 2px rgba(0, 242, 254, 0.15);
+}
+
+/* Hide native number spinner arrows for a cleaner look (optional) */
+.lock-strategy-panel input[type='number']::-webkit-outer-spin-button,
+.lock-strategy-panel input[type='number']::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Locked state badge (shown after a successful lockInStrategy call) */
+.lock-strategy-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 14px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--bull-green);
+  background: rgba(0, 255, 157, 0.12);
+  border: 1px solid rgba(0, 255, 157, 0.5);
+  border-radius: 10px;
+  box-shadow: 0 0 12px rgba(0, 255, 157, 0.3);
+  animation: lock-badge-pop 0.35s ease;
+}
+
+@keyframes lock-badge-pop {
+  0% {
+    transform: scale(0.92);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+
 /* ─── Animations ──────────────────────────── */
 @keyframes backdropFadeIn {
   from { opacity: 0; }
