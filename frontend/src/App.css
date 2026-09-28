@@ -355,7 +355,6 @@
     overflow-x: hidden;
     overflow-y: visible;
   }
-<<<<<<< HEAD
 
   .dashboard-grid {
     display: grid;
@@ -515,11 +514,11 @@
     min-width: 0;
     padding: 8px 10px;
     font-size: 11px;
-=======
+  }
+
   .left-sidebar,
   .right-sidebar {
     grid-column: span 1;
->>>>>>> upstream/main
   }
 }
 
