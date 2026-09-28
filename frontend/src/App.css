@@ -254,6 +254,78 @@
   color: var(--bear-red);
 }
 
+@media (max-width: 768px) {
+  .dashboard-header {
+    padding: 0 12px;
+  }
+
+  .header-left {
+    gap: 6px;
+    flex-shrink: 0;
+  }
+
+  .logo-text {
+    font-size: 17px;
+  }
+
+  .header-right {
+    gap: 8px;
+    min-width: 0;
+  }
+
+  .credits-badge {
+    gap: 3px;
+    padding: 3px 5px;
+    font-size: 9px;
+  }
+
+  .recharge-btn {
+    padding: 3px 5px;
+    font-size: 8px;
+  }
+
+  .user-profile {
+    gap: 0;
+  }
+
+  .profile-name {
+    display: none;
+  }
+
+  .avatar-upload-wrapper,
+  .logout-btn {
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
+  }
+}
+
+@media (min-width: 375px) and (max-width: 480px) {
+  .credits-badge {
+    gap: 5px;
+    padding: 5px 8px;
+    font-size: 11px;
+  }
+
+  .credits-badge svg {
+    width: 16px;
+    height: 16px;
+  }
+}
+
+@media (min-width: 481px) and (max-width: 768px) {
+  .credits-badge {
+    gap: 6px;
+    padding: 6px 9px;
+    font-size: 12px;
+  }
+
+  .credits-badge svg {
+    width: 17px;
+    height: 17px;
+  }
+}
+
 /* ─── 3. Dashboard Grid ─────────────────── */
 .dashboard-grid {
   display: grid;
@@ -283,6 +355,7 @@
     overflow-x: hidden;
     overflow-y: visible;
   }
+<<<<<<< HEAD
 
   .dashboard-grid {
     display: grid;
@@ -442,6 +515,11 @@
     min-width: 0;
     padding: 8px 10px;
     font-size: 11px;
+=======
+  .left-sidebar,
+  .right-sidebar {
+    grid-column: span 1;
+>>>>>>> upstream/main
   }
 }
 
