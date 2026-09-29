@@ -349,9 +349,173 @@
 }
 
 @media (max-width: 768px) {
-  .dashboard-grid {
-    grid-template-columns: 1fr;
+  .app-container {
+    min-height: 100vh;
+    height: auto;
+    overflow-x: hidden;
+    overflow-y: visible;
   }
+
+  .dashboard-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    width: 100%;
+    max-width: 100%;
+    padding: 12px 8px;
+    overflow: visible;
+  }
+
+  .dashboard-grid > * {
+    min-width: 0;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .left-sidebar,
+  .center-content,
+  .right-sidebar {
+    position: static;
+    height: auto;
+    min-height: 0;
+    max-height: none;
+    overflow: visible;
+  }
+
+  .watchlist-container {
+    height: auto;
+    min-height: 0;
+    max-height: none;
+    overflow: visible;
+  }
+
+  .watchlist-items {
+    flex: none;
+    height: auto;
+    max-height: none;
+    overflow: visible;
+  }
+
+  .alerts-panel {
+    flex: none;
+    height: auto;
+    min-height: 0;
+    max-height: none;
+    overflow: visible;
+  }
+
+  .alerts-list {
+    flex: none;
+    height: auto;
+    max-height: none;
+    overflow: visible;
+  }
+}
+
+@media (max-width: 768px) {
+  html,
+  body,
+  #root {
+    height: auto;
+    min-height: 100%;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  .app-container,
+  .dashboard-grid,
+  .left-sidebar,
+  .center-content,
+  .right-sidebar,
+  .watchlist-container,
+  .watchlist-items,
+  .alerts-panel,
+  .alerts-list {
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow-y: visible !important;
+    position: static !important;
+  }
+
+  .dashboard-grid {
+    grid-template-columns: minmax(0, 1fr);
+    width: 100%;
+    max-width: 100%;
+    padding: 12px 8px;
+    overflow-x: hidden !important;
+  }
+
+  .dashboard-grid > * {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .chart-panel {
+    width: 100%;
+    max-width: 100%;
+    padding: 16px 12px;
+    box-sizing: border-box;
+  }
+
+  .chart-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .chart-range-selector {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    white-space: nowrap;
+    justify-content: flex-start;
+    scrollbar-width: none;
+  }
+
+  .chart-range-selector::-webkit-scrollbar {
+    display: none;
+  }
+
+  .range-btn {
+    flex: 0 0 auto;
+    padding: 5px 9px;
+  }
+
+  .chart-container,
+  .chart-panel,
+  .insight-panel,
+  .alerts-panel {
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .chart-panel {
+    overflow: hidden;
+  }
+
+  .chart-controls,
+  .indicator-controls,
+  .chart-range-selector {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .chart-controls,
+  .indicator-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+  }
+
+  .control-toggle-btn {
+    flex: 0 1 auto;
+    min-width: 0;
+    padding: 8px 10px;
+    font-size: 11px;
+  }
+
   .left-sidebar,
   .right-sidebar {
     grid-column: span 1;
