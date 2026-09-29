@@ -520,6 +520,80 @@
   .right-sidebar {
     grid-column: span 1;
   }
+
+  .chart-indicator-controls {
+    flex-direction: column;
+    align-items: stretch !important;
+    gap: 12px !important;
+    padding: 12px !important;
+  }
+
+  .chart-type-controls,
+  .technical-overlay-controls {
+    width: 100%;
+    max-width: 100%;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .chart-type-controls {
+    justify-content: flex-start;
+  }
+
+  .technical-overlay-controls {
+    justify-content: flex-start;
+  }
+
+  .technical-overlay-controls .control-toggle-btn {
+    flex: 1 1 calc(50% - 4px);
+    min-width: 0;
+    min-height: 38px;
+    justify-content: center;
+  }
+
+  .chart-range-actions {
+    width: 100%;
+    max-width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 8px !important;
+  }
+
+  .chart-range-selector {
+    flex: 1 1 auto;
+    min-width: 0;
+    width: auto !important;
+    padding: 2px;
+    gap: 0;
+    overflow: hidden;
+  }
+
+  .range-btn {
+    flex: 1 1 0;
+    min-width: 0;
+    padding: 3px 1px;
+    font-size: 7px;
+    height: 30px;
+  }
+
+  .chart-range-actions > .control-toggle-btn {
+    flex: 0 0 34px;
+    width: 34px;
+    min-width: 34px;
+    height: 34px;
+    padding: 0 !important;
+    border-radius: 7px !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 768px) {
+  .chart-range-actions .range-btn {
+    font-size: 10px !important;
+    padding: 4px 2px !important;
+  }
 }
 
 /* ─── Glass Panel Base ──────────────────── */
