@@ -614,6 +614,9 @@ export default function StockChart({
     const el = chartCanvasRef.current;
     if (!el) return;
     const onWheel = (e: WheelEvent) => {
+      if (window.innerWidth <= 768) {
+        return;
+      }
       e.preventDefault(); // stops BOTH page scroll AND browser pinch-zoom
       const zoomStep = 0.08;
       if (e.deltaY < 0) {
@@ -781,20 +784,26 @@ export default function StockChart({
     rsi: latestDataPoint?.rsi || null,
   };
 
+  const isMobile = window.innerWidth <= 768;
   // Slice data based on zoom — works in both normal and maximized views
   const isZoomed = zoomFactor < 1.0;
-  const visibleCount = Math.max(
-    5,
-    Math.round(processedData.length * zoomFactor),
-  );
+  const visibleCount = isMobile
+    ? Math.min(11, processedData.length)
+    : Math.max(5, Math.round(processedData.length * zoomFactor));
   const maxScrollIndex = Math.max(0, processedData.length - visibleCount);
-  const currentScrollIndex = isZoomed
+  const currentScrollIndex = isMobile
     ? Math.min(scrollIndex, maxScrollIndex)
-    : 0;
+    : isZoomed
+      ? Math.min(scrollIndex, maxScrollIndex)
+      : 0;
 
-  const visibleData = isZoomed
-    ? processedData.slice(currentScrollIndex, currentScrollIndex + visibleCount)
-    : processedData;
+  const visibleData =
+    isMobile || isZoomed
+      ? processedData.slice(
+          currentScrollIndex,
+          currentScrollIndex + visibleCount,
+        )
+      : processedData;
 
   const rsiData = showRSI ? computeRSI(chartData, 14) : [];
   const visibleRsiData = showRSI
@@ -850,12 +859,19 @@ export default function StockChart({
   // Sub-pane sizing: RSI + MACD are stacked below the main chart. The container
   // grows with each active pane and the main chart shrinks proportionally so the
   // multi-pane layout stays balanced in both normal and maximized modes.
+
   const subPaneCount = (showRSI ? 1 : 0) + (showMACD ? 1 : 0);
   const subPanePct = isZoomed ? 18 : 24;
   const mainChartHeight = isMaximized
     ? `calc(${100 - subPanePct * subPaneCount - (isZoomed ? 20 : 4)}%)`
-    : "340px";
-  const subPaneHeight = isMaximized ? `calc(${subPanePct}%)` : "100px";
+    : isMobile
+      ? "380px"
+      : "340px";
+  const subPaneHeight = isMaximized
+    ? `calc(${subPanePct}%)`
+    : isMobile
+      ? "220px"
+      : "100px";
 
   // Mouse-wheel zoom is now handled via non-passive native addEventListener above.
   // Drag-to-pan handlers (Binance-style: click + drag left/right to pan)
@@ -1417,7 +1433,11 @@ export default function StockChart({
               display: "flex",
               flexDirection: "column",
               gap: isMaximized ? "14px" : "16px",
-              padding: isMaximized ? "16px 24px 24px" : "16px 16px 32px",
+              padding: isMaximized
+                ? "16px 24px 24px"
+                : isMobile
+                  ? "12px 4px 20px"
+                  : "16px 16px 32px",
               flex: "unset",
               flexShrink: 0,
               height: isMaximized ? `${650 + subPaneCount * 200}px` : "auto",
@@ -1617,6 +1637,7 @@ export default function StockChart({
                 style={{
                   height: mainChartHeight,
                   width: "100%",
+                  marginLeft: isMobile ? "-23px" : "0",
                   position: "relative",
                   cursor: isZoomed
                     ? isDragging.current
@@ -1665,6 +1686,7 @@ export default function StockChart({
                       fontSize={11}
                       domain={[yMin, yMax]}
                       tickLine={false}
+                      width={isMobile ? 42 : 60}
                       tickFormatter={(v: number) => {
                         if (!isFinite(v) || isNaN(v)) return "";
                         if (v >= 1000) return `${(v / 1000).toFixed(1)}k`;
@@ -1828,24 +1850,58 @@ export default function StockChart({
               </div>
             )}
 
+            {isMobile && processedData.length > 0 && (
+              <div className="mobile-chart-nav">
+                <button
+                  onClick={() =>
+                    setScrollIndex((prev) => Math.max(0, prev - 1))
+                  }
+                  disabled={currentScrollIndex === 0}
+                  aria-label="Previous chart data"
+                >
+                  ←
+                </button>
+
+                <span>
+                  {currentScrollIndex + 1} –{" "}
+                  {Math.min(
+                    currentScrollIndex + visibleCount,
+                    processedData.length,
+                  )}
+                </span>
+
+                <button
+                  onClick={() =>
+                    setScrollIndex((prev) => Math.min(maxScrollIndex, prev + 1))
+                  }
+                  disabled={currentScrollIndex >= maxScrollIndex}
+                  aria-label="Next chart data"
+                >
+                  →
+                </button>
+              </div>
+            )}
+
             {/* Technical Indicator panel: RSI 14 (Auxiliary Chart below main price chart) */}
             {showRSI && visibleRsiData.length > 0 && (
               <div
+                className="chart-indicator-pane"
                 style={{
                   height: subPaneHeight,
                   width: "100%",
-                  borderTop: "1px dashed var(--border-glass)",
-                  paddingTop: "10px",
+                  marginLeft: isMobile ? "-6px" : "0",
                 }}
               >
                 <div
                   style={{
                     display: "flex",
-                    justifyContent: "space-between",
                     fontSize: "11px",
                     color: "var(--text-secondary)",
                     marginBottom: "4px",
                     paddingLeft: "10px",
+                    alignItems: "center",
+                    marginRight: "6px",
+                    gap: "16px",
                   }}
                 >
                   <span style={{ fontWeight: 700, color: "var(--neon-cyan)" }}>
@@ -1858,7 +1914,12 @@ export default function StockChart({
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart
                     data={visibleRsiData}
-                    margin={{ top: 5, right: 5, left: 20, bottom: 5 }}
+                    margin={{
+                      top: 4,
+                      right: 0,
+                      left: 0,
+                      bottom: 2,
+                    }}
                   >
                     <XAxis dataKey="time" hide />
                     <YAxis
@@ -1867,6 +1928,7 @@ export default function StockChart({
                       domain={[0, 100]}
                       tickLine={false}
                       ticks={[30, 50, 70]}
+                      width={isMobile ? 28 : 60}
                     />
                     <Tooltip
                       contentStyle={{
@@ -1930,14 +1992,14 @@ export default function StockChart({
                 style={{
                   height: subPaneHeight,
                   width: "100%",
-                  borderTop: "1px dashed var(--border-glass)",
-                  paddingTop: "10px",
+                  marginLeft: isMobile ? "-6px" : "0",
                 }}
               >
                 <div
                   style={{
                     display: "flex",
-                    justifyContent: "space-between",
+                    alignItems: "center",
+                    gap: "16px",
                     fontSize: "11px",
                     color: "var(--text-secondary)",
                     marginBottom: "4px",
@@ -1958,10 +2020,20 @@ export default function StockChart({
                 <ResponsiveContainer width="100%" height="100%">
                   <ComposedChart
                     data={visibleMacdData}
-                    margin={{ top: 5, right: 5, left: 20, bottom: 5 }}
+                    margin={{
+                      top: 4,
+                      right: 0,
+                      left: 0,
+                      bottom: 2,
+                    }}
                   >
                     <XAxis dataKey="time" hide />
-                    <YAxis stroke="#475569" fontSize={9} tickLine={false} />
+                    <YAxis
+                      stroke="#475569"
+                      fontSize={9}
+                      tickLine={false}
+                      width={isMobile ? 28 : 60}
+                    />
                     <Tooltip
                       contentStyle={{
                         background: "#0d101b",
