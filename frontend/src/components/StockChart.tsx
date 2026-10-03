@@ -804,7 +804,6 @@ export default function StockChart({
           currentScrollIndex + visibleCount,
         )
       : processedData;
-
   const rsiData = showRSI ? computeRSI(chartData, 14) : [];
   const visibleRsiData = showRSI
     ? indicatorData?.rsi
@@ -1895,13 +1894,14 @@ export default function StockChart({
                 <div
                   style={{
                     display: "flex",
+                    alignItems: "center",
+                    gap: "16px",
+                    justifyContent: "space-between",
                     fontSize: "11px",
                     color: "var(--text-secondary)",
                     marginBottom: "4px",
                     paddingLeft: "10px",
-                    alignItems: "center",
                     marginRight: "6px",
-                    gap: "16px",
                   }}
                 >
                   <span style={{ fontWeight: 700, color: "var(--neon-cyan)" }}>
@@ -2000,6 +2000,7 @@ export default function StockChart({
                     display: "flex",
                     alignItems: "center",
                     gap: "16px",
+                    justifyContent: "space-between",
                     fontSize: "11px",
                     color: "var(--text-secondary)",
                     marginBottom: "4px",
