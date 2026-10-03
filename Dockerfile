@@ -1,4 +1,4 @@
-FROM python:3.12-slim
+FROM python:3.12-slim-bookworm
 
 # Force stdout/stderr to be unbuffered to enable live streaming logs in Docker
 ENV PYTHONUNBUFFERED=1
