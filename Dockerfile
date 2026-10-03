@@ -15,7 +15,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Redpanda
-RUN curl -1sLf 'https://dl.redpanda.com/nzc4ZYQK3WRGd9sy/redpanda/cfg/setup/bash.deb.sh' | bash \
+RUN curl -1sLf 'https://linux.pkg.redpanda.com/setup-redpanda.deb.sh' | bash \
     && apt-get install -y --no-install-recommends redpanda \
     && rm -rf /var/lib/apt/lists/*
 
