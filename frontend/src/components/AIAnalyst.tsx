@@ -55,14 +55,6 @@ export default function AIAnalyst({
   const [isStyleOpen, setIsStyleOpen] = useState(false);
   const [isRiskOpen, setIsRiskOpen] = useState(false);
 
-  const mockInsight: AIInsight = {
-    ticker: activeTicker,
-    bullishProbability: 72,
-    reason:
-      "### Strategy Overview\n* Momentum is positive.\n* Price action supports a bullish setup.",
-    creditsRemaining: 24,
-  };
-
   // Auto-switch to analysis tab when loading starts
   useEffect(() => {
     if (loadingInsight) {
