@@ -444,13 +444,6 @@
     z-index: 9999 !important;
     animation: none !important;
   }
-
-  .insight-panel,
-  .ai-analyst-content,
-  .insight-cta,
-  .ai-param-selectors {
-    overflow: visible !important;
-  }
 }
 
 @media (max-width: 768px) {

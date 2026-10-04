@@ -63,9 +63,6 @@ export default function AIAnalyst({
     creditsRemaining: 24,
   };
 
-  const testInsight = insight ?? mockInsight;
-  const testCurrentPrice = currentPrice ?? 185.42;
-
   // Auto-switch to analysis tab when loading starts
   useEffect(() => {
     if (loadingInsight) {
@@ -759,7 +756,7 @@ export default function AIAnalyst({
               </div>
             )}
 
-            {testInsight && !loadingInsight && (
+            {insight && !loadingInsight && (
               <div className="insight-result">
                 <div
                   style={{
@@ -770,7 +767,7 @@ export default function AIAnalyst({
                     flexShrink: 0,
                   }}
                 >
-                  {renderGauge(testInsight.bullishProbability)}
+                  {renderGauge(insight.bullishProbability)}
                   <button
                     className="insight-btn"
                     onClick={onResetInsight}
@@ -785,14 +782,14 @@ export default function AIAnalyst({
                 </div>
                 <div className="insight-text-container">
                   <div
-                    className={`insight-tag ${testInsight.bullishProbability >= 50 ? "tag-bullish" : "tag-bearish"}`}
+                    className={`insight-tag ${insight.bullishProbability >= 50 ? "tag-bullish" : "tag-bearish"}`}
                   >
-                    {testInsight.bullishProbability >= 50
+                    {insight.bullishProbability >= 50
                       ? "BULLISH BIAS"
                       : "BEARISH BIAS"}
                   </div>
                   <div className="insight-reason-body">
-                    {formatReason(testInsight.reason)}
+                    {formatReason(insight.reason)}
                   </div>
 
                   {/* Lock In Strategy — captures the trader's own entry/target/stop-loss,
@@ -854,7 +851,7 @@ export default function AIAnalyst({
                               }}
                             >
                               {currentPrice != null
-                                ? `$${testCurrentPrice.toFixed(2)}`
+                                ? `$${currentPrice.toFixed(2)}`
                                 : "—"}
                             </div>
                           </div>
