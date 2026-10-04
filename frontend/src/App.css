@@ -409,6 +409,48 @@
     max-height: none;
     overflow: visible;
   }
+
+  .insight-panel {
+    overflow: visible !important;
+  }
+
+  .ai-analyst-content {
+    overflow: visible !important;
+  }
+
+  .insight-cta {
+    overflow: visible !important;
+  }
+
+  .ai-param-selectors {
+    overflow: visible !important;
+    position: relative;
+    z-index: 20;
+  }
+
+  .glass-dropdown-menu {
+    top: auto !important;
+    bottom: calc(100% + 8px) !important;
+    left: 0 !important;
+    z-index: 1000 !important;
+    animation: none !important;
+  }
+
+  .insight-panel .glass-dropdown-menu {
+    top: auto !important;
+    bottom: calc(100% + 8px) !important;
+    left: 0 !important;
+    transform: none !important;
+    z-index: 9999 !important;
+    animation: none !important;
+  }
+
+  .insight-panel,
+  .ai-analyst-content,
+  .insight-cta,
+  .ai-param-selectors {
+    overflow: visible !important;
+  }
 }
 
 @media (max-width: 768px) {
